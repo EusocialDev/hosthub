@@ -1,0 +1,573 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Host Space</title>
+    <link rel="stylesheet" href="{% static 'hosthub/css/styles.css' %}?v=12">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+</head>
+<body>
+  <div class="desktop-shell">
+    <!-- Header Section -->
+    <div class="header">
+        <div class="header-left">
+            <button id="liveCallsBtn" class="live-calls-btn" type="button"
+                data-bs-toggle="modal" data-bs-target="#exampleModalCenter">
+                Live calls <span id="liveCallsCount" class="live-calls-badge">0</span>
+            </button>
+        </div>
+
+        <div class="modal fade" id="exampleModalCenter" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                <h5 class="modal-title">Live calls</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                <div id="liveCallsPanel" class="live-calls-panel"></div>
+                </div>
+            </div>
+            </div>
+        </div>
+    
+        <h1>HostHub</h1>
+    
+        <div class="header-buttons">
+            <a href="https://160maincarryout.com/payment/dashboard/carryout_dashboard/{{ CARRYOUT_DASHBOARD_SLUG }}/"
+               class="header-btn home-btn">Carryouts</a>
+            <a href="{% url 'testendpoint:logout' %}"
+               class="header-btn logout-btn">Logout</a>
+        </div>
+    </div>
+    <div class="main-container">   
+
+    <!-- Live Alert Banner (hidden by default) -->
+    <div id="liveAlertBanner" class="live-alert-banner hidden" role="alert" aria-live="polite">
+        <div class="live-alert-left">
+        <span class="live-alert-dot"></span>
+        <div class="live-alert-text">
+            <div class="live-alert-title" id="liveAlertTitle"></div>
+            <div class="live-alert-sub" id="liveAlertSub"></div>
+        </div>
+        </div>
+    
+        <!-- close / mark handled -->
+        <button
+        id="liveAlertClose"
+        class="live-alert-close"
+        type="button"
+        title="Mark as handled"
+        aria-label="Mark alert as handled"
+        >
+        ✕
+        </button>
+    </div>
+
+    <!-- Tab Navigation -->  
+    <nav class="tab-navigation">
+
+      <div class="filters-container">
+
+        <div class="tabs primary-tabs">
+
+          <!-- Reservations -->
+          <a href="?{% if active_host_status == 'resolved' %}host_status=resolved&{% endif %}{% if active_category != 'reservation' %}category=reservation&{% endif %}date={{ active_date_filter }}{% if active_date_filter == 'custom' and custom_date %}&custom_date={{ custom_date }}{% endif %}"
+            data-tab="reservation"
+            class="tab-btn {% if active_category == 'reservation' %}active{% endif %}">
+              Reservations
+          </a>
+      
+          <!-- Carryout -->
+          <a href="?{% if active_host_status == 'resolved' %}host_status=resolved&{% endif %}{% if active_category != 'carryout' %}category=carryout&{% endif %}date={{ active_date_filter }}{% if active_date_filter == 'custom' and custom_date %}&custom_date={{ custom_date }}{% endif %}"
+            data-tab="carryout"
+            class="tab-btn {% if active_category == 'carryout' %}active{% endif %}">
+              Carryout
+          </a>
+      
+          <!-- Leave a Message -->
+          <a href="?{% if active_host_status == 'resolved' %}host_status=resolved&{% endif %}{% if active_category != 'leave_message' %}category=leave_message&{% endif %}date={{ active_date_filter }}{% if active_date_filter == 'custom' and custom_date %}&custom_date={{ custom_date }}{% endif %}"
+            data-tab="leave_message"
+            class="tab-btn {% if active_category == 'leave_message' %}active{% endif %}">
+              Leave a Message
+          </a>
+          
+          <!-- Private Events -->
+          <a href="?{% if active_host_status == 'resolved' %}host_status=resolved&{% endif %}{% if active_category != 'private_events' %}category=private_events&{% endif %}date={{ active_date_filter }}{% if active_date_filter == 'custom' and custom_date %}&custom_date={{ custom_date }}{% endif %}"
+              data-tab="private_events"
+              class="tab-btn {% if active_category == 'private_events' %}active{% endif %}">
+              Private Events
+          </a>
+
+          <!-- Handled -->
+          <a href="?{% if active_host_status != 'resolved' %}host_status=resolved&{% endif %}{% if active_category %}category={{ active_category}}&{% endif %}date={{active_date_filter}}{% if active_date_filter == 'custom' and custom_date %}&custom_date={{custom_date}}{% endif %} "
+            data-tab="handled"
+            class="tab-btn {% if active_host_status == 'resolved' %}active{% endif %}">
+              Handled
+          </a>
+        </div>
+
+
+    
+
+        <div class="tabs date-tabs">
+          <!-- TODAY -->
+          <a
+            class="date-pill {% if active_date_filter == 'today' %}active{% endif %}"
+            href="?date=today{% if active_host_status == 'resolved' %}&host_status=resolved{% endif %}{% if active_category %}&category={{ active_category }}{% endif %}"
+          >
+            Today
+          </a>
+        
+          <!-- YESTERDAY -->
+          <a
+            class="date-pill {% if active_date_filter == 'yesterday' %}active{% endif %}"
+            href="?date=yesterday{% if active_host_status == 'resolved' %}&host_status=resolved{% endif %}{% if active_category %}&category={{ active_category }}{% endif %}"
+          >
+            Yesterday
+          </a>
+        
+          <!-- LAST 7 DAYS -->
+          <a
+            class="date-pill {% if active_date_filter == 'last7' %}active{% endif %}"
+            href="?date=last7{% if active_host_status == 'resolved' %}&host_status=resolved{% endif %}{% if active_category %}&category={{ active_category }}{% endif %}"
+          >
+            Last 7 Days
+          </a>
+        
+          <!-- ALL TIME -->
+          <a
+            class="date-pill {% if active_date_filter == 'all' %}active{% endif %}"
+            href="?date=all{% if active_host_status == 'resolved' %}&host_status=resolved{% endif %}{% if active_category %}&category={{ active_category }}{% endif %}"
+          >
+            All Time
+          </a>
+          <!-- 📅 opens modal -->
+          <button
+          type="button"
+          class="date-pill icon {% if active_date_filter == 'custom' %}active{% endif %}"
+          onclick="openCustomDate()"
+          aria-label="Pick a custom date"
+          title="Pick a custom date"
+          >
+          {% if active_date_filter == 'custom' and custom_date %}
+            {{ custom_date }}
+          {% else %}              
+            <svg width="18"height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" 
+              stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" 
+              stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> 
+              <path d="M3 9H21M7 3V5M17 3V5M6 12H8M11 12H13M16 12H18M6 15H8M11 15H13M16 15H18M6 18H8M11 18H13M16 18H18M6.2 21H17.8C18.9201 
+              21 19.4802 21 19.908 20.782C20.2843 20.5903 20.5903 20.2843 20.782 19.908C21 19.4802 21 18.9201 21 17.8V8.2C21 7.07989 21 6.51984 
+              20.782 6.09202C20.5903 5.71569 20.2843 5.40973 19.908 5.21799C19.4802 5 18.9201 5 17.8 5H6.2C5.0799 5 4.51984 5 
+              4.09202 5.21799C3.71569 5.40973 3.40973 5.71569 3.21799 6.09202C3 6.51984 3 7.07989 3 8.2V17.8C3 18.9201 3 19.4802 
+              3.21799 19.908C3.40973 20.2843 3.71569 20.5903 4.09202 20.782C4.51984 21 5.07989 21 6.2 21Z" stroke="#000000" stroke-width="2" 
+              stroke-linecap="round"></path> 
+              </g>
+            </svg>
+          {% endif %}
+          </button>
+
+          <!-- Custom Date Modal -->
+          <div id="customDateModal" class="modal-backdrop" style="display:none;">
+            <div class="modal-card">
+              <div class="modal-title">Pick a date</div>
+
+              <form method="get">
+                <!-- keep your other filters -->
+                {% if active_host_status %}
+                  <input type="hidden" name="host_status" value="{{ active_host_status }}">
+                {% endif %}
+                {% if active_category %}
+                  <input type="hidden" name="category" value="{{ active_category }}">
+                {% endif %}
+
+                <!-- required for custom -->
+                <input type="hidden" name="date" value="custom">
+
+                <!-- the picked day -->
+                <input
+                  type="date"
+                  name="custom_date"
+                  value="{{ custom_date|default:'' }}"
+                  required
+                >
+
+                <div class="modal-actions">
+                  <button type="button" class="btn" onclick="closeCustomDate()">Cancel</button>
+                  <button type="submit" class="btn primary">Apply</button>
+                </div>
+              </form>
+            </div>
+        </div>
+
+
+      </div>
+
+    </nav>
+
+      
+
+        <div class="content-grid">
+            <section class="message-list" id="callsList" aria-label="Messages List">
+
+                <div class="sticky-overlay">
+                    <div id="newCallsPill" class="new-calls-pill hidden" role="button" tabindex="0">
+                      <span class="ptr-spinner always-on"></span>
+                      <span>New calls — tap to refresh</span>
+                    </div>
+                  </div>
+            
+                {% for call in calls %}
+                <article class="message-item {% if call.host_status == 'resolved' %}resolved{% endif %} {% if forloop.first %}selected{% endif %}" 
+                        data-call-id = "{{ call.id }}"
+                        data-user-name="{{ call.user_name|default:'' }}"
+                        data-from-number="{{ call.from_number|default:'' }}"
+                        data-to-number="{{ call.to_number|default:'' }}"
+                        data-category="{{ call.get_display_category_display }}"
+                        data-category-value="{{ call.display_category }}"
+                        data-summary="{{ call.summary|default:'' }}"
+                        data-full-trasncript="{{call.transcripts|default:''}}"
+                        data-created-at="{% if call.created_at %}{{ call.created_at|date:'M d, Y g:i A' }}{% endif %}"
+                        data-started-at="{% if call.started_at %}{{ call.started_at|date:'M d, Y g:i A' }}{% endif %}"
+                        data-ended-at="{% if call.ended_at %}{{ call.ended_at|date:'M d, Y g:i A' }}{% endif %}"
+                        data-duration="{{ call.duration_seconds|default:0 }}"
+                        data-host-status="{{ call.host_status }}"
+                        data-notes="{{ call.notes|default:'' }}"
+                        data-reservation-date="{{call.variables.date|default:''}}"
+                        data-reservation-guests="{{call.variables.guest|default:''}}"
+                        data-reservation-time="{{call.variables.time|default:''}}"
+                        data-reservation-request="{{call.variables.request|default:''}}"
+                        data-order-summary="{{call.variables.order_summary|default:''}}"
+                        data-total-price="{{call.variables.total_price|default:''}}"
+                        data-party-occasion="{{call.variables.occasion|default:''}}"
+                        data-party-date="{{call.variables.party_date|default:''}}"
+                        data-party-time="{{call.variables.party_time|default:''}}"
+                        data-party-guests="{{call.variables.guests|default:''}}"
+                        data-party-message="{{call.variables.party_message|default:''}}"
+                        data-leave-message="{{call.variables.user_message|default:''}}"
+                        data-handled-by="{{ call.handled_by|default:'' }}"
+                        data-handled-by-display="{% if call.handled_by %}{{ call.get_handled_by_display }}{% endif %}"
+                        data-handled-at="{{ call.handled_at|date:'c' }}"
+                        data-disposition="{{ call.disposition|default:'' }}"
+                        data-disposition-display="{% if call.disposition %}{{ call.get_disposition_display }}{% endif %}"
+                        onclick="selectCall(this)">
+                    <div class="message-header">
+                        {% if call.host_status == 'resolved' %}
+                            <span class="check-icon">✓</span>
+                        {% else %}
+                            <input type="checkbox" class="checkbox" id="msg{{ call.id }}" aria-label="Mark as complete" onclick="event.stopPropagation();">
+                        {% endif %}
+                        <span class="message-status">
+                            {% if call.host_status == 'resolved' %}
+                                Resolved
+                            {% elif call.user_name %}
+                                {{ call.user_name }}
+                            {% else %}
+                                Guest
+                            {% endif %}
+                        </span>
+                        <time class="message-time" datetime="{{ call.created_at|date:'c' }}">
+                            {% if call.created_at %}
+                                {{ call.created_at|date:"M d, Y g:i A" }}
+                            {% endif %}
+                        </time>
+                    </div>
+                    <div class="message-category">{{ call.get_display_category_display }}</div>
+                    {% if call.display_category == 'carryout' or call.display_category == 'private events' or call.display_category == 'reservation' %}
+                        {% if call.host_status != 'resolved' %}
+                            <span class="needs-action-tag">Needs Action</span>
+                        {% endif %}
+                    {% endif %}
+                    <p class="message-content">
+                        {% if call.summary %}
+                            {{ call.summary|truncatewords:20 }}
+                        {% else %}
+                            No summary available
+                        {% endif %}
+                    </p>
+                </article>
+                {% empty %}
+                <article class="message-item">
+                    <p class="message-content">No calls found for the selected filters.</p>
+                </article>
+                {% endfor %}
+            </section>
+            
+            <aside class="details-panel" aria-label="Call Details" id="detailsPanel">
+                <h2 class="panel-title" id="panelTitle">Select a Call</h2>
+                
+                <div class="customer-info" id="customerInfo" style="display: none;">
+                    <div class="customer-name" id="customerName"></div>
+                    <div class="customer-phone" id="customerPhone"></div>
+                    
+                    <div class="mark-handled">
+                        <input type="checkbox" class="checkbox" id="handled" aria-label="Mark as handled" onchange="handleMarkAsHandled(this.checked)">
+                        <label for="handled">Mark as handled</label>
+                    </div>
+                </div>
+                
+                <section class="details-section" id="callInfoSection" style="display: none;">
+                    <h3>Call Info</h3>
+                    <ul class="details-list" id="callInfoList"></ul>
+                </section>
+                
+                <section class="details-section" id="requestDetailsSection" style="display: none;">
+                    <h3 id="requestDetailsTitle">Request Details</h3>
+                    <ul class="details-list" id="requestDetailsList"></ul>
+                </section>
+                <br>
+                <div class="request-box" id="finalTranscriptBox" style="display: none;">
+                  <details id="finalTranscriptDetails">
+                    <summary>Call Transcript</summary>
+                
+                    <div id="finalTranscriptContainer" class="live-transcript-container"></div>
+                  </details>
+                </div>
+            </aside>
+        </div>
+        <!-- Resolve Call Modal -->
+      <div class="modal fade" id="resolveCallModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+
+            <div class="modal-header">
+              <h5 class="modal-title">Mark Call as Handled</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+              <input type="hidden" id="resolveModalCallId" value="" />
+              <input type="hidden" id="resolveModalSource" value="" /> <!-- "details" | "list" -->
+
+              <div class="mb-3">
+                <label class="form-label" for="handledBySelect">Handled by</label>
+                <select class="form-select" id="handledBySelect" required></select>
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label" for="dispositionSelect">Action Taken</label>
+                <select class="form-select" id="dispositionSelect" required></select>
+              </div>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-primary" id="saveResolveBtn">Save</button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>  <!-- close desktop-shell -->
+
+  <!-- Mobile Version  -->
+  <div class="mobile-shell">
+    <header class="mobile-header">
+      <button
+      id="mobileLiveCallsBtn" 
+      class="mobile-header-btn mobile-live-btn" 
+      type="button" 
+      onclick="openMobileLiveCalls()" 
+      aria-label="View Live Calls">
+        Live  <span class="mobile-live-badge" id="mobileLiveCallsCount"> 0</span>
+      </button>
+
+      <div class="mobile-header-title">HostHub</div>
+
+      <button class="mobile-header-btn mobile-filter-btn" type="button" onclick="openMobileFilters()" aria-label="Open filters">
+        Filters
+      </button>
+    </header>
+
+    <main class="mobile-main">
+      <section class="mobile-list-view">
+      {% for call in calls %}
+
+        <article class="mobile-call-card"
+            data-call-id="{{ call.id }}"
+            data-user-name="{{ call.user_name|default:'' }}"
+            data-from-number="{{ call.from_number|default:'' }}"
+            data-to-number="{{ call.to_number|default:'' }}"
+            data-category="{{ call.get_display_category_display }}"
+            data-category-value="{{ call.display_category }}"
+            data-summary="{{ call.summary|default:'' }}"
+            data-full-trasncript="{{call.transcripts|default:''}}"
+            data-created-at="{% if call.created_at %}{{ call.created_at|date:'M d, Y g:i A' }}{% endif %}"
+            data-started-at="{% if call.started_at %}{{ call.started_at|date:'M d, Y g:i A' }}{% endif %}"
+            data-ended-at="{% if call.ended_at %}{{ call.ended_at|date:'M d, Y g:i A' }}{% endif %}"
+            data-duration="{{ call.duration_seconds|default:0 }}"
+            data-host-status="{{ call.host_status }}"
+            data-notes="{{ call.notes|default:'' }}"
+            data-reservation-date="{{call.variables.date|default:''}}"
+            data-reservation-guests="{{call.variables.guest|default:''}}"
+            data-reservation-time="{{call.variables.time|default:''}}"
+            data-reservation-request="{{call.variables.request|default:''}}"
+            data-order-summary="{{call.variables.order_summary|default:''}}"
+            data-total-price="{{call.variables.total_price|default:''}}"
+            data-party-occasion="{{call.variables.occasion|default:''}}"
+            data-party-date="{{call.variables.party_date|default:''}}"
+            data-party-time="{{call.variables.party_time|default:''}}"
+            data-party-guests="{{call.variables.guests|default:''}}"
+            data-party-message="{{call.variables.party_message|default:''}}"
+            data-leave-message="{{call.variables.user_message|default:''}}"
+            data-handled-by="{{ call.handled_by|default:'' }}"
+            data-handled-by-display="{% if call.handled_by %}{{ call.get_handled_by_display }}{% endif %}"
+            data-handled-at="{{ call.handled_at|date:'c' }}"
+            data-disposition="{{ call.disposition|default:'' }}"
+            data-disposition-display="{% if call.disposition %}{{ call.get_disposition_display }}{% endif %}"
+            onclick="selectMobileCall(this)"
+        >
+
+            <div class="mobile-call-top">
+                <span class="mobile-call-category">
+                    {{ call.get_display_category_display}}
+                </span>
+
+              {% if call.host_status == 'resolved' %}
+                <span class="mobile-call-resolved">✓</span>
+              {% endif %}
+
+                <time class="mobile-call-time">
+                    {{ call.created_at|date:"g:i A" }}
+                </time>
+            </div>
+
+            <div class="mobile-call-name">
+                {% if call.user_name %}
+                    {{ call.user_name }}
+                {% else %}
+                    Guest
+                {% endif %}
+            </div>
+
+            <div class="mobile-call-preview">
+                {{ call.summary|truncatewords:14 }}
+            </div>
+
+        </article>
+      {% empty %}
+        <p class="no-calls-message">No calls found for the selected filters.</p>
+
+      {% endfor %}
+
+      </section> <!-- Close List View Section -->
+
+      <section class="mobile-details-view">
+
+      </section> <!-- Close Details View Section -->
+
+    </main>
+    <div class="mobile-sheet-backdrop" onclick="closeMobileFilters()"></div> <!-- backdrop for mobile filters -->
+
+    <div class="mobile-filter-sheet" aria-hidden="true">
+      <div class="mobile-sheet-handle"></div>
+
+      <div class="mobile-filter-sheet-header">
+        <h2 class="mobile-filter-sheet-title">Filter Calls</h2>
+        <button
+          type="button"
+          class="mobile-sheet-close"
+          aria-label="Close filters"
+          onclick="closeMobileFilters()"
+        >✕</button>
+      </div>
+
+      <div class="mobile-filter-sheet-body">
+        <div class="mobile-filter-group">
+          <label class="mobile-filter-label" for="mobileCategoryFilter">Category</label>
+          <select id="mobileCategoryFilter" class="mobile-filter-select">
+            <option value="All Categories" {% if not active_category%}selected{% endif %}> All Categories</option>
+            <option value="reservation" {% if active_category == 'reservation' %}selected{% endif %}>Reservations</option>
+            <option value="carryout" {% if active_category == 'carryout' %}selected{% endif %}>Carryout</option>
+            <option value="leave_message" {% if active_category == 'leave_message' %}selected{% endif %}>Leave a Message</option>
+            <option value="private_events" {% if active_category == 'private_events' %}selected{% endif %}>Private Events</option>
+          </select>
+        </div>
+
+        <div class="mobile-filter-group">
+          <label class="mobile-filter-label" for="mobileStatusFilter">Status</label>
+          <select id="mobileStatusFilter" class="mobile-filter-select">
+            <option value="" {% if active_host_status != 'resolved' %}selected{% endif %}>Needs Action</option>
+            <option value="resolved" {% if active_host_status == 'resolved' %}selected{% endif %}>Handled</option>
+          </select>
+        </div>
+
+        <div class="mobile-filter-group">
+          <label class="mobile-filter-label" for="mobileDateFilter">Date</label>
+          <select id="mobileDateFilter" class="mobile-filter-select">
+            <option value="today" {% if active_date_filter == 'today' %}selected{% endif %}>Today</option>
+            <option value="yesterday" {% if active_date_filter == 'yesterday' %}selected{% endif %}>Yesterday</option>
+            <option value="last7" {% if active_date_filter == 'last7' %}selected{% endif %}>Last 7 Days</option>
+            <option value="all" {% if active_date_filter == 'all' %}selected{% endif %}>All Time</option>
+            <option value="custom" {% if active_date_filter == 'custom' %}selected{% endif %}>Custom Date</option>
+          </select>
+        </div>
+
+        <div class="mobile-filter-group" id="mobileCustomDateWrap" {% if active_date_filter != 'custom' %}style="display:none;"{% endif %}>
+          <label class="mobile-filter-label" for="mobileCustomDate">Custom Date</label>
+          <input
+            type="date"
+            id="mobileCustomDate"
+            class="mobile-filter-input"
+            value="{{ custom_date|default:'' }}"
+          >
+        </div>
+      </div>
+
+      <div class="mobile-filter-sheet-footer">
+        <button type="button" class="mobile-sheet-secondary-btn" onclick="closeMobileFilters()">
+          Cancel
+        </button>
+        <button type="button" class="mobile-sheet-primary-btn" onclick="applyMobileFilters()">
+          Apply Filters
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Live Calls backdrop -->
+    <div class="mobile-live-backdrop" onclick="closeMobileLiveCalls()"></div>
+
+    <div class="mobile-live-sheet" aria-hidden="true">
+      <div class="mobile-sheet-handle"></div>
+
+      <div class="mobile-live-sheet-header">
+        <h2 class="mobile-live-sheet-title">Live Calls</h2>
+        <button
+          type="button"
+          class="mobile-sheet-close"
+          aria-label="Close live calls"
+          onclick="closeMobileLiveCalls()"
+        >
+          ×
+        </button>
+      </div>
+
+    <div class="mobile-live-sheet-body">
+      <div id="mobileLiveCallsPanel" class="mobile-live-calls-panel">
+        <div class="mobile-live-empty">No live calls right now.</div>
+      </div>
+    </div>
+    </div>
+  </div> <!-- close Mobile Shell -->
+
+
+  <script>
+    window.HOSTHUB_CONFIG = {
+    pageLoadedAt: "{{ page_loaded_at|date:'c' }}",
+    activeCategory: "{{ active_category|default:''|escapejs }}",
+    activeHostStatus: "{{ active_host_status|default:'needs_action'|escapejs }}",
+    csrfToken: "{{ csrf_token }}",
+    sseToken: "{{ HOSTHUB_SSE_TOKEN|default:''|escapejs }}"
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{% static 'hosthub/js/hosthub-legacy.js' %}?v=2.3"></script>
+  <script src="{% static 'hosthub/js/hosthub-mobile.js' %}?v=2.3"></script>
+      
+</body>
+</html>

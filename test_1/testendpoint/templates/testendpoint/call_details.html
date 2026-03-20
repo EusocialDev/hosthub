@@ -1,0 +1,254 @@
+{% load static %}
+{% load custom_filters %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Call Details - Eusocial Voice Agent</title>
+    <link rel="stylesheet" href="{% static 'testendpoint/css/styles.css' %}">
+</head>
+<body class="call-details-page">
+    <!-- Header Section -->
+    <div class="header">
+        <a href="{% url 'testendpoint:calls' %}" class="back-button">←</a>
+        <h1>Call Details</h1>
+        <a href="{% url 'testendpoint:logout' %}" class="logout-btn">Logout</a>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-container">
+        <div class="stat-card">
+            <div class="stat-icon completed">✓</div>
+            <div class="stat-label completed">Completed</div>
+            <div class="stat-number">{{ completed_count }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon abandoned">✕</div>
+            <div class="stat-label abandoned">Abandoned</div>
+            <div class="stat-number">{{ abandoned_count }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon in-progress">⟳</div>
+            <div class="stat-label in-progress">In-progress</div>
+            <div class="stat-number">{{ in_progress_count }}</div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+        <div class="content-header">
+            <div class="call-identifier">{{ call.from_number|phone_format }}</div>
+            <div class="section-title">Details & History</div>
+        </div>
+
+        <div class="content-columns">
+            <!-- Transcription Column -->
+            <div class="transcription-column">
+                <div class="column-header">
+                    Transcription
+                    {% if is_live %}
+                        <span class="live-indicator" id="live-indicator">🔴 LIVE</span>
+                    {% endif %}
+                </div>
+
+                <div class="transcription-content" id="transcript-content">
+                    {% if call.full_transcript %}
+                        <div class="transcript-entry">
+                            {{ call.full_transcript|linebreaksbr }}
+                        </div>
+                    {% else %}
+                        <div class="transcript-entry">
+                            No transcript available yet.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Call History Column -->
+            <div class="call-history-column">
+                <div class="column-header">Call History</div>
+
+                <!-- Audio Waveform Section -->
+                {% if call.bland_call_id %}
+                <div class="audio-waveform-section">
+                    <div class="audio-controls">
+                        <button id="play-pause-btn" class="play-pause-btn">
+                            <span id="play-icon">▶</span>
+                        </button>
+                        <div class="waveform-container">
+                            <div class="audio-waveform" id="audio-waveform">
+                                <div class="waveform-bar"></div>
+                                <div class="waveform-bar"></div>
+                                <div class="waveform-bar"></div>
+                                <div class="waveform-bar"></div>
+                                <div class="waveform-bar"></div>
+                                <div class="waveform-bar"></div>
+                                <div class="waveform-bar"></div>
+                                <div class="waveform-bar"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <audio id="call-audio" class="hidden">
+                        <source src="{% url 'testendpoint:call_recording' call.bland_call_id %}" type="audio/mpeg">
+                        Your browser does not support the audio element.
+                    </audio>
+                </div>
+                {% endif %}
+
+                <!-- Call History Table -->
+                <div class="call-history-table">
+                    <div class="table-header">
+                        <div class="table-cell header-cell">Date</div>
+                        <div class="table-cell header-cell">Path</div>
+                        <div class="table-cell header-cell">Status</div>
+                        <div class="table-cell header-cell">Action</div>
+                    </div>
+
+                    <div class="table-body">
+                        {% if call_history %}
+                            {% for c in call_history %}
+                            <div class="table-row">
+                                <div class="table-cell">{{ c.created_at|date_format|default:"N/A" }}</div>
+
+                                <div class="table-cell">
+                                    {% for name in c.pathway_tags|unique_names %}
+                                        {{ name }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </div>
+
+                                <div class="table-cell">
+                                    <span class="call-status
+                                        {% if c.computed_status == 'abandoned' %}abandoned
+                                        {% elif c.computed_status == 'completed' %}completed
+                                        {% elif c.computed_status == 'in-progress' %}in-progress
+                                        {% else %}unknown{% endif %}">
+                                        {% if c.computed_status == 'in-progress' %}
+                                            <span class="spinning-icon">⟳</span> In-Progress
+                                        {% elif c.computed_status == 'abandoned' %}
+                                            Abandoned
+                                        {% elif c.computed_status == 'completed' %}
+                                            Completed
+                                        {% else %}
+                                            Unknown
+                                        {% endif %}
+                                    </span>
+                                </div>
+
+                                <div class="table-cell">
+                                    <a href="{% url 'testendpoint:call_details' c.bland_call_id %}" class="call-action">
+                                        <span>View</span>
+                                        <div class="current-call-icon"></div>
+                                    </a>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="table-row">
+                                <div class="table-cell" colspan="4">No history found for this number</div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Branding -->
+    <div class="branding">
+        <div class="brand-text eu">eu</div>
+        <div class="brand-logo">social</div>
+    </div>
+
+    <script>
+        const isLive = {% if is_live %}true{% else %}false{% endif %};
+        let refreshIndicator;
+
+        function addRefreshIndicator() {
+            const indicator = document.createElement('div');
+            indicator.id = 'refresh-indicator';
+            indicator.textContent = 'Refreshing...';
+            indicator.style.display = 'none';
+            document.body.appendChild(indicator);
+            refreshIndicator = indicator;
+        }
+
+        function showRefreshIndicator() {
+            if (refreshIndicator) refreshIndicator.style.display = 'block';
+        }
+
+        function autoRefresh() {
+            showRefreshIndicator();
+            setTimeout(() => window.location.reload(), 500);
+        }
+
+        // Audio waveform functionality
+        function initAudioWaveform() {
+            const playPauseBtn = document.getElementById('play-pause-btn');
+            const audio = document.getElementById('call-audio');
+            const playIcon = document.getElementById('play-icon');
+            const waveformBars = document.querySelectorAll('.waveform-bar');
+            const waveformContainer = document.querySelector('.waveform-container');
+
+            if (!playPauseBtn || !audio) return;
+
+            let isPlaying = false;
+            let animationId;
+
+            function animateWaveform() {
+                waveformBars.forEach((bar) => {
+                    const height = Math.random() * 100;
+                    bar.style.height = height + '%';
+                });
+                if (isPlaying) animationId = requestAnimationFrame(animateWaveform);
+            }
+
+            playPauseBtn.addEventListener('click', function() {
+                if (isPlaying) {
+                    audio.pause();
+                    playIcon.textContent = '▶';
+                    playPauseBtn.classList.remove('playing');
+                    waveformContainer.classList.remove('playing');
+                    isPlaying = false;
+                    if (animationId) cancelAnimationFrame(animationId);
+                } else {
+                    audio.play();
+                    playIcon.textContent = '⏸';
+                    playPauseBtn.classList.add('playing');
+                    waveformContainer.classList.add('playing');
+                    isPlaying = true;
+                    animateWaveform();
+                }
+            });
+
+            audio.addEventListener('ended', function() {
+                playIcon.textContent = '▶';
+                playPauseBtn.classList.remove('playing');
+                waveformContainer.classList.remove('playing');
+                isPlaying = false;
+                if (animationId) cancelAnimationFrame(animationId);
+            });
+
+            audio.addEventListener('pause', function() {
+                playIcon.textContent = '▶';
+                playPauseBtn.classList.remove('playing');
+                waveformContainer.classList.remove('playing');
+                isPlaying = false;
+                if (animationId) cancelAnimationFrame(animationId);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            addRefreshIndicator();
+            initAudioWaveform();
+
+            // If you *want* periodic refresh from DB:
+            // - for live calls you can refresh every 3–5s (if DB updates during call)
+            // - otherwise refresh less often
+            if (isLive) {
+                setInterval(autoRefresh, 5000);
+            } else {
+                setInterval(autoRefresh, 30000);
+            }
+        });
+    </script>
+</body>
+</html>

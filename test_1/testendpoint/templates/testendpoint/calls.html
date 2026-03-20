@@ -1,0 +1,170 @@
+{% load static %}
+{% load custom_filters %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Eusocial Voice Agent</title>
+    <link rel="stylesheet" href="{% static 'testendpoint/css/styles.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+    <h1>Eusocial Voice Agent</h1>
+    <a href="{% url 'hosthub:hosthub_dashboard' %}" class="btn btn-primary" style="margin-right: 30px;">HostHub</a>
+    <a href="{% url 'testendpoint:logout' %}" class="logout-btn">Logout</a>
+</div>
+
+<!-- Stats -->
+<div class="stats-container">
+    <div class="stat-card clickable" data-status-filter="completed">
+        <div class="stat-icon completed">✓</div>
+        <div class="stat-label completed">Completed</div>
+        <div class="stat-number">{{ completed_count }}</div>
+    </div>
+    <div class="stat-card clickable" data-status-filter="abandoned">
+        <div class="stat-icon abandoned">✕</div>
+        <div class="stat-label abandoned">Abandoned</div>
+        <div class="stat-number">{{ abandoned_count }}</div>
+    </div>
+    <div class="stat-card clickable" data-status-filter="in-progress">
+        <div class="stat-icon in-progress">⟳</div>
+        <div class="stat-label in-progress">In-progress</div>
+        <div class="stat-number">{{ in_progress_count }}</div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+    <div class="filters-bar">
+        <div class="call-history-title">Call History</div>
+        <div class="filters">
+            <input type="date" id="filter-date" class="filter-input" />
+            <input type="text" id="filter-phone" class="filter-input" placeholder="Phone Number" />
+            <button id="clear-filters" type="button">Clear</button>
+        </div>
+    </div>
+
+    <div class="content-columns">
+        <div class="call-history-column">
+            <div class="call-table">
+                <div class="table-header">
+                    <div class="table-cell header-cell">Phone</div>
+                    <div class="table-cell header-cell">Path</div>
+                    <div class="table-cell header-cell">Status</div>
+                    <div class="table-cell header-cell"></div>
+                </div>
+
+                <div class="table-body">
+                    {% for call in calls %}
+                    <div class="table-row"
+                         data-created="{{ call.created_at|date:'Y-m-d' }}"
+                         data-phone="{{ call.from_number }}"
+                         data-status="{{ call.computed_status }}">
+
+                        <div class="table-cell">
+                            {{ call.from_number|phone_format }}
+                        </div>
+
+                        <div class="table-cell">
+                            {% for tag in call.pathway_tags|unique_names %}
+                                {{ tag }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </div>
+
+                        <div class="table-cell">
+                            <span class="call-status {{ call.computed_status }}">
+                                {{ call.computed_status|capfirst }}
+                            </span>
+                        </div>
+
+                        <div class="table-cell">
+                            <a href="{% url 'testendpoint:call_details' call.bland_call_id %}" class="call-action">
+                                <span>View</span>
+                                <div class="current-call-icon"></div>
+                            </a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="table-row">
+                        <div class="table-cell">No calls found</div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Branding -->
+<div class="branding">
+    <div class="brand-text eu">eu</div>
+    <div class="brand-logo">social</div>
+</div>
+
+<!-- ✅ Client-side filtering ONLY (no API calls) -->
+<script>
+let currentStatusFilter = '';
+
+function shouldIncludeRow(row, phoneValue, dateValue) {
+    let phoneMatch = true, dateMatch = true, statusMatch = true;
+
+    if (phoneValue) {
+        const digits = (row.dataset.phone || '').replace(/\D/g, '');
+        phoneMatch = digits.includes(phoneValue.replace(/\D/g, ''));
+    }
+
+    if (dateValue) {
+        dateMatch = row.dataset.created === dateValue;
+    }
+
+    if (currentStatusFilter) {
+        statusMatch = row.dataset.status === currentStatusFilter;
+    }
+
+    return phoneMatch && dateMatch && statusMatch;
+}
+
+function filterTableRows() {
+    const phone = document.getElementById('filter-phone').value;
+    const date = document.getElementById('filter-date').value;
+
+    document.querySelectorAll('.table-row').forEach(row => {
+        row.style.display = shouldIncludeRow(row, phone, date) ? '' : 'none';
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('filter-phone').addEventListener('input', filterTableRows);
+    document.getElementById('filter-date').addEventListener('input', filterTableRows);
+
+    document.getElementById('clear-filters').addEventListener('click', () => {
+        document.getElementById('filter-phone').value = '';
+        document.getElementById('filter-date').value = '';
+        currentStatusFilter = '';
+        document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
+        filterTableRows();
+    });
+
+    document.querySelectorAll('.stat-card.clickable').forEach(card => {
+        card.addEventListener('click', () => {
+            const selected = card.dataset.statusFilter;
+            if (currentStatusFilter === selected) {
+                currentStatusFilter = '';
+                card.classList.remove('active');
+            } else {
+                currentStatusFilter = selected;
+                document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+            }
+            filterTableRows();
+        });
+    });
+});
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Daily Call Report</title>
+        <style>
+        body {
+            margin: 0;
+            padding: 24px;
+            background-color: #f4f6f8;
+            font-family: Arial, Helvetica, sans-serif;
+            color: #1f2937;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+        }
+
+        .header {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            background: #111827;
+            color: #ffffff;
+            padding: 28px 32px;
+        }
+
+        .header-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-img {
+            padding-right: 30px
+        }
+
+        .header img {
+            height: 80px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            line-height: 1.2;
+        }
+
+        .header p {
+            margin: 8px 0 0;
+            font-size: 14px;
+            color: #d1d5db;
+            line-height: 1.5;
+        }
+
+        .section {
+            padding: 24px 32px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .section h2 {
+            margin: 0 0 16px;
+            font-size: 20px;
+            color: #111827;
+        }
+
+        .stats-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 12px 0;
+            margin: 0 -12px;
+        }
+
+        .stats-table td {
+            width: 20%;
+            vertical-align: top;
+        }
+
+        .stat-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #111827;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th,
+        .table td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+            vertical-align: top;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .table th {
+            background: #f9fafb;
+            color: #374151;
+            font-weight: bold;
+        }
+
+        .muted {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: bold;
+            background: #eef2ff;
+            color: #3730a3;
+        }
+
+        .pill-danger {
+            background: #fef2f2;
+            color: #b91c1c;
+        }
+
+        .person-block {
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .person-header {
+            background: #f9fafb;
+            padding: 14px 16px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 16px;
+            font-weight: bold;
+            color: #111827;
+        }
+
+        .person-content {
+            padding: 0 16px;
+        }
+
+        .call-item {
+            padding: 14px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .call-item:last-child {
+            border-bottom: none;
+        }
+
+        .empty-state {
+            padding: 14px 16px;
+            background: #f9fafb;
+            border: 1px dashed #d1d5db;
+            border-radius: 8px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .footer {
+            padding: 20px 32px;
+            background: #f9fafb;
+            border-top: 1px solid #e5e7eb;
+            color: #6b7280;
+            font-size: 12px;
+        }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#111827;color:#ffffff;padding:28px 32px;border-radius:12px 12px 0 0;">
+            <tr>
+                <td style="vertical-align:top;">
+                <h1 style="margin:0;font-size:28px;line-height:1.2;color:#ffffff;">
+                    AI Host Daily Call Report
+                </h1>
+
+                <p style="margin:8px 0 0;font-size:14px;color:#d1d5db;line-height:1.5;">
+                    Report for {{ report_date|date:"F j, Y" }}<br>
+                    Window: {{ start_of_day|date:"M j, Y g:i A" }} – {{ end_of_day|date:"M j, Y g:i A" }}
+                </p>
+                </td>
+
+                <td align="right" style="vertical-align:top;">
+                <img 
+                    src="https://eusocial.com/wp-content/uploads/2024/05/logo.png"
+                    alt="EuSocial Logo"
+                    style="height:90px;display:block;"
+                >
+                </td>
+            </tr>
+            </table>
+    
+            <div class="section">
+                <h2>Summary</h2>
+                <table class="stats-table">
+                    <tr>
+                        <td>
+                            <div class="stat-card">
+                                <div class="stat-label">Total Calls</div>
+                                <div class="stat-value">{{ total_calls }}</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="stat-card">
+                                <div class="stat-label">Resolved</div>
+                                <div class="stat-value">{{ resolved_calls }}</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="stat-card">
+                                <div class="stat-label">Unresolved</div>
+                                <div class="stat-value">{{ unresolved_calls }}</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="stat-card">
+                                <div class="stat-label">Average Resolution</div>
+                                <div class="stat-value">
+                                    {{avg_resolution_display|default:"—"}}
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="stat-card">
+                                <div class="stat-label">Average Duration</div>
+                                <div class="stat-value">
+                                    {% if avg_duration_seconds %}
+                                        {{ avg_duration_seconds|floatformat:0 }}s
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+    
+            <div class="section">
+                <h2>Calls by Category</h2>
+                {% if by_category %}
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in by_category %}
+                                <tr>
+                                    <td>{{ item.label }}</td>
+                                    <td>{{ item.count }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="empty-state">No category data for this day.</div>
+                {% endif %}
+            </div>
+    
+            {% comment %} <div class="section">
+                <h2>Disposition Breakdown</h2>
+                {% if by_disposition %}
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Disposition</th>
+                                <th>Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in by_disposition %}
+                                <tr>
+                                    <td>{{ item.label }}</td>
+                                    <td>{{ item.count }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="empty-state">No dispositions recorded for this day.</div>
+                {% endif %}
+            </div> {% endcomment %}
+    
+            {% comment %} <div class="section">
+                <h2>Handled by Team Member</h2>
+                {% if handled_calls_by_person %}
+                    {% for person in handled_calls_by_person %}
+                        <div class="person-block">
+                            <div class="person-header">
+                                {{ person.label }} — {{ person.count }} Calls Handled
+                            </div>
+                            <div class="person-content">
+                                {% for call in person.calls %}
+                                    <div class="call-item">
+                                        <strong>{{ call.display_category_label }}</strong>
+                                        {% if call.disposition_label %}
+                                            — {{ call.disposition_label }}
+                                        {% endif %}
+                                        <br>
+                                        <span class="muted">
+                                            Caller:
+                                            {% if call.user_name %}
+                                                {{ call.user_name }}
+                                            {% else %}
+                                                Unknown Caller
+                                            {% endif %}
+                                            {% if call.from_number %} · {{ call.from_number }}{% endif %}
+                                            {% if call.created_at %} · Created {{ call.created_at|date:"g:i A" }}{% endif %}
+                                            {% if call.handled_at %} · Handled {{ call.handled_at|date:"g:i A" }}{% endif %}
+                                        </span>
+                                        {% if call.summary %}
+                                            <br>
+                                            {{ call.summary }}
+                                        {% endif %}
+                                        {% if call.notes %}
+                                            <br>
+                                            <span class="muted">Notes: {{ call.notes }}</span>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">No handled calls recorded for this day.</div>
+                {% endif %}
+            </div> {% endcomment %}
+    
+            <div class="section">
+                <h2>Call Details</h2>
+                {% if detailed_calls %}
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Caller</th>
+                                <th>Phone</th>
+                                <th>Category</th>
+                                <th>Summary</th>
+                                <th>Status</th>
+                                <th>Handled By</th>
+                                <th>Disposition</th>
+                                
+
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for call in detailed_calls %}
+                                <tr>
+                                    <td>{{ call.created_at|date:"g:i A" }}</td>
+                                    <td>
+                                        {% if call.user_name %}
+                                            {{ call.user_name }}
+                                        {% else %}
+                                            Unknown Caller
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ call.from_number|default:"—" }}</td>
+                                    <td>{{ call.display_category_label }}</td>
+                                    <td>{{ call.summary|default:"—" }}</td>
+                                    <td>
+                                        {% if call.host_status == "needs_action" %}
+                                            <span class="pill pill-danger">Needs Action</span>
+                                        {% else %}
+                                            <span class="pill">Resolved</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ call.handled_by_label|default:"—" }}</td>
+                                    <td>{{ call.disposition_label|default:"—" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="empty-state">No calls found for this report window.</div>
+                {% endif %}
+            </div>
+    
+            <div class="footer">
+                Generated automatically by HostHub daily reporting.
+            </div>
+        </div>
+    </body>
+</html>

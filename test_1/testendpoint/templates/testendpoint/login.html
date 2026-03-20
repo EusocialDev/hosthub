@@ -1,0 +1,153 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login - Eusocial Voice Agent</title>
+    <link rel="stylesheet" href="{% static 'testendpoint/css/styles.css' %}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"
+</head>
+<body class="login-page">
+    <div class="login-container">
+        <h1 class="login-title">Eusocial Voice Agent</h1>
+        
+        <div class="pin-display">
+            <div class="pin-dots">
+                <div class="pin-dot" id="dot1"></div>
+                <div class="pin-dot" id="dot2"></div>
+                <div class="pin-dot" id="dot3"></div>
+                <div class="pin-dot" id="dot4"></div>
+            </div>
+            <div class="pin-text" id="pin-display">Enter PIN</div>
+        </div>
+        
+        <form method="post" id="login-form">
+            {% csrf_token %}
+            <input type="hidden" name="pin" id="pin-input" value="">
+            
+            <div class="keypad">
+                <button type="button" class="keypad-btn" data-number="1">1</button>
+                <button type="button" class="keypad-btn" data-number="2">2</button>
+                <button type="button" class="keypad-btn" data-number="3">3</button>
+                <button type="button" class="keypad-btn" data-number="4">4</button>
+                <button type="button" class="keypad-btn" data-number="5">5</button>
+                <button type="button" class="keypad-btn" data-number="6">6</button>
+                <button type="button" class="keypad-btn" data-number="7">7</button>
+                <button type="button" class="keypad-btn" data-number="8">8</button>
+                <button type="button" class="keypad-btn" data-number="9">9</button>
+                <button type="button" class="keypad-btn clear" id="clear-btn">✕</button>
+                <button type="button" class="keypad-btn" data-number="0">0</button>
+                <button type="button" class="keypad-btn submit" id="submit-btn">✓</button>
+            </div>
+        </form>
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="{% if message.tags == 'error' %}error-message{% else %}success-message{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+    
+    <!-- Branding -->
+    <!-- <div class="branding">
+        <div class="brand-text eu">eu</div>
+        <div class="brand-logo">social</div>
+    </div> -->
+
+    <script>
+        let currentPin = '';
+        const maxPinLength = 4;
+        
+        // Get DOM elements
+        const pinInput = document.getElementById('pin-input');
+        const pinDisplay = document.getElementById('pin-display');
+        const dots = document.querySelectorAll('.pin-dot');
+        const keypadBtns = document.querySelectorAll('.keypad-btn[data-number]');
+        const clearBtn = document.getElementById('clear-btn');
+        const submitBtn = document.getElementById('submit-btn');
+        const loginForm = document.getElementById('login-form');
+        
+        // Add click listeners to number buttons
+        keypadBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const number = this.getAttribute('data-number');
+                addDigit(number);
+            });
+        });
+        
+        // Clear button
+        clearBtn.addEventListener('click', clearPin);
+        
+        // Submit button
+        submitBtn.addEventListener('click', submitPin);
+        
+        // Add digit to PIN
+        function addDigit(digit) {
+            if (currentPin.length < maxPinLength) {
+                currentPin += digit;
+                updateDisplay();
+                
+                // Auto-submit when PIN is complete
+                if (currentPin.length === maxPinLength) {
+                    setTimeout(() => {
+                        submitPin();
+                    }, 500);
+                }
+            }
+        }
+        
+        // Clear PIN
+        function clearPin() {
+            currentPin = '';
+            updateDisplay();
+        }
+        
+        // Update visual display
+        function updateDisplay() {
+            // Update dots
+            dots.forEach((dot, index) => {
+                if (index < currentPin.length) {
+                    dot.classList.add('filled');
+                } else {
+                    dot.classList.remove('filled');
+                }
+            });
+            
+            // Update text display
+            if (currentPin.length === 0) {
+                pinDisplay.textContent = 'Enter PIN';
+            } else {
+                pinDisplay.textContent = '•'.repeat(currentPin.length);
+            }
+            
+            // Update hidden input
+            pinInput.value = currentPin;
+        }
+        
+        // Submit PIN
+        function submitPin() {
+            if (currentPin.length === maxPinLength) {
+                loginForm.submit();
+            }
+        }
+        
+        // Keyboard support
+        document.addEventListener('keydown', function(e) {
+            if (e.key >= '0' && e.key <= '9') {
+                addDigit(e.key);
+            } else if (e.key === 'Backspace' || e.key === 'Delete') {
+                clearPin();
+            } else if (e.key === 'Enter') {
+                submitPin();
+            }
+        });
+        
+        // Focus management
+        document.addEventListener('DOMContentLoaded', function() {
+            // Focus on the container for keyboard events
+            document.body.focus();
+        });
+    </script>
+</body>
+</html>
