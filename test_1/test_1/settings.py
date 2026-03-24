@@ -17,6 +17,11 @@ from dotenv import load_dotenv
 from django.core.exceptions import ImproperlyConfigured
 import dj_database_url # type: ignore
 
+# Environment Distinction
+ENVIRONMENT = os.getenv("ENVIRONMENT", '')
+
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env()
@@ -30,15 +35,25 @@ load_dotenv(os.path.join(BASE_DIR, ".env"))
 SECRET_KEY = env("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
- 
+if ENVIRONMENT == "production":
+    DEBUG = False
+elif ENVIRONMENT == "staging":
+    DEBUG = True
+else:
+     DEBUG = True
 
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    'eu-voice-agent.onrender.com',
-    'hosthub.160maincarryout.com'
-]
+if ENVIRONMENT == "production":
+    ALLOWED_HOSTS = [
+        'localhost',
+        '127.0.0.1',
+        'hosthub.160maincarryout.com'
+    ]
+elif ENVIRONMENT == 'staging':
+     ALLOWED_HOSTS = [
+        'localhost',
+        '127.0.0.1',
+        'devhosthub.160maincarryout.com'
+    ]
 
 # Application definition
 
@@ -167,10 +182,14 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 BLAND_API_KEY = os.environ.get("BLAND_API_KEY", "")
 
-CSRF_TRUSTED_ORIGINS = [
-    "https://eu-voice-agent.onrender.com",
-    'https://hosthub.160maincarryout.com'
-]
+if ENVIRONMENT == "production":
+    CSRF_TRUSTED_ORIGINS = [
+        'https://hosthub.160maincarryout.com'
+    ]
+elif ENVIRONMENT == "staging":
+     CSRF_TRUSTED_ORIGINS = [
+        'https://devhosthub.160maincarryout.com'
+    ]
 
 DASHBOARD_PIN = os.environ.get("DASHBOARD_PIN", "7983")
 BLAND_WEBHOOK_TOKEN = os.environ.get("BLAND_WEBHOOK_TOKEN", "")
