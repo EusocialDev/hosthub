@@ -24,6 +24,29 @@ DISPOSITION_CHOICES = [
 ]
 
 class Call(models.Model):
+    # Tenant Info
+    account = models.ForeignKey(
+        "Account",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="calls",
+    )
+    location = models.ForeignKey(
+        "Location",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="calls",
+    )
+    phone_number = models.ForeignKey(
+        "PhoneNumber",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="calls",
+    )
+
     # ID
     bland_call_id = models.CharField(max_length=250, unique=True)
 
