@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from django.contrib.postgres.fields import ArrayField
+from django.core.exceptions import ValidationError
 
 # Disposition (how the call was handled) choices
 DISPOSITION_CHOICES = [
@@ -216,5 +217,57 @@ class CallAlert(models.Model):
             models.Index(fields=["call", "resolved_at"]),
         ]
 
+
+
+# ------------------------
+# MULTI-TENANT MODELS
+# ------------------------
+
+class Account(models.Model):
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=255, unique=True)
+    is_active = models.BooleanField(default=True)
+
+    #For future integration with Eusocial
+    external_platform_id = models.CharField(max_length=255, blank=True, null=True)
+
+    # timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+class Location(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='locations')
+    name = models.CharField(max_length=255)
+    is_active = models.BooleanField(default=True)
+
+    # timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.account.name})"
+
+class PhoneNumber(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='phone_numbers')
+    location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name='phone_numbers')
+    number = models.CharField(max_length=20, unique=True, db_index=True)
+    is_active = models.BooleanField(default=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        if self.location and self.account and self.location.account_id != self.account_id:
+            raise ValidationError("Location must belong to the same account as the phone number.")
+            
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.number} -> {self.location.name} ({self.account.name})"
 
 
