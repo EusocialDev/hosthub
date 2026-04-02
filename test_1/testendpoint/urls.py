@@ -10,7 +10,6 @@ urlpatterns = [
     path('', views.login_view, name='login'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
-    path('calls/<str:call_id>/recording/', views.call_recording_view, name='call_recording'),
     path('api/calls/<str:call_id>/live-transcript/', views.live_transcript_view, name='live_transcript'),
     path('api/calls/live-data/', views.live_calls_data_view, name='live_calls_data'),
 
