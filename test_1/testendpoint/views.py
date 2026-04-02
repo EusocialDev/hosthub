@@ -1,21 +1,21 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse, HttpResponseNotAllowed
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout, get_user_model
-from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Q, Count
-from django.db.models.functions import Coalesce
-from django.forms.models import model_to_dict
+from django.db.models import Q
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from dateutil import parser as dateparser
-from .models import Call
+from .models import Call, PhoneNumber
 from testendpoint.services.bland_ingest import ingest_bland_webhook_event
 import requests
 import json
+import re
+import logging
+
 
 
 
@@ -179,29 +179,6 @@ def bland_calls_webhook(request, token:str):
 
 # --------- Django Views ---------
 
-
-def call_recording_view(request, call_id):
-    """Stream call recording as MP3."""
-    url = f"https://api.bland.ai/v1/recordings/{call_id}"  # API endpoint for recordings
-    headers = get_api_headers()
-    headers["content-type"] = "audio/mpeg"  # Specify audio content type
-
-    try:
-        # Stream request to get audio file
-        response = requests.get(url, headers=headers, stream=True)
-        response.raise_for_status()
-    except requests.RequestException as e:
-        # Return error response if recording cannot be fetched
-        return HttpResponse(f"Error fetching call recording: {e}", status=500)
-
-    # Return MP3 audio as HTTP response
-    return HttpResponse(
-        response.content,
-        content_type="audio/mpeg",
-        headers={"Content-Disposition": f"inline; filename={call_id}.mp3"},
-    )
-
-
 def live_transcript_view(request, call_id):
     """API endpoint to fetch live transcripts for in-progress calls."""
     headers = get_api_headers()
@@ -324,64 +301,6 @@ def logout_view(request):
     messages.info(request, 'You have been logged out.')
     return redirect('testendpoint:login')
 
-
-@login_required
-def calls_view(request):
-    calls_qs = Call.objects.all().order_by("-started_at")  # or created_at if started_at null
-    completed_count, abandoned_count, in_progress_count = get_call_stats_from_db()
-
-    context = {
-        "calls": calls_qs,
-        "completed_count": completed_count,
-        "abandoned_count": abandoned_count,
-        "in_progress_count": in_progress_count,
-    }
-    return render(request, "testendpoint/calls.html", context)
-
-
-@login_required
-def call_details_view(request, call_id):
-    # 1) Source of truth: DB
-    call_obj = get_object_or_404(Call, bland_call_id=call_id)
-
-    phone_number = call_obj.from_number or call_obj.to_number
-
-    # 2) Call history for same number (DB)
-    call_history_qs = (
-        Call.objects
-        .filter(Q(from_number=phone_number) | Q(to_number=phone_number))
-        .order_by(Coalesce("started_at", "created_at").desc())
-    )
-
-    # 3) Dashboard counts (DB)
-    abandoned_q = Q(duration_seconds__gt=0, duration_seconds__lt=20)
-    completed_q = Q(queue_status__in=["complete", "completed"]) & ~abandoned_q
-    in_progress_q = Q(queue_status="started")
-
-    counts = Call.objects.aggregate(
-        abandoned_count=Count("id", filter=abandoned_q),
-        completed_count=Count("id", filter=completed_q),
-        in_progress_count=Count("id", filter=in_progress_q),
-    )
-
-    # 4) Live flag (DB)
-    is_live = (
-        call_obj.queue_status == "started"
-        or (call_obj.bland_status in ["started", "queued", "allocated"])
-    )
-
-    context = {
-        "call": call_obj,                 # <-- template reads call.from_number, call.full_transcript, etc.
-        "call_history": call_history_qs,  # <-- template iterates calls
-        "is_live": is_live,
-
-        "completed_count": counts["completed_count"] or 0,
-        "abandoned_count": counts["abandoned_count"] or 0,
-        "in_progress_count": counts["in_progress_count"] or 0,
-    }
-
-    return render(request, "testendpoint/call_details.html", context)
-    
 def get_display_category_from_tags(pathway_tags):
     """
     Map Bland tags for display later on at HostHub filters.
@@ -415,6 +334,18 @@ def get_display_category_from_tags(pathway_tags):
     if any('private' in t for t in normalized):
         return "private_events"
     return "other"
+
+def _normalize_phone_number(value): 
+    """ 
+    Basic canonicalization to US phone numbers for consistent comparison.
+     It simply strips non-digit characters and ensures the number starts with +1 for US numbers.
+    """
+
+    if not value:
+        return None
+    digits = re.sub(r"\D", "", str(value))
+    digits = digits if digits.startswith("1") else "1" + digits  # Ensure it starts with USA country code
+    return f"+{digits}" or None
 
 def upsert_call_from_bland_json(call: dict):
     """
@@ -480,7 +411,7 @@ def upsert_call_from_bland_json(call: dict):
     created_at = _parse_dt(call.get("created_at"))
     started_at = _parse_dt(call.get("started_at"))
     ended_at = _parse_dt(call.get("end_at") or call.get("ended_at"))
-    insterted_at = timezone.now()
+
 
     # Full List of Pathway Tags each called hit
     pathway_tags = call.get("pathway_tags") or []
@@ -491,9 +422,31 @@ def upsert_call_from_bland_json(call: dict):
     variables = call.get("variables") or {}
     user_name = variables.get("user_name")
 
+    # Resolve tenant context from business phone number
+    raw_to_number = call.get("to")
+    normalized_to_number = _normalize_phone_number(raw_to_number)
+
+    matched_phone = None
+    matched_account = None
+    matched_location = None
+
+    if normalized_to_number:
+        matched_phone = PhoneNumber.objects.filter(
+            normalized_number=normalized_to_number,
+            is_active=True,
+            ).select_related("account", "location").first()
+    if matched_phone:
+        matched_account = matched_phone.account
+        matched_location = matched_phone.location
+    else:
+        raise ValueError("Could not match call to an active phone number in the database")
+
     # Now we "append" everything to the database
     
     defaults={
+        "account": matched_account,
+        "location": matched_location,
+        "phone_number": matched_phone,
         "from_number": call.get("from"),
         "to_number": call.get("to"),
         "user_name": user_name,
