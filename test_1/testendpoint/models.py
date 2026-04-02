@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
+from django.conf import settings
 
 # Disposition (how the call was handled) choices
 DISPOSITION_CHOICES = [
@@ -272,6 +273,48 @@ class Location(models.Model):
 
     def __str__(self):
         return f"{self.account.name} - {self.name}"
+
+class UserAccess(models.Model):
+    ROLE_CHOICES = [
+        ("owner", "Owner"),
+        ("manager", "Manager"),
+        ("host", "Host"),
+    ]
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="hosthub_access",
+    )
+
+    account = models.ForeignKey(
+        Account,
+        on_delete=models.CASCADE,
+        related_name="user_accesses",
+    )
+
+    locations = models.ManyToManyField(
+        Location,
+        related_name="authorized_users",
+        blank=True,
+    )
+
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="host")
+
+    is_active = models.BooleanField(default=True)
+
+    # timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        super().clean()
+
+        for location in self.locations.all():
+            if location.account_id != self.account_id:
+                raise ValidationError("All assigned locations must belong to the same account.")
+
+    def __str__(self):
+        return f"{self.user.username} -> {self.account.name} ({self.role})"
 
 class PhoneNumber(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='phone_numbers')
