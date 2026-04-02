@@ -61,7 +61,7 @@ def filter_by_category(qs, category):
         return qs
     return qs
 
-def filter_by_date(qs, date_filter, custom_date=None):
+def filter_by_date(qs, date_filter, today, custom_date=None):
     from datetime import datetime, time as dt_time
 
     if not date_filter:
