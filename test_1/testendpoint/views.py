@@ -275,25 +275,21 @@ def _ensure_single_user():
 
 # Authentication Views
 def login_view(request):
-    _ensure_single_user()
-
     if request.user.is_authenticated:
         return redirect('hosthub:hosthub_dashboard')
+    
+    if request.method == "POST":
+        username = request.POST.get("username", "").strip()
+        password = request.POST.get("password", "").strip()
 
-    if request.method == 'POST':
-        pin = request.POST.get('pin', '').strip()
-        username = getattr(settings, "DASHBOARD_USER", "admin")
+        user = authenticate(request, username=username, password=password)
+    if user is None:
+        messages.error(request, "Invalid username or password")
+        return render(request, "testendpoint/login.html")
 
-        user = authenticate(request, username=username, password=pin)
-        if user is not None:
-            login(request, user)
-            messages.success(request, 'Login successful!')
-            return redirect(reverse('hosthub:hosthub_dashboard'))
-        else:
-            messages.error(request, 'Invalid PIN. Please try again.')
-
-    return render(request, 'testendpoint/login.html')
-
+    if not hasattr(user, "hosthub_access"):
+        messages.error(request, "Your account is not ocnfigured")
+        return render(request, "testendpoint/login.html")
 
 def logout_view(request):
     """Logout view."""

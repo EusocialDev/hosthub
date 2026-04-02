@@ -10,6 +10,8 @@ from testendpoint.models import Call
 from dateutil import parser as dateparser
 import requests
 
+from testendpoint.services.access import get_visible_calls_queryset
+
 # ---- API Helper ----
 def get_api_headers():
     """Return headers with authorization token from settings."""
@@ -24,8 +26,20 @@ def get_api_headers():
 
 
 # Order by newest first
-def new_to_old():
-    queryset = Call.objects.all().order_by("-created_at")
+def new_to_old(user):
+    access = getattr(user, "hosthub_access", None)
+
+    if not access or not access.is_active:
+        return Call.objects.none()
+    
+    queryset = Call.objects.filter(
+        account=access.account,
+        location__in=access.locations.all(),
+    ).select_related(
+        "account",
+        "location",
+        "phone_number",
+    ).order_by("-created_at")
     return queryset
 
 #Filter by status: resolved or needs aciton
@@ -47,7 +61,7 @@ def filter_by_category(qs, category):
         return qs
     return qs
 
-def filter_by_date(qs, date_filter, today, custom_date=None):
+def filter_by_date(qs, date_filter, custom_date=None):
     from datetime import datetime, time as dt_time
 
     if not date_filter:
@@ -107,7 +121,7 @@ def hosthub_view(request):
     (this can later be implemented in different folders like 'services/call_filters.py'; 'selectors/call_selectors.py')
     """
     # Base Order for calls
-    qs = new_to_old()
+    qs = new_to_old(request.user)
     date_filter = request.GET.get("date")
     custom_date = request.GET.get("custom_date")
     # Get today's date in local timezone (will be used in filter_by_date, but filter_by_date uses localtime)
@@ -127,7 +141,7 @@ def hosthub_view(request):
     page_loaded_at = timezone.now()
 
     # Computing counts for the headers (using base queryset with date filter only)
-    base_qs = new_to_old()
+    base_qs = new_to_old(request.user)
     base_qs = filter_by_date(base_qs, date_filter, today, custom_date)
     counts = {
         "open": base_qs.filter(host_status="needs_action").count(),
