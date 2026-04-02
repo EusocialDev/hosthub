@@ -432,9 +432,10 @@ def upsert_call_from_bland_json(call: dict):
 
     if normalized_to_number:
         matched_phone = PhoneNumber.objects.filter(
-            normalized_number=normalized_to_number,
+            number=normalized_to_number,
             is_active=True,
             ).select_related("account", "location").first()
+        
     if matched_phone:
         matched_account = matched_phone.account
         matched_location = matched_phone.location
