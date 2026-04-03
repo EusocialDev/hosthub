@@ -278,7 +278,7 @@ def login_view(request, account_slug, location_slug):
 
     accesses = UserAccess.objects.filter(
         account=account,
-        location=location,
+        locations=location,
         is_active=True,
         user__is_active=True,
     ).select_related("user")
