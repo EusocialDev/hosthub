@@ -308,6 +308,9 @@ class UserAccess(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def clean(self):
+        super().clean()
+        if not self.pk:
+            return
 
         for location in self.locations.all():
             if location.account_id != self.account_id:
