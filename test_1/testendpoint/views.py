@@ -251,7 +251,7 @@ def live_calls_data_view(request):
 
 # Authentication Views
 def login_view(request, account_slug):
-    account = get_object_or_404(Account, slug=account_slug, is_Active=True)
+    account = get_object_or_404(Account, slug=account_slug, is_active=True)
 
     accesses = UserAccess.objects.filter(
         account=Account,
