@@ -9,7 +9,24 @@
 <body class="login-page">
     <div class="login-container">
         <h1 class="login-title">Eusocial Voice Agent</h1>
-        
+        <div class="employee-picker">
+            <div class="employee-picker-label">Select your name</div>
+
+            <div class="employee-list">
+                {% for employee in employees %}
+                    <button
+                        type="button"
+                        class="employee-btn"
+                        data-user-id="{{ employee.id }}"
+                        data-name="{{ employee.first_name|default:employee.username }}"
+                    >
+                        {{ employee.first_name|default:employee.username }}
+                    </button>
+                {% endfor %}
+            </div>
+        </div>
+
+
         <div class="pin-display">
             <div class="pin-dots">
                 <div class="pin-dot" id="dot1"></div>
@@ -23,6 +40,7 @@
         
         <form method="post" id="login-form">
             {% csrf_token %}
+            <input type="hidden" name="user_id" id="user-id-input" value="">
             <input type="hidden" name="pin" id="pin-input" value="">
             
             <div class="keypad">
@@ -68,12 +86,29 @@
         const clearBtn = document.getElementById('clear-btn');
         const submitBtn = document.getElementById('submit-btn');
         const loginForm = document.getElementById('login-form');
+        const userIdInput = document.getElementById('user-id-input');
+        const employeeBtns = document.querySelectorAll('.employee-btn');
+        let selectedUserId = null;
+        let selectedUserName = '';
         
         // Add click listeners to number buttons
         keypadBtns.forEach(btn => {
             btn.addEventListener('click', function() {
                 const number = this.getAttribute('data-number');
                 addDigit(number);
+            });
+        });
+
+        employeeBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                employeeBtns.forEach(b => b.classList.remove('selected'));
+                this.classList.add('selected');
+
+                selectedUserId = this.getAttribute('data-user-id');
+                selectedUserName = this.getAttribute('data-name');
+                userIdInput.value = selectedUserId;
+
+                updateDisplay();
             });
         });
         
@@ -103,6 +138,8 @@
             currentPin = '';
             updateDisplay();
         }
+
+
         
         // Update visual display
         function updateDisplay() {
@@ -116,8 +153,10 @@
             });
             
             // Update text display
-            if (currentPin.length === 0) {
-                pinDisplay.textContent = 'Enter PIN';
+            if (!selectedUserId) {
+                pinDisplay.textContent = 'Select your name';
+            } else if (currentPin.length === 0) {
+                pinDisplay.textContent = `Enter PIN for ${selectedUserName}`;
             } else {
                 pinDisplay.textContent = '•'.repeat(currentPin.length);
             }
@@ -128,6 +167,10 @@
         
         // Submit PIN
         function submitPin() {
+            if (!selectedUserId){
+                pinDisplay.textContent = 'Please select your name first';
+            }
+            
             if (currentPin.length === maxPinLength) {
                 loginForm.submit();
             }

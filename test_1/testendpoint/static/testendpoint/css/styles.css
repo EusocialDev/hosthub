@@ -719,6 +719,46 @@ body.login-page {
     color: #ff9800;
 }
 
+.employee-picker {
+    margin-bottom: 1.25rem;
+}
+
+.employee-picker-label {
+    font-size: 0.95rem;
+    color: rgba(255,255,255,0.75);
+    margin-bottom: 0.75rem;
+}
+
+.employee-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.employee-btn {
+    min-width: 110px;
+    padding: 0.8rem 1rem;
+    border-radius: 12px;
+    border: 2px solid rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.08);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.employee-btn:hover {
+    border-color: #ff9800;
+    background: rgba(255,255,255,0.16);
+}
+
+.employee-btn.selected {
+    background: #ff9800;
+    border-color: #ff9800;
+    color: #000;
+}
+
 /* Display de PIN (los puntitos o input visual) */
 .pin-display {
     margin-bottom: 1.5rem;

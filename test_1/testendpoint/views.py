@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse, HttpResponseNotAllowed
 from django.conf import settings
 from django.contrib import messages
@@ -9,7 +9,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from dateutil import parser as dateparser
-from .models import Call, PhoneNumber
+from .models import Call, PhoneNumber, Account, UserAccess
 from testendpoint.services.bland_ingest import ingest_bland_webhook_event
 import requests
 import json
@@ -249,47 +249,41 @@ def live_calls_data_view(request):
     except Exception as e:
         return JsonResponse({"error": f"Error fetching calls data: {e}"}, status=500)
 
-
-def _get_dashboard_creds():
-    username = getattr(settings, "DASHBOARD_USER", "admin")
-    pin_code = getattr(settings, "DASHBOARD_PIN", "7983")
-    return username, pin_code
-
-
-def _ensure_single_user():
-    """Ensure a single Django user exists and password matches the configured PIN."""
-    User = get_user_model()
-    username = getattr(settings, "DASHBOARD_USER", "admin")
-    pin_code = getattr(settings, "DASHBOARD_PIN", "7983")
-
-    user, created = User.objects.get_or_create(
-        username=username,
-        defaults={"is_staff": True, "is_superuser": False}
-    )
-
-    # Check if password needs update
-    if not user.check_password(pin_code):
-        user.set_password(pin_code)
-        user.save()
-
-
 # Authentication Views
-def login_view(request):
-    if request.user.is_authenticated:
-        return redirect('hosthub:hosthub_dashboard')
+def login_view(request, account_slug):
+    account = get_object_or_404(Account, slug=account_slug, is_Active=True)
+
+    accesses = UserAccess.objects.filter(
+        account=Account,
+        is_active=True,
+        user__is_active=True,
+    ).select_related("user")
+
+    employees = [ua.user for ua in accesses]
+
     
     if request.method == "POST":
-        username = request.POST.get("username", "").strip()
-        password = request.POST.get("password", "").strip()
+        user_id = request.POST.get("user_id", "")
+        pin = request.POST.get("pin", "").strip()
 
-        user = authenticate(request, username=username, password=password)
-    if user is None:
-        messages.error(request, "Invalid username or password")
-        return render(request, "testendpoint/login.html")
-
-    if not hasattr(user, "hosthub_access"):
-        messages.error(request, "Your account is not ocnfigured")
-        return render(request, "testendpoint/login.html")
+        access = accesses.filter(user__id=user_id).first()
+        if not access:
+            messages.error(request, "Invalid user or PIN.")
+        else:
+            user = access.user
+            authenticated_user = authenticate(
+                request,
+                username=user.username,
+                password=pin,
+            )
+            if authenticated_user is not None:
+                login(request, authenticated_user)
+                return redirect("hosthub:hosthub_dashboard")
+            messages.error(request, "Invalid PIN.")
+        return render(request, "testendpoint/login.html", {
+            "account": account, 
+            "employees": employees
+        })
 
 def logout_view(request):
     """Logout view."""

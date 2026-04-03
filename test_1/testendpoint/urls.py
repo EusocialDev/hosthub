@@ -8,7 +8,7 @@ app_name = 'testendpoint'
 
 urlpatterns = [
     path('', views.login_view, name='login'),
-    path('login/', views.login_view, name='login'),
+    path('login/<slug:account_slug>/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('api/calls/<str:call_id>/live-transcript/', views.live_transcript_view, name='live_transcript'),
     path('api/calls/live-data/', views.live_calls_data_view, name='live_calls_data'),
