@@ -248,13 +248,36 @@ def live_calls_data_view(request):
 
     except Exception as e:
         return JsonResponse({"error": f"Error fetching calls data: {e}"}, status=500)
+    
+def account_entry_view(request, account_slug):
+    account = get_object_or_404(Account, slug=account_slug, is_active=True)
+    locations = account.locations.filter(is_active=True).order_by("name").first()
+
+    count = locations.count()
+
+    if count == 0:
+        raise ValueError("No active location found for this account")
+    
+    if count == 1:
+        return redirect("testendpoint:location_login", account_slug=account.slug, location_slug=locations.slug)
+    
+    return render(request, "testendpoint/location_picker.html", {
+        "account": account,
+        "locations": locations,
+        })
 
 # Authentication Views
-def login_view(request, account_slug):
+def login_view(request, account_slug, location_slug):
     account = get_object_or_404(Account, slug=account_slug, is_active=True)
+    
+    location = get_object_or_404(
+        account.locations.filter(is_active=True),
+        slug=location_slug,
+    )
 
     accesses = UserAccess.objects.filter(
         account=account,
+        location=location,
         is_active=True,
         user__is_active=True,
     ).select_related("user")
@@ -278,7 +301,11 @@ def login_view(request, account_slug):
             )
             if authenticated_user is not None:
                 login(request, authenticated_user)
+                request.session["active_account_id"] = account.id
+                request.session["active_location_id"] = location.id
+
                 return redirect("hosthub:hosthub_dashboard")
+            
             messages.error(request, "Invalid PIN.")
         return render(request, "testendpoint/login.html", {
             "account": account, 
@@ -286,14 +313,15 @@ def login_view(request, account_slug):
         })
     return render(request, "testendpoint/login.html", {
         "account": account, 
-        "employees": employees
+        "location": location,
+        "employees": employees,
     })
 
 def logout_view(request):
     """Logout view."""
     logout(request)
     messages.info(request, 'You have been logged out.')
-    return redirect('testendpoint:login')
+    return redirect('testendpoint:hosthub_home')
 
 def get_display_category_from_tags(pathway_tags):
     """

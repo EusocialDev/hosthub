@@ -266,6 +266,7 @@ class Location(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='locations')
     name = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
+    slug = models.SlugField(max_length=255, unique=True, null=True, blank=True)
 
     # timestamps
     created_at = models.DateTimeField(auto_now_add=True)
