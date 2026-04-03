@@ -307,12 +307,10 @@ class UserAccess(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def clean(self):
-        super().clean()
 
-        for location in self.locations.all():
-            if location.account_id != self.account_id:
-                raise ValidationError("All assigned locations must belong to the same account.")
+    for location in self.locations.all():
+        if location.account_id != self.account_id:
+            raise ValidationError("All assigned locations must belong to the same account.")
 
     def __str__(self):
         return f"{self.user.username} -> {self.account.name} ({self.role})"
