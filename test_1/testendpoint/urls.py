@@ -7,8 +7,8 @@ from .views_live import get_transcript_turns
 app_name = 'testendpoint'
 
 urlpatterns = [
-    path('', views.account_entry_view, name='hosthub_home'),
-    path('login/<slug:account_slug>/', views.login_view, name='login'),
+    path('login/<slug:account_slug>/',views.account_entry_view , name='account_entry'),
+    path('login/<slug:account_slug>/<slug:location_slug>/', views.login_view, name='location_login'),
     path('logout/', views.logout_view, name='logout'),
     path('api/calls/<str:call_id>/live-transcript/', views.live_transcript_view, name='live_transcript'),
     path('api/calls/live-data/', views.live_calls_data_view, name='live_calls_data'),
