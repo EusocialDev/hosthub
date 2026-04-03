@@ -251,7 +251,7 @@ def live_calls_data_view(request):
     
 def account_entry_view(request, account_slug):
     account = get_object_or_404(Account, slug=account_slug, is_active=True)
-    locations = account.locations.filter(is_active=True).order_by("name").first()
+    locations = account.locations.filter(is_active=True).order_by("name")
 
     count = locations.count()
 
@@ -259,7 +259,8 @@ def account_entry_view(request, account_slug):
         raise ValueError("No active location found for this account")
     
     if count == 1:
-        return redirect("testendpoint:location_login", account_slug=account.slug, location_slug=locations.slug)
+        location = locations.first()
+        return redirect("testendpoint:location_login", account_slug=account.slug, location_slug=location.slug)
     
     return render(request, "testendpoint/location_picker.html", {
         "account": account,
@@ -309,7 +310,8 @@ def login_view(request, account_slug, location_slug):
             messages.error(request, "Invalid PIN.")
         return render(request, "testendpoint/login.html", {
             "account": account, 
-            "employees": employees
+            "location": location,
+            "employees": employees,
         })
     return render(request, "testendpoint/login.html", {
         "account": account, 
