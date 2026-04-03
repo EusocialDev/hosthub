@@ -254,7 +254,7 @@ def login_view(request, account_slug):
     account = get_object_or_404(Account, slug=account_slug, is_active=True)
 
     accesses = UserAccess.objects.filter(
-        account=Account,
+        account=account,
         is_active=True,
         user__is_active=True,
     ).select_related("user")
@@ -284,6 +284,10 @@ def login_view(request, account_slug):
             "account": account, 
             "employees": employees
         })
+    return render(request, "testendpoint/login.html", {
+        "account": account, 
+        "employees": employees
+    })
 
 def logout_view(request):
     """Logout view."""
