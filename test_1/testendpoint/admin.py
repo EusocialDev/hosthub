@@ -18,6 +18,6 @@ class UserAccessAdmin(admin.ModelAdmin):
 
     list_display = ("user", "account", "role", "is_active", "created_at")
     list_filter = ("account", "role", "is_active")
-    filter_horizontal = ("locations")
+    filter_horizontal = ("locations",)
 
 # Register your models here.
