@@ -27,3 +27,4 @@ urlpatterns = [
     path("transcript/call/<str:call_id>/", views.get_final_transcripts, name="final_transcript_view"),
 ]
 
+ 
