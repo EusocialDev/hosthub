@@ -1,14 +1,16 @@
 {% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Login - Eusocial Voice Agent</title>
-    <link rel="stylesheet" href="{% static 'testendpoint/css/styles.css' %}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"
+    <link rel="stylesheet" href="{% static 'testendpoint/css/login.css' %}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body class="login-page">
     <div class="login-container">
         <h1 class="login-title">Eusocial Voice Agent</h1>
+
         <div class="employee-picker">
             <div class="employee-picker-label">Select your name</div>
 
@@ -26,7 +28,6 @@
             </div>
         </div>
 
-
         <div class="pin-display">
             <div class="pin-dots">
                 <div class="pin-dot" id="dot1"></div>
@@ -34,15 +35,15 @@
                 <div class="pin-dot" id="dot3"></div>
                 <div class="pin-dot" id="dot4"></div>
             </div>
-            
-            <div class="pin-text" id="pin-display">Enter PIN</div>
+
+            <div class="pin-text" id="pin-display">Select your name</div>
         </div>
-        
+
         <form method="post" id="login-form">
             {% csrf_token %}
             <input type="hidden" name="user_id" id="user-id-input" value="">
             <input type="hidden" name="pin" id="pin-input" value="">
-            
+
             <div class="keypad">
                 <button type="button" class="keypad-btn" data-number="1">1</button>
                 <button type="button" class="keypad-btn" data-number="2">2</button>
@@ -58,27 +59,22 @@
                 <button type="button" class="keypad-btn submit" id="submit-btn">✓</button>
             </div>
         </form>
-        
+
         {% if messages %}
-            {% for message in messages %}
-                <div class="{% if message.tags == 'error' %}error-message{% else %}success-message{% endif %}">
-                    {{ message }}
-                </div>
-            {% endfor %}
+            <div class="login-alerts">
+                {% for message in messages %}
+                    <div class="login-alert {% if message.tags == 'error' %}login-alert-error{% else %}login-alert-success{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
         {% endif %}
     </div>
-    
-    <!-- Branding -->
-    <!-- <div class="branding">
-        <div class="brand-text eu">eu</div>
-        <div class="brand-logo">social</div>
-    </div> -->
 
     <script>
         let currentPin = '';
         const maxPinLength = 4;
-        
-        // Get DOM elements
+
         const pinInput = document.getElementById('pin-input');
         const pinDisplay = document.getElementById('pin-display');
         const dots = document.querySelectorAll('.pin-dot');
@@ -88,19 +84,19 @@
         const loginForm = document.getElementById('login-form');
         const userIdInput = document.getElementById('user-id-input');
         const employeeBtns = document.querySelectorAll('.employee-btn');
+
         let selectedUserId = null;
         let selectedUserName = '';
-        
-        // Add click listeners to number buttons
+
         keypadBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', function () {
                 const number = this.getAttribute('data-number');
                 addDigit(number);
             });
         });
 
         employeeBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', function () {
                 employeeBtns.forEach(b => b.classList.remove('selected'));
                 this.classList.add('selected');
 
@@ -108,89 +104,112 @@
                 selectedUserName = this.getAttribute('data-name');
                 userIdInput.value = selectedUserId;
 
+                clearInlineWarning();
                 updateDisplay();
             });
         });
-        
-        // Clear button
+
         clearBtn.addEventListener('click', clearPin);
-        
-        // Submit button
         submitBtn.addEventListener('click', submitPin);
-        
-        // Add digit to PIN
+
         function addDigit(digit) {
             if (currentPin.length < maxPinLength) {
                 currentPin += digit;
+                clearInlineWarning();
                 updateDisplay();
-                
-                // Auto-submit when PIN is complete
-                if (currentPin.length === maxPinLength) {
-                    setTimeout(() => {
-                        submitPin();
-                    }, 500);
-                }
             }
         }
-        
-        // Clear PIN
+
         function clearPin() {
             currentPin = '';
+            clearInlineWarning();
             updateDisplay();
         }
 
+        function removeLastDigit() {
+            if (currentPin.length > 0) {
+                currentPin = currentPin.slice(0, -1);
+                clearInlineWarning();
+                updateDisplay();
+            }
+        }
 
-        
-        // Update visual display
+        function showInlineWarning(message) {
+            pinDisplay.textContent = message;
+            pinDisplay.classList.add('pin-warning');
+        }
+
+        function clearInlineWarning() {
+            pinDisplay.classList.remove('pin-warning');
+        }
+
+        function updateSubmitState() {
+            const ready = selectedUserId && currentPin.length === maxPinLength;
+            submitBtn.disabled = !ready;
+            submitBtn.classList.toggle('disabled', !ready);
+        }
+
         function updateDisplay() {
-            // Update dots
             dots.forEach((dot, index) => {
-                if (index < currentPin.length) {
-                    dot.classList.add('filled');
-                } else {
-                    dot.classList.remove('filled');
-                }
+                dot.classList.toggle('filled', index < currentPin.length);
             });
-            
-            // Update text display
+
             if (!selectedUserId) {
-                pinDisplay.textContent = 'Select your name';
+                pinDisplay.textContent = currentPin.length
+                    ? 'Press ✓ after selecting your name'
+                    : 'Select your name';
             } else if (currentPin.length === 0) {
                 pinDisplay.textContent = `Enter PIN for ${selectedUserName}`;
             } else {
                 pinDisplay.textContent = '•'.repeat(currentPin.length);
             }
-            
-            // Update hidden input
+
             pinInput.value = currentPin;
+            updateSubmitState();
         }
-        
-        // Submit PIN
+
         function submitPin() {
-            if (!selectedUserId){
-                pinDisplay.textContent = 'Please select your name first';
+            if (!selectedUserId) {
+                showInlineWarning('Please select your name first');
+                updateSubmitState();
+                return;
             }
-            
-            if (currentPin.length === maxPinLength) {
-                loginForm.submit();
+
+            if (currentPin.length !== maxPinLength) {
+                showInlineWarning('Enter your 4-digit PIN');
+                updateSubmitState();
+                return;
             }
+
+            pinInput.value = currentPin;
+            loginForm.submit();
         }
-        
-        // Keyboard support
-        document.addEventListener('keydown', function(e) {
+
+        document.addEventListener('keydown', function (e) {
             if (e.key >= '0' && e.key <= '9') {
                 addDigit(e.key);
-            } else if (e.key === 'Backspace' || e.key === 'Delete') {
+            } else if (e.key === 'Backspace') {
+                removeLastDigit();
+            } else if (e.key === 'Delete') {
                 clearPin();
             } else if (e.key === 'Enter') {
+                e.preventDefault();
                 submitPin();
             }
         });
-        
-        // Focus management
-        document.addEventListener('DOMContentLoaded', function() {
-            // Focus on the container for keyboard events
-            document.body.focus();
+
+        document.addEventListener('DOMContentLoaded', function () {
+            updateDisplay();
+
+            const alerts = document.querySelectorAll('.login-alert');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    alert.classList.add('fade-out');
+                    setTimeout(() => {
+                        alert.remove();
+                    }, 300);
+                }, 3500);
+            });
         });
     </script>
 </body>

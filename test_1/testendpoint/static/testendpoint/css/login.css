@@ -1,0 +1,311 @@
+/* ========================================
+   HostHub Login Page
+   File: static/testendpoint/css/login.css
+======================================== */
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+}
+
+body.login-page {
+    min-height: 100vh;
+    min-height: 100svh;
+    background: #000;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+/* Main container */
+.login-container {
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+    padding: 24px 20px;
+}
+
+/* Title */
+.login-title {
+    margin: 0 0 1.5rem;
+    font-size: 2rem;
+    line-height: 1.15;
+    font-weight: 700;
+    color: #ff9800;
+    letter-spacing: -0.02em;
+}
+
+/* Employee selection */
+.employee-picker {
+    margin-bottom: 1.5rem;
+}
+
+.employee-picker-label {
+    margin-bottom: 0.85rem;
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.employee-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.employee-btn {
+    min-width: 120px;
+    min-height: 52px;
+    padding: 0.85rem 1rem;
+    border: 2px solid rgba(255, 255, 255, 0.18);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease, color 0.18s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.employee-btn:hover {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: #ff9800;
+    transform: translateY(-1px);
+}
+
+.employee-btn:focus-visible {
+    outline: 3px solid rgba(255, 152, 0, 0.35);
+    outline-offset: 2px;
+}
+
+.employee-btn.selected {
+    background: #ff9800;
+    border-color: #ff9800;
+    color: #000;
+}
+
+/* PIN display */
+.pin-display {
+    margin-bottom: 1.5rem;
+}
+
+.pin-dots {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.pin-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.2);
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.pin-dot.filled {
+    background: #ff9800;
+    transform: scale(1.05);
+}
+
+.pin-text {
+    min-height: 24px;
+    margin-top: 0.85rem;
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.78);
+    transition: color 0.2s ease;
+}
+
+.pin-text.pin-warning {
+    color: #ffb3bd;
+}
+
+/* Form / keypad */
+#login-form {
+    margin: 0;
+}
+
+.keypad {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(72px, 88px));
+    justify-content: center;
+    gap: 0.9rem;
+}
+
+.keypad-btn {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 1.7rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease, opacity 0.18s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.keypad-btn:hover {
+    background: rgba(255, 255, 255, 0.18);
+    border-color: #ff9800;
+    transform: translateY(-2px);
+}
+
+.keypad-btn:focus-visible {
+    outline: 3px solid rgba(255, 152, 0, 0.35);
+    outline-offset: 2px;
+}
+
+.keypad-btn.clear {
+    background: rgba(220, 53, 69, 0.18);
+    border-color: rgba(220, 53, 69, 0.6);
+}
+
+.keypad-btn.clear:hover {
+    background: rgba(220, 53, 69, 0.28);
+    border-color: #dc3545;
+}
+
+.keypad-btn.submit {
+    background: rgba(40, 167, 69, 0.18);
+    border-color: rgba(40, 167, 69, 0.6);
+}
+
+.keypad-btn.submit:hover {
+    background: rgba(40, 167, 69, 0.28);
+    border-color: #28a745;
+}
+
+.keypad-btn.disabled,
+.keypad-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.keypad-btn.disabled:hover,
+.keypad-btn:disabled:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: none;
+}
+
+/* Django messages */
+.login-alerts {
+    margin-top: 1.25rem;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.login-alert {
+    padding: 0.95rem 1rem;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-align: center;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.login-alert-error {
+    background: rgba(220, 53, 69, 0.18);
+    border: 1px solid rgba(220, 53, 69, 0.45);
+    color: #ffb3bd;
+}
+
+.login-alert-success {
+    background: rgba(40, 167, 69, 0.18);
+    border: 1px solid rgba(40, 167, 69, 0.45);
+    color: #b8f5c8;
+}
+
+.login-alert.fade-out {
+    opacity: 0;
+    transform: translateY(-6px);
+}
+
+/* Small screens */
+@media (max-width: 799px) {
+    body.login-page {
+        padding: 16px;
+    }
+
+    .login-container {
+        max-width: 420px;
+        width: 100%;
+        padding: 12px 0;
+    }
+
+    .login-title {
+        margin-bottom: 1rem;
+        font-size: 1.8rem;
+    }
+
+    .employee-picker {
+        margin-bottom: 1.25rem;
+    }
+
+    .employee-btn {
+        min-width: 110px;
+        padding: 0.8rem 0.95rem;
+    }
+
+    .pin-display {
+        margin-bottom: 1.25rem;
+    }
+
+    .pin-dots {
+        gap: 0.85rem;
+    }
+
+    .keypad {
+        grid-template-columns: repeat(3, minmax(70px, 84px));
+        gap: 0.8rem;
+    }
+
+    .keypad-btn {
+        font-size: 1.65rem;
+        border-radius: 16px;
+    }
+}
+
+/* Very short screens */
+@media (max-height: 700px) {
+    body.login-page {
+        align-items: flex-start;
+    }
+
+    .login-container {
+        padding-top: 16px;
+        padding-bottom: 16px;
+    }
+
+    .login-title {
+        margin-bottom: 0.9rem;
+    }
+
+    .employee-picker {
+        margin-bottom: 1rem;
+    }
+
+    .pin-display {
+        margin-bottom: 1rem;
+    }
+
+    .keypad {
+        gap: 0.7rem;
+    }
+}
