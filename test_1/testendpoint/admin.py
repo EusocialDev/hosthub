@@ -20,4 +20,3 @@ class UserAccessAdmin(admin.ModelAdmin):
     list_filter = ("account", "role", "is_active")
     filter_horizontal = ("locations",)
 
-# Register your models here.

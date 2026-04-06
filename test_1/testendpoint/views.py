@@ -10,7 +10,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from dateutil import parser as dateparser
-from .models import Call, PhoneNumber, Account, UserAccess
+from .models import Call, PhoneNumber, Account, UserAccess, Location
 from testendpoint.services.bland_ingest import ingest_bland_webhook_event
 import requests
 import json
@@ -313,8 +313,25 @@ def login_view(request, account_slug, location_slug):
 
 def logout_view(request):
     """Logout view."""
+    account_id = request.session.get("active_account_id")
+    location_id = request.session.get("active_location_id")
+
+    if account_id and location_id:
+        try:
+            account = Account.objects.get(id=account_id, is_active=True)
+            location = Location.objects.get(id=location_id, account=account, is_active=True)
+            account_slug = account.slug
+            location_slug = location.slug
+        except (Account.DoesNotExist, Location.DoesNotExist):
+            pass
     logout(request)
-    messages.info(request, 'You have been logged out.')
+    if account_slug and location_slug:
+        return redirect(
+            "testendpoint:location_login",
+            account_slug=account_slug,
+            location_slug=location_slug,
+        )
+    
     return redirect('testendpoint:hosthub_home')
 
 def get_display_category_from_tags(pathway_tags):
