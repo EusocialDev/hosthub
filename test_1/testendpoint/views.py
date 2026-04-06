@@ -117,7 +117,10 @@ def get_api_headers():
         # Handle request errors gracefully
         print(f"Error fetching calls: {e}")
         return [], 0, 0, 0
-    
+
+def landing_view(request):
+    return render(request, "testendpoint/landing_hosthub.html")
+
 def get_call_stats_from_db():
     """
     Return (completed_count, abandoned_count, in_progress_count)
