@@ -305,6 +305,8 @@ class UserAccess(models.Model):
     pin_hash = models.CharField(max_length=128, blank=True, null=True)
 
     def set_pin(self, raw_pin):
+        if not raw_pin or not raw_pin.isdigit() or len(raw_pin) != 4:
+            raise ValueError("PIN must be a 4-digit numeric string.")
         self.pin_hash = make_password(raw_pin)
     
     def check_pin(self, raw_pin):

@@ -295,29 +295,16 @@ def login_view(request, account_slug, location_slug):
         if not access:
             messages.error(request, "Invalid user or PIN.")
 
-        elif access.pin != pin:
+        elif not access.check_pin(pin):
             messages.error(request, "Invalid PIN.")
 
         else:
-            user = access.user
-            authenticated_user = authenticate(
-                request,
-                username=user.username,
-                password=pin,
-            )
-            if authenticated_user is not None:
-                login(request, authenticated_user)
-                request.session["active_account_id"] = account.id
-                request.session["active_location_id"] = location.id
+            login(request, access.user)
+            request.session["active_account_id"] = account.id
+            request.session["active_location_id"] = location.id
 
-                return redirect("hosthub:hosthub_dashboard")
-            
-            messages.error(request, "Invalid PIN.")
-        return render(request, "testendpoint/login.html", {
-            "account": account, 
-            "location": location,
-            "employees": employees,
-        })
+            return redirect("hosthub:hosthub_dashboard")
+
     return render(request, "testendpoint/login.html", {
         "account": account, 
         "location": location,
