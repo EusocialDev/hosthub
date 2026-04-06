@@ -12,18 +12,17 @@
         <h1 class="login-title">Eusocial Voice Agent</h1>
 
         <div class="employee-picker">
+            <div class="employee-select-wrap">
+                <select id="employeeSelect" name="user_id" class="employee-select" required>
+                    <option value="">Select your Name</option>
+                    {% for employee in employees %}
+                        <option value="{{ employee.id }}">
+                            {{ employee.first_name|default:employee.username }}
+                        </option>
+                    {% endfor %}
+                </select>
 
-            <div class="employee-list">
-                {% for employee in employees %}
-                    <button
-                        type="button"
-                        class="employee-btn"
-                        data-user-id="{{ employee.id }}"
-                        data-name="{{ employee.first_name|default:employee.username }}"
-                    >
-                        {{ employee.first_name|default:employee.username }}
-                    </button>
-                {% endfor %}
+                <span class="employee-select-arrow" aria-hidden="true">⌄</span>
             </div>
         </div>
 
@@ -34,7 +33,7 @@
                 <div class="pin-dot"></div>
                 <div class="pin-dot"></div>
             </div>
-            <div class="pin-text" id="pin-display">Select your name</div>
+            <div class="pin-text" id="pin-display"></div>
         </div>
 
         <form method="post" id="login-form" novalidate>
@@ -81,10 +80,10 @@
         const submitBtn = document.getElementById('submit-btn');
         const loginForm = document.getElementById('login-form');
         const userIdInput = document.getElementById('user-id-input');
-        const employeeBtns = document.querySelectorAll('.employee-btn');
+        const employeeSelect = document.getElementById('employeeSelect');
 
-        let selectedUserId = null;
-        let selectedUserName = '';
+        let selectedUserId = employeeSelect?.value || null;
+        let selectedUserName = employeeSelect?.options[employeeSelect.selectedIndex]?.text || '';
 
         keypadBtns.forEach(btn => {
             btn.addEventListener('click', function () {
@@ -92,19 +91,16 @@
             });
         });
 
-        employeeBtns.forEach(btn => {
-            btn.addEventListener('click', function () {
-                employeeBtns.forEach(b => b.classList.remove('selected'));
-                this.classList.add('selected');
-
-                selectedUserId = this.getAttribute('data-user-id');
-                selectedUserName = this.getAttribute('data-name');
-                userIdInput.value = selectedUserId;
+        if (employeeSelect) {
+            employeeSelect.addEventListener('change', function () {
+                selectedUserId = this.value || null;
+                selectedUserName = this.options[this.selectedIndex]?.text || '';
+                userIdInput.value = selectedUserId || '';
 
                 clearInlineWarning();
                 updateDisplay();
             });
-        });
+        }
 
         clearBtn.addEventListener('click', clearPin);
         submitBtn.addEventListener('click', submitPin);
@@ -154,7 +150,7 @@
             if (!selectedUserId) {
                 pinDisplay.textContent = currentPin.length
                     ? 'Press ✓ after selecting your name'
-                    : 'Select your name';
+                    : '';
             } else if (currentPin.length === 0) {
                 pinDisplay.textContent = `Enter PIN for ${selectedUserName}`;
             } else {
@@ -162,6 +158,7 @@
             }
 
             pinInput.value = currentPin;
+            userIdInput.value = selectedUserId || '';
             updateSubmitState();
         }
 
@@ -179,6 +176,7 @@
             }
 
             pinInput.value = currentPin;
+            userIdInput.value = selectedUserId;
             loginForm.submit();
         }
 

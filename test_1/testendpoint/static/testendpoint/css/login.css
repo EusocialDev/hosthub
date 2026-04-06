@@ -56,46 +56,62 @@ body.login-page {
     color: rgba(255, 255, 255, 0.75);
 }
 
-.employee-list {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.75rem;
+.employee-select-wrap {
+    position: relative;
+    width: 100%;
 }
 
-.employee-btn {
-    min-width: 120px;
-    min-height: 52px;
-    padding: 0.85rem 1rem;
+.employee-select {
+    width: 100%;
+    min-height: 56px;
+    padding: 0 3.2rem 0 1rem;
     border: 2px solid rgba(255, 255, 255, 0.18);
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.08);
     color: #fff;
-    font-size: 0.95rem;
+    font-size: 1rem;
     font-weight: 600;
     line-height: 1.2;
     cursor: pointer;
-    transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease, color 0.18s ease;
-    -webkit-tap-highlight-color: transparent;
+    outline: none;
+
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
 }
 
-.employee-btn:hover {
+.employee-select:hover {
     background: rgba(255, 255, 255, 0.16);
     border-color: #ff9800;
-    transform: translateY(-1px);
 }
 
-.employee-btn:focus-visible {
-    outline: 3px solid rgba(255, 152, 0, 0.35);
-    outline-offset: 2px;
-}
-
-.employee-btn.selected {
-    background: #ff9800;
+.employee-select:focus {
     border-color: #ff9800;
-    color: #000;
+    box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.18);
 }
 
+.employee-select:invalid {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.employee-select option {
+    background: #111;
+    color: #fff;
+    font-weight: 500;
+}
+
+.employee-select-arrow {
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: #ff9800;
+    font-size: 1.2rem;
+    line-height: 1;
+}
 /* PIN display */
 .pin-display {
     margin-bottom: 1.5rem;
