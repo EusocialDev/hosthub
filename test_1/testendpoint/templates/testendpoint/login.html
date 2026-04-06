@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Login - Eusocial Voice Agent</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="stylesheet" href="{% static 'testendpoint/css/login.css' %}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body class="login-page">
     <div class="login-container">
@@ -30,16 +30,15 @@
 
         <div class="pin-display">
             <div class="pin-dots">
-                <div class="pin-dot" id="dot1"></div>
-                <div class="pin-dot" id="dot2"></div>
-                <div class="pin-dot" id="dot3"></div>
-                <div class="pin-dot" id="dot4"></div>
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
             </div>
-
             <div class="pin-text" id="pin-display">Select your name</div>
         </div>
 
-        <form method="post" id="login-form">
+        <form method="post" id="login-form" novalidate>
             {% csrf_token %}
             <input type="hidden" name="user_id" id="user-id-input" value="">
             <input type="hidden" name="pin" id="pin-input" value="">
@@ -90,8 +89,7 @@
 
         keypadBtns.forEach(btn => {
             btn.addEventListener('click', function () {
-                const number = this.getAttribute('data-number');
-                addDigit(number);
+                addDigit(this.getAttribute('data-number'));
             });
         });
 
@@ -189,8 +187,10 @@
             if (e.key >= '0' && e.key <= '9') {
                 addDigit(e.key);
             } else if (e.key === 'Backspace') {
+                e.preventDefault();
                 removeLastDigit();
             } else if (e.key === 'Delete') {
+                e.preventDefault();
                 clearPin();
             } else if (e.key === 'Enter') {
                 e.preventDefault();
