@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from django.contrib.postgres.fields import ArrayField
+from django.contrib.auth.hashers import make_password, check_password
 from django.core.exceptions import ValidationError
 from django.conf import settings
 
@@ -300,6 +301,16 @@ class UserAccess(models.Model):
     )
 
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="host")
+
+    pin_hash = models.CharField(max_length=128, blank=True, null=True)
+
+    def set_pin(self, raw_pin):
+        self.pin_hash = make_password(raw_pin)
+    
+    def check_pin(self, raw_pin):
+        if not self.pin_hash:
+            return False
+        return check_password(raw_pin, self.pin_hash)
 
     is_active = models.BooleanField(default=True)
 

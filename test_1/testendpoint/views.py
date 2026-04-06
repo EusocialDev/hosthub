@@ -3,6 +3,7 @@ from django.http import HttpResponse, JsonResponse, HttpResponseNotAllowed
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout, get_user_model
+from django.contrib.auth.hashers import check_password
 from django.db import transaction
 from django.db.models import Q
 from django.urls import reverse
@@ -293,6 +294,10 @@ def login_view(request, account_slug, location_slug):
         access = accesses.filter(user__id=user_id).first()
         if not access:
             messages.error(request, "Invalid user or PIN.")
+
+        elif access.pin != pin:
+            messages.error(request, "Invalid PIN.")
+
         else:
             user = access.user
             authenticated_user = authenticate(
