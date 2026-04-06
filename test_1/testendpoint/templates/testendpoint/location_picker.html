@@ -1,97 +1,38 @@
 {% load static %}
 
-{% block content %}
-<style>
-    .login-page-wrapper {
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 24px;
-        background: #f8f9fb;
-    }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ account.name }} | Select Location</title>
+    <link rel="stylesheet" href="{% static 'testendpoint/css/location_picker.css' %}">
+</head>
+<body class="location-picker-page">
+    <main class="location-shell">
+        <section class="location-card">
+            <div class="location-card__header">
+                <div class="location-badge">HostHub</div>
+                <h1 class="location-card__title">{{ account.name }}</h1>
+                <p class="location-card__subtitle">Select a location to continue</p>
+            </div>
 
-    .login-card {
-        width: 100%;
-        max-width: 480px;
-        background: #fff;
-        border-radius: 18px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-        padding: 32px 28px;
-    }
-
-    .login-card-header {
-        text-align: center;
-        margin-bottom: 24px;
-    }
-
-    .login-title {
-        margin: 0;
-        font-size: 28px;
-        font-weight: 700;
-        color: #1f2937;
-    }
-
-    .login-subtitle {
-        margin-top: 8px;
-        font-size: 15px;
-        color: #6b7280;
-    }
-
-    .location-list {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .location-option {
-        display: block;
-        width: 100%;
-        text-align: center;
-        text-decoration: none;
-        padding: 14px 16px;
-        border-radius: 12px;
-        background: #111827;
-        color: #fff;
-        font-weight: 600;
-        transition: 0.2s ease;
-    }
-
-    .location-option:hover {
-        background: #1f2937;
-        transform: translateY(-1px);
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 14px;
-        border-radius: 12px;
-        background: #f3f4f6;
-        color: #6b7280;
-    }
-</style>
-
-<div class="login-page-wrapper">
-    <div class="login-card">
-        <div class="login-card-header">
-            <h1 class="login-title">{{ account.name }}</h1>
-            <p class="login-subtitle">Choose a location</p>
-        </div>
-
-        <div class="location-list">
-            {% for location in locations %}
-                <a
-                    href="{% url 'testendpoint:location_login' account.slug location.slug %}"
-                    class="location-option"
-                >
-                    {{ location.name }}
-                </a>
-            {% empty %}
-                <div class="empty-state">
-                    No active locations available.
-                </div>
-            {% endfor %}
-        </div>
-    </div>
-</div>
-{% endblock %}
+            <div class="location-list">
+                {% for location in locations %}
+                    <a
+                        href="{% url 'testendpoint:location_login' account.slug location.slug %}"
+                        class="location-item"
+                    >
+                        <span class="location-item__name">{{ location.name }}</span>
+                        <span class="location-item__arrow">→</span>
+                    </a>
+                {% empty %}
+                    <div class="location-empty">
+                        No active locations available.
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+</body>
+</html>
