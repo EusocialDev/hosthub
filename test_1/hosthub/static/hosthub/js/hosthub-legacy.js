@@ -211,6 +211,7 @@ function selectCall(element) {
 
   const call = {
     id: element.dataset.callId,
+    callLocation: element.dataset.callLocation || "",
     userName: element.dataset.userName || "",
     fromNumber: element.dataset.fromNumber || "",
     toNumber: element.dataset.toNumber || "",

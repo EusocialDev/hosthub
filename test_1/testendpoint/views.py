@@ -147,7 +147,7 @@ def bland_calls_webhook(request, token:str):
 
     # Only allow POST requests
     if request.method != "POST":
-        return HttpResponseNotAllowed(["POST"])
+        return HttpResponseNotAllowed(["POST"]) 
     
     #IMPORTANT!
     """"This needs to be update, Bland does offer a Auth token now"""

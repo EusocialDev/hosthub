@@ -224,6 +224,7 @@
                 {% for call in calls %}
                 <article class="message-item {% if call.host_status == 'resolved' %}resolved{% endif %} {% if forloop.first %}selected{% endif %}" 
                         data-call-id = "{{ call.id }}"
+                        data-call-location="{{call.location|default:''}}"
                         data-user-name="{{ call.user_name|default:'' }}"
                         data-from-number="{{ call.from_number|default:'' }}"
                         data-to-number="{{ call.to_number|default:'' }}"
@@ -264,6 +265,8 @@
                         <span class="message-status">
                             {% if call.host_status == 'resolved' %}
                                 Resolved
+                            {% elif call.user_name and show_location_context%}
+                                {{ call.user_name }} - {{ call.location}}
                             {% elif call.user_name %}
                                 {{ call.user_name }}
                             {% else %}
