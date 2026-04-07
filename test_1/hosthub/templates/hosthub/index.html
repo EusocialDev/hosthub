@@ -436,7 +436,7 @@
             </div>
 
             <div class="mobile-call-name">
-                {% elif call.user_name and has_multiple_locations %}
+                {% if call.user_name and has_multiple_locations %}
                     {{ call.user_name }} - {{ call.location.name}}
                 {% elif call.user_name %}
                     {{ call.user_name }}
