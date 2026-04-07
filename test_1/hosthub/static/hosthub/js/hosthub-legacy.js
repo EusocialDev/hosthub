@@ -12,17 +12,6 @@ const CATEGORY_STYLES = {
   private_events: { bg: "rgba(124, 58, 237, 0.10)", border: "rgba(124, 58, 237, 0.32)", text: "#6D28D9" },
   handled: { bg: "rgba(148, 163, 184, 0.08)", border: "rgba(148, 163, 184, 0.26)", text: "#64748B" },
 };
-
-// ======= Resolve Modal Config =======
-const HANDLERS = [
-  { value: "david", label: "David" },
-  { value: "derek", label: "Derek" },
-  { value: "gabriel", label: "Gabriel" },
-  { value: "brian", label: "Brian" },
-  { value: "miguel", label: "Miguel" },
-  {value: "adriana", label: "Adriana"},
-];
-
 // Use the SAME keys as your Django model choices
 const DISPOSITIONS_BY_CATEGORY = {
 reservation: [
@@ -235,7 +224,6 @@ function selectCall(element) {
     partyOccasion: element.dataset.partyOccasion || "",
     partyMessage: element.dataset.partyMessage || "",
     leaveMessage: element.dataset.leaveMessage || "",
-    handledBy: element.dataset.handledBy || "",
     handledByDisplay: element.dataset.handledByDisplay || "",
     handledAt: element.dataset.handledAt || "",
     disposition: element.dataset.disposition || "",
@@ -438,16 +426,12 @@ function populateSelect(selectEl, options, selectedValue = "") {
 
 function openResolveModal(callId, source /* "details"|"list" */, callItemEl = null) {
   const modalEl = document.getElementById("resolveCallModal");
-  const handledBySelect = document.getElementById("handledBySelect");
   const dispositionSelect = document.getElementById("dispositionSelect");
   const dispositionHint = document.getElementById("dispositionHint");
 
   document.getElementById("resolveModalCallId").value = callId;
   document.getElementById("resolveModalSource").value = source;
 
-  // defaults
-  const lastHandler = localStorage.getItem("hosthub_last_handler") || "";
-  populateSelect(handledBySelect, HANDLERS, lastHandler || HANDLERS[0].value);
 
   // choose dispositions based on category
   const el = callItemEl || getSelectedCallItem();
@@ -497,17 +481,16 @@ function handleMarkAsHandled(checked) {
     const selected = getSelectedCallItem();
     openResolveModal(callId, "details", selected);
   } else {
-    updateCallStatus(callId, "unresolve", null, null, false);
+    updateCallStatus(callId, "unresolve", null, false);
   }
 }
 
-function updateCallStatus(callId, action, handledBy = null, disposition=null, fromDetailsPanel = false) {
+function updateCallStatus(callId, action, disposition=null, fromDetailsPanel = false) {
   const csrfToken = getCSRFToken();
   const formData = new FormData();
   formData.append("action", action);
   formData.append("csrfmiddlewaretoken", csrfToken);
 
-  if (handledBy) formData.append("handled_by", handledBy);
   if (disposition) formData.append("disposition", disposition);
 
   fetch(`/calls/${callId}/mark-handled/`, {
@@ -524,8 +507,6 @@ function updateCallStatus(callId, action, handledBy = null, disposition=null, fr
         if (data.status === "resolved") {
           callItem.classList.add("resolved");
           callItem.dataset.hostStatus = "resolved";
-
-          callItem.dataset.handledBy = data.handled_by || "";
           callItem.dataset.handledByDisplay = data.handled_by_display || "";
           callItem.dataset.handledAt = data.handled_at || "";
           callItem.dataset.disposition = data.disposition || "";
@@ -629,7 +610,7 @@ function handleListCheckboxChange(event) {
   if (this.checked) {
     openResolveModal(callId, "list", callItem);
   } else {
-    updateCallStatus(callId, "unresolve", null, null, false);
+    updateCallStatus(callId, "unresolve", null, false);
   }
 }
 
@@ -1047,24 +1028,18 @@ document.addEventListener("DOMContentLoaded", function () {
     saveBtn.addEventListener("click", () => {
       const callId = document.getElementById("resolveModalCallId").value;
       const source = document.getElementById("resolveModalSource").value;
-      const handledBy = document.getElementById("handledBySelect").value;
       const disposition = document.getElementById("dispositionSelect").value;
 
-      if (!handledBy) {
-        alert("Please select who handled the call.");
-        return;
-      }
+
       if (!disposition) {
         alert("Please select a disposition.");
         return;
       }
 
-      localStorage.setItem("hosthub_last_handler", handledBy);
-
       resolveModalSaved = true;
       resolveModalInstance.hide();
 
-      updateCallStatus(callId, "resolve", handledBy, disposition, source === "details");
+      updateCallStatus(callId, "resolve", disposition, source === "details");
     });
 
   // startLiveAlertPolling();

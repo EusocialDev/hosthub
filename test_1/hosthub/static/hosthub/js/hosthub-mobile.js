@@ -48,7 +48,7 @@ function openMobileLiveCalls() {
     const shell = document.querySelector('.mobile-shell');
     if (!shell) return;
 
-    shell.classList.add('live-open');
+    shell.classList.add('live-open'); 
     document.body.classList.add('mobile-sheet-open');
 }
 

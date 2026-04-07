@@ -126,6 +126,14 @@ class Call(models.Model):
         ('miguel', 'Miguel'),
         ('adiana', 'Adriana')
     ], null=True, blank=True)
+
+    handled_by_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="handled_calls",
+    )
     disposition = models.CharField(max_length=50, choices=DISPOSITION_CHOICES, null=True, blank=True)
 
 

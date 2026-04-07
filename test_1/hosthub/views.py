@@ -26,7 +26,7 @@ def get_api_headers():
 
 
 # Order by newest first
-def new_to_old(user):
+def accessible_calls_for_user(user):
     access = getattr(user, "hosthub_access", None)
 
     if not access or not access.is_active:
@@ -121,7 +121,7 @@ def hosthub_view(request):
     (this can later be implemented in different folders like 'services/call_filters.py'; 'selectors/call_selectors.py')
     """
     # Base Order for calls
-    qs = new_to_old(request.user)
+    qs = accessible_calls_for_user(request.user)
     date_filter = request.GET.get("date")
     custom_date = request.GET.get("custom_date")
     # Get today's date in local timezone (will be used in filter_by_date, but filter_by_date uses localtime)
@@ -148,7 +148,7 @@ def hosthub_view(request):
         has_multiple_locations = access.locations.count() > 1
 
     # Computing counts for the headers (using base queryset with date filter only)
-    base_qs = new_to_old(request.user)
+    base_qs = accessible_calls_for_user(request.user)
     base_qs = filter_by_date(base_qs, date_filter, today, custom_date)
     counts = {
         "open": base_qs.filter(host_status="needs_action").count(),
@@ -170,6 +170,10 @@ def hosthub_view(request):
 
     return render(request, "hosthub/index.html", context)
 
+def get_handled_by_display(self):
+    if not self.handled_by_user:
+        return None
+    return self.handled_by_user.username
 
 @login_required
 @require_http_methods(["POST"])
@@ -177,34 +181,33 @@ def mark_call_handled(request, call_id):
     """
     AJAX endpoint to mark a call as handled (resolved) or unhandled (needs_action)
     """
-    try:
-        call = get_object_or_404(Call, id=call_id)
+    try: 
+        call = get_object_or_404(accessible_calls_for_user(request.user), id=call_id)
         action = request.POST.get("action", "resolve")
         
         if action == "resolve":
-            handled_by = request.POST.get("handled_by")
             disposition = request.POST.get("disposition")
-
-            if not "handled_by":
+            if not disposition:
                 return JsonResponse({
                     "success": False,
-                    "error": 'Handled By is Required'
-                }, statu=400)
+                    "error": "Disposition is required to resolve a call"
+                }, status=400)
 
-            call.mark_resolved(handled_by=handled_by, disposition=disposition)
+            call.mark_resolved(handled_by_user=request.user, disposition=disposition)
 
             status = "resolved"
         else:
             call.host_status = "needs_action"
             call.handled_at = None
-            call.save()
+            call.handled_by_user = None
+            call.disposition = None
+            call.save(update_fields=["host_status", "handled_at", "handled_by_user", "disposition"])
             status = "needs_action"
         
         return JsonResponse({
             "success": True,
             "status": status,
-            "handled_by": call.handled_by,
-            "handled_by_display": call.get_handled_by_display() if call.handled_by else None,
+            "handled_by_display": call.get_handled_by_display() if call.handled_by_user else None,
             "disposition": call.disposition,
             "disposition_display": call.get_disposition_display() if call.disposition else None,
             "handled_at": call.handled_at.isoformat() if call.handled_at else None,
@@ -235,7 +238,7 @@ def check_new_calls(request):
         category = request.GET.get("category")
         today = timezone.localtime(timezone.now()).date()
 
-        qs = new_to_old()
+        qs = accessible_calls_for_user(user=request.user)
         qs = filter_by_status(qs, host_status)
         if category:
             qs = filter_by_category(qs, category)
