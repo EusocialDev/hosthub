@@ -143,9 +143,9 @@ def hosthub_view(request):
     # Getting user access to show location context or not (if multiple locations, we show location in the UI, if not, user should not se location name)
     access = getattr(request.user, "hosthub_access", None)
 
-    show_location_context = False
+    has_multiple_locations = False
     if access and access.is_active:
-        show_location_context = access.locations.count() > 1
+        has_multiple_locations = access.locations.count() > 1
 
     # Computing counts for the headers (using base queryset with date filter only)
     base_qs = new_to_old(request.user)
@@ -163,7 +163,7 @@ def hosthub_view(request):
         "custom_date": custom_date,
         "counts": counts,
         "page_loaded_at": page_loaded_at,
-        "show_location_context": show_location_context,
+        "has_multiple_locations": has_multiple_locations,
         "CARRYOUT_DASHBOARD_SLUG": settings.CARRYOUT_DASHBOARD_SLUG,
         "HOSTHUB_SSE_TOKEN": settings.HOSTHUB_SSE_TOKEN,
     }
