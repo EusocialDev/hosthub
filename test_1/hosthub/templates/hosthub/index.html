@@ -266,7 +266,7 @@
                             {% if call.host_status == 'resolved' %}
                                 Resolved
                             {% elif call.user_name and show_location_context%}
-                                {{ call.user_name }} - {{ call.location.name}}
+                                {{ call.user_name }} - {{ call.location.name }}
                             {% elif call.user_name %}
                                 {{ call.user_name }}
                             {% else %}
