@@ -137,11 +137,11 @@ class Call(models.Model):
     disposition = models.CharField(max_length=50, choices=DISPOSITION_CHOICES, null=True, blank=True)
 
 
-    def mark_resolved(self, handled_by=None, disposition=None):
+    def mark_resolved(self, handled_by_user=None, disposition=None):
         self.host_status = "resolved"
         self.handled_at = timezone.now()
-        if handled_by:
-            self.handled_by = handled_by
+        if handled_by_user:
+            self.handled_by_user = handled_by_user
         if disposition:
             self.disposition = disposition
         
