@@ -837,6 +837,7 @@ function openTranscriptView(callId, panel) {
 
   panel.querySelector(".back-to-live-calls")?.addEventListener("click", () => {
     closeTranscriptSSE();
+    stopTranscriptPolling();
     ACTIVE_TRANSCRIPT_CALL = null;
     ACTIVE_TRANSCRIPT_PANEL = null;
     renderLiveCallsPanel(LAST_LIVE_CALLS);
@@ -844,6 +845,7 @@ function openTranscriptView(callId, panel) {
 
   loadTranscriptHistory(callId, panel);
   openTranscriptSSE(callId, panel);
+  startTranscriptPolling(callId, panel);
 }
 
 async function loadTranscriptHistory(callId, panel) {
@@ -861,6 +863,10 @@ async function loadTranscriptHistory(callId, panel) {
     console.error("Failed to load transcript history", e);
   }
 }
+
+let LIVE_TRANSCRIPT_POLL = null;
+let LIVE_TRANSCRIPT_CALL_ID = null;
+let LIVE_TRANSCRIPT_LAST_SEQ = 0;
 
 function renderTranscriptTurn(turn, panel) {
   const container = panel?.querySelector(".live-transcript-container");
@@ -880,7 +886,62 @@ function renderTranscriptTurn(turn, panel) {
 
   container.appendChild(div);
   container.scrollTop = container.scrollHeight;
+
+  const seq = Number(turn.sequence || 0);
+  if (seq > LIVE_TRANSCRIPT_LAST_SEQ) {
+    LIVE_TRANSCRIPT_LAST_SEQ = seq;
+  }
 }
+
+async function pollTranscriptTurns(callId, panel) {
+  try {
+    const res = await fetch(
+      `/test/api/calls/${callId}/turns/?limit=200`,
+      { credentials: "same-origin" }
+    );
+
+    if (!res.ok) return;
+
+    const data = await res.json();
+    const turns = data.turns || [];
+
+    turns.forEach((turn) => {
+      const seq = Number(turn.sequence || 0);
+
+      if (seq <= LIVE_TRANSCRIPT_LAST_SEQ) return;
+
+      const existing = panel?.querySelector(
+        `.transcript-row[data-seq="${turn.sequence}"]`
+      );
+
+      if (!existing) {
+        renderTranscriptTurn(turn, panel);
+      }
+    });
+  } catch (err) {
+    console.log("Transcript polling failed", err);
+  }
+}
+
+function stopTranscriptPolling() {
+  if (LIVE_TRANSCRIPT_POLL) {
+    clearInterval(LIVE_TRANSCRIPT_POLL);
+    LIVE_TRANSCRIPT_POLL = null;
+  }
+}
+
+function startTranscriptPolling(callId, panel) {
+  stopTranscriptPolling();
+
+  LIVE_TRANSCRIPT_CALL_ID = callId;
+  LIVE_TRANSCRIPT_LAST_SEQ = 0;
+
+  LIVE_TRANSCRIPT_POLL = setInterval(() => {
+    pollTranscriptTurns(callId, panel);
+  }, 1500);
+}
+
+
 
 function openTranscriptSSE(callId, panel) {
   closeTranscriptSSE();
