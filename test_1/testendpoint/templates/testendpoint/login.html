@@ -180,6 +180,15 @@
             loginForm.submit();
         }
 
+        window.addEventListener("pageshow", function (event) {
+            const nav = performance.getEntriesByType("navigation")[0];
+            const isBackOrForward = nav && (nav.length && nav[0].type === "back_forward");
+
+            if (event.persisted || isBackOrForward) {
+                window.location.reload();
+            }
+        });
+
         document.addEventListener('keydown', function (e) {
             if (e.key >= '0' && e.key <= '9') {
                 addDigit(e.key);
