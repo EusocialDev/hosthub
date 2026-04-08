@@ -2,8 +2,10 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 from django.http import JsonResponse, HttpResponseNotAllowed
 from django.contrib.auth.decorators import login_required
+from django.http import Http404
+from .views import _normalize_phone_number
 
-from testendpoint.models import CallAlert, CallSession, TranscriptTurn
+from testendpoint.models import CallAlert, CallSession, TranscriptTurn, PhoneNumber
 
 @require_GET
 def live_alerts_poll(request):
@@ -41,12 +43,32 @@ def resolve_alert(request, alert_id: int):
 def get_transcript_turns(request, call_id:str):
     limit = int(request.GET.get("limit", 200))
 
-    call = CallSession.objects.filter(call_id=call_id).first()
-    if not call:
-        return JsonResponse({"ok": True, "call_id": call_id, "turns": []})
+    
+    access = getattr(request.user, "has_access_to_call", lambda c: False)
+    if not access or not access.is_active:
+        raise Http404("call not found or access denied")
+    allowed_location_ids = access.locations.filter(
+        is_active=True,
+    ).values_list("id", flat=True)
+
+    allowed_numbers = set(PhoneNumber.objects.filter(
+        account = access.account,
+        location_id__in=allowed_location_ids,
+        is_active=True,
+    ).values_list("number", flat=True)
+    )
+
+    call_session = CallSession.objects.filter(call_id=call_id).first()
+    if not call_session:
+        raise Http404("call not found")
+    
+    normalized_to = _normalize_phone_number(call_session.to_number)
+    if not normalized_to or normalized_to not in allowed_numbers:
+        raise Http404("call not found or access denied")
+    
     
     qs = (TranscriptTurn.objects
-          .filter(call=call)
+          .filter(call=call_session)
           .order_by("sequence", "id")[:limit]
           )
 
