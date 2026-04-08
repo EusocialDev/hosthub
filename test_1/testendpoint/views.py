@@ -509,7 +509,7 @@ def upsert_call_from_bland_json(call: dict):
 
 @login_required
 def get_final_transcripts(request, call_id):
-    access = getattr(request.user, "access", None)
+    access = getattr(request.user, "hosthub_access", None)
     if not access or not access.is_active:
         raise Http404("Call not Found")
     
