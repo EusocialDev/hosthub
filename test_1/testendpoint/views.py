@@ -3,6 +3,7 @@ from django.http import JsonResponse, HttpResponseNotAllowed
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -11,6 +12,7 @@ from dateutil import parser as dateparser
 from .models import Call, PhoneNumber, Account, UserAccess, Location
 from testendpoint.services.bland_ingest import ingest_bland_webhook_event
 from django.views.decorators.cache import never_cache
+from django.http import Http404
 import requests
 import json
 import re
@@ -515,11 +517,24 @@ def upsert_call_from_bland_json(call: dict):
     return obj
 
 
-
+@login_required
 def get_final_transcripts(request, call_id):
-    call = Call.objects.filter(id=call_id).first()
+    access = getattr(request.user, "access", None)
+    if not access or not access.is_active:
+        raise Http404("Call not Found")
+    
+    allowed_location_ids = access.locations.filter(
+        is_active=True,
+    ).values_list("id", flat=True)
+
+    call = Call.objects.filter(
+        id=call_id,
+        account=access.account,
+        location_id__in=allowed_location_ids,
+        ).first()
     if not call:
-        return JsonResponse({"ok": True, "call_id":call_id, "transcripts":[]})
+        return Http404("Call not found or access denied")
+    
     return JsonResponse({
         "ok": True,
         "call_id":call_id,

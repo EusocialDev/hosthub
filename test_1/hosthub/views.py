@@ -7,7 +7,8 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.cache import never_cache
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
-from testendpoint.models import Call
+from testendpoint.models import Call, PhoneNumber, CallSession
+from testendpoint.views import _normalize_phone_number
 from dateutil import parser as dateparser
 import requests
 
@@ -255,10 +256,14 @@ def check_new_calls(request):
             "error": str(e)
         }, status=500)
 
+@login_required
 def new_calls_for_pill(request):
     """This is a lightweight endpoint to check if new calls have been ingested since the page was loaded.
         It returns a boolean value indicating wheter new calls exist.
     """  
+    access = getattr(request.user, "hosthub_access", None)
+
+
     try:
         page_loaded_at_raw =request.GET.get("page_loaded_at")
         page_loaded_at = dateparser.parse(page_loaded_at_raw) if page_loaded_at_raw else None
@@ -269,7 +274,11 @@ def new_calls_for_pill(request):
         if page_loaded_at and timezone.is_naive(page_loaded_at):
             page_loaded_at = timezone.make_aware(page_loaded_at, timezone.get_current_timezone())
 
-        new_call = Call.objects.filter(ingested_at__gt=page_loaded_at).exists()
+
+        new_call = Call.objects.filter(
+            account=access.account,
+            ingested_at__gt=page_loaded_at,
+            ).exists()
 
         if not new_call:
             return JsonResponse({
@@ -288,7 +297,7 @@ def new_calls_for_pill(request):
             "error": str(e)
         }, status=500)
 
-
+@login_required
 def bland_live_calls(request):
     """
     Lightweight endpoint for showing list of live calls from Bland
@@ -297,6 +306,26 @@ def bland_live_calls(request):
     url = "https://api.bland.ai/v1/calls/active"
 
     headers = get_api_headers()
+
+    access = getattr(request.user, "hosthub_access", None)
+    if not access or not access.is_active:
+        return JsonResponse({
+            "ok": True,
+            "count": 0,
+            calls: []
+        }, status=200)
+    
+    allowed_locations_ids = access.locations.filter(is_active=True).values_list("id", flat=True)
+
+    allowed_numbers = set(
+        PhoneNumber.objects.filter(
+            account=access.acount,
+            location_id__in=allowed_locations_ids,
+            is_active=True,
+        ).valuer_list("number", flat=True)
+    )
+
+
     try:
         response = requests.get(url, headers=headers)
     except  requests.RequestException as e:
@@ -319,11 +348,18 @@ def bland_live_calls(request):
     data = payload.get("data") or []
 
     calls = []
+
     for c in data:
+        normalized_to = _normalize_phone_number(c.get("to"))
+        if not normalized_to:
+            continue
+        if normalized_to not in allowed_numbers:
+            continue
+
         calls.append({
             "call_id":c.get("call_id"),
             "from":c.get("from"),
-            "to":c.get("to"),
+            "to":normalized_to,
             "started_at":c.get("started_at"),
             "status":c.get("status"),
         })

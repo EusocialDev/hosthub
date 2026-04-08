@@ -176,6 +176,8 @@ class CallSession(models.Model):
 
     )
 
+    to_number = models.CharField(max_length=30, null=True, blank=True, db_index=True, help_text="Receiver phone number (from Bland 'to' field)")
+
     started_at = models.DateTimeField(null=True, blank=True)
     ended_at = models.DateTimeField(null=True, blank=True)
 
