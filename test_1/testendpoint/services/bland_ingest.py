@@ -63,10 +63,6 @@ def ingest_bland_webhook_event(payload: dict) -> CallSession:
     raw_from = payload.get("from")
     raw_to = payload.get("to")
 
-    print("TOP LEVEL TO:", payload.get("to"))
-    print("NESTED TO:", (payload.get("call") or {}).get("to"))
-    print("PAYLOAD KEYS:", payload.keys())
-
     if raw_from:
         call.from_number = _normalize_phone_number(raw_from)
     if raw_to:
@@ -78,6 +74,7 @@ def ingest_bland_webhook_event(payload: dict) -> CallSession:
     role, text = parse_bland_message(payload.get("message", ""))
 
     if role and text:
+        text = text.strip()
         dh = _dedupe_hash(role, text)
 
         recent = (
@@ -90,6 +87,36 @@ def ingest_bland_webhook_event(payload: dict) -> CallSession:
         if any (t.dedupe_hash == dh for t in recent if t.dedupe_hash):
             evaluate_alerts_for_call(call)
             return call
+        
+        last_turn = (
+        TranscriptTurn.objects
+        .filter(call=call)
+        .order_by("-sequence", "-id")
+        .first()
+        )
+
+        if last_turn and last_turn.role == role:
+            old_text = (last_turn.text or "").strip()
+        
+            if old_text and text.startswith(old_text) and text != old_text:
+                last_turn.text = text
+                last_turn.dedupe_hash = dh
+                last_turn.save(update_fields=["text", "dedupe_hash"])
+
+                async_to_sync(publish)(
+                    call_id,
+                    "turn_update",
+                    {
+                        "call_id": call_id,
+                        "sequence": last_turn.sequence,
+                        "role": last_turn.role,
+                        "text": last_turn.text,
+                        "created_at": last_turn.created_at.isoformat() if last_turn.created_at else None,
+                    },
+                    event_id=last_turn.sequence,
+                )
+
+                return call
         
         last_seq = (
             TranscriptTurn.objects
