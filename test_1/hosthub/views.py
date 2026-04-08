@@ -26,6 +26,9 @@ def get_api_headers():
 
 # ---- Helpers for main function (queryset, filters, counts) ----
 
+def landing_view(request):
+    return render(request, "testendpoint/landing_hosthub.html")
+
 
 # Order by newest first
 def accessible_calls_for_user(user):
