@@ -961,6 +961,18 @@ function openTranscriptSSE(callId, panel) {
     renderTranscriptTurn(turn, panel);
   });
 
+  LIVE_TRANSCRIPT_ES.addEventListener("turn_update", (evt) => {
+    const turn = JSON.parse(evt.data);
+  
+    const bubble = panel?.querySelector(
+      `.transcript-row[data-seq="${turn.sequence}"] .bubble`
+    );
+  
+    if (bubble) {
+      bubble.textContent = turn.text || "";
+    }
+  });
+
   LIVE_TRANSCRIPT_ES.onerror = () => {
     console.log("SSE reconnecting...");
   };
