@@ -7,7 +7,7 @@ from .views_live import get_transcript_turns
 app_name = 'testendpoint'
 
 urlpatterns = [
-    path('', views.landing_view, name='landing_page'),
+    path("login/", views.account_picker_view, name="account_picker"),
     path('login/<slug:account_slug>/',views.account_entry_view , name='account_entry'),
     path('login/<slug:account_slug>/<slug:location_slug>/', views.login_view, name='location_login'),
     path('logout/', views.logout_view, name='logout'),

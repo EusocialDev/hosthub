@@ -119,8 +119,7 @@ def get_api_headers():
         print(f"Error fetching calls: {e}")
         return [], 0, 0, 0
 
-def landing_view(request):
-    return render(request, "testendpoint/landing_hosthub.html")
+
 
 def get_call_stats_from_db():
     """
@@ -254,6 +253,25 @@ def live_calls_data_view(request):
     except Exception as e:
         return JsonResponse({"error": f"Error fetching calls data: {e}"}, status=500)
     
+
+    
+def account_picker_view(request):
+    accounts = Account.objects.filter(is_active=True).order_by("name")
+
+    count = accounts.count()
+
+    if count == 0:
+        raise Http404("No active accounts found")
+
+    if count == 1:
+        account = accounts.first()
+        return redirect("testendpoint:account_entry", account_slug=account.slug)
+
+    return render(request, "testendpoint/account_picker.html", {
+        "accounts": accounts,
+    })
+
+
 def account_entry_view(request, account_slug):
     account = get_object_or_404(Account, slug=account_slug, is_active=True)
     locations = account.locations.filter(is_active=True).order_by("name")
@@ -261,16 +279,20 @@ def account_entry_view(request, account_slug):
     count = locations.count()
 
     if count == 0:
-        raise ValueError("No active location found for this account")
-    
+        raise Http404("No active location found for this account")
+
     if count == 1:
         location = locations.first()
-        return redirect("testendpoint:location_login", account_slug=account.slug, location_slug=location.slug)
-    
+        return redirect(
+            "testendpoint:location_login",
+            account_slug=account.slug,
+            location_slug=location.slug,
+        )
+
     return render(request, "testendpoint/location_picker.html", {
         "account": account,
         "locations": locations,
-        })
+    })
 
 # Authentication Views
 @never_cache

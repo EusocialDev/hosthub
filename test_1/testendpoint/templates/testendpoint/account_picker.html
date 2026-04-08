@@ -1,0 +1,38 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Account | HostHub</title>
+    <link rel="stylesheet" href="{% static 'testendpoint/css/location_picker.css' %}">
+</head>
+<body class="location-picker-page">
+    <main class="location-shell">
+        <section class="location-card">
+            <div class="location-card__header">
+                <div class="location-badge">HostHub</div>
+                <h1 class="location-card__title">Select Account</h1>
+                <p class="location-card__subtitle">Choose an account to continue</p>
+            </div>
+
+            <div class="location-list">
+                {% for account in accounts %}
+                    <a
+                        href="{% url 'testendpoint:account_entry' account.slug %}"
+                        class="location-item"
+                    >
+                        <span class="location-item__name">{{ account.name }}</span>
+                        <span class="location-item__arrow">→</span>
+                    </a>
+                {% empty %}
+                    <div class="location-empty">
+                        No active accounts available.
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+</body>
+</html>
