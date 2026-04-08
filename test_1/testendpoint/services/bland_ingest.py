@@ -63,6 +63,10 @@ def ingest_bland_webhook_event(payload: dict) -> CallSession:
     raw_from = payload.get("from")
     raw_to = payload.get("to")
 
+    print("TOP LEVEL TO:", payload.get("to"))
+    print("NESTED TO:", (payload.get("call") or {}).get("to"))
+    print("PAYLOAD KEYS:", payload.keys())
+
     if raw_from:
         call.from_number = _normalize_phone_number(raw_from)
     if raw_to:
