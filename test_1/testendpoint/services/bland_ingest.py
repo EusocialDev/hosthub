@@ -10,7 +10,7 @@ from testendpoint.sse import publish
 from testendpoint.models import TranscriptTurn, CallSession
 from asgiref.sync import async_to_sync
 
-from testendpoint.views import _normalize_phone_number
+from testendpoint.utils.phone import _normalize_phone_number
 
 AGENT_PREFIXES = ("Agent speech:", "Agent says:")
 USER_PREFIXES = ("Handling user speech:", "User speech:")
