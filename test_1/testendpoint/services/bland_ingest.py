@@ -9,6 +9,7 @@ from testendpoint.services.alert_rules import evaluate_alerts_for_call
 from testendpoint.sse import publish
 from testendpoint.models import TranscriptTurn, CallSession
 from asgiref.sync import async_to_sync
+from hosthub.views import _normalize_phone_number
 
 AGENT_PREFIXES = ("Agent speech:", "Agent says:")
 USER_PREFIXES = ("Handling user speech:", "User speech:")
@@ -58,8 +59,16 @@ def ingest_bland_webhook_event(payload: dict) -> CallSession:
         if not call.started_at:
             call.started_at = now
 
+    raw_from = payload.get("from")
+    raw_to = payload.get("to")
+
+    if raw_from:
+        call.from_number = _normalize_phone_number(raw_from)
+    if raw_to:
+        call.to_number = _normalize_phone_number(raw_to)
+
     call.last_event_at = now
-    call.save(update_fields=['status', 'started_at', 'last_event_at', "updated_at"])
+    call.save(update_fields=['status', 'started_at', 'last_event_at', "updated_at", "from_number", "to_number"])
 
     role, text = parse_bland_message(payload.get("message", ""))
 
