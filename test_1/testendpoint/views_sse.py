@@ -4,7 +4,7 @@ from django.conf import settings
 from django.http import StreamingHttpResponse, JsonResponse, Http404
 from .models import PhoneNumber, CallSession
 from .views import _normalize_phone_number
-
+from asgiref.sync import sync_to_async
 from .sse import subscribe, unsubscribe  # your async pubsub
 
 
@@ -25,20 +25,27 @@ async def sse_call_stream(request, call_id: str):
         return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
     
     # 3. Resolve Hosthub access
-    access = getattr(user, "hosthub_access", None)
+    access = await sync_to_async(lambda: getattr(user, "hosthub_access", None))()
     if not access or not access.is_active:
         raise Http404("call not found or access denied")
     
-    allowed_location_ids = access.locations.filter(
-        is_active=True,
-    ).values_list("id", flat=True)
+    allowed_location_ids = await sync_to_async( 
+        lambda: list(
+                access.locations.filter(is_active=True)
+                .values_list("id", flat=True)
+        )    
+    )()
 
-    allowed_numbers = set(PhoneNumber.objects.filter(
-        account = access.account,
-        location_id__in=allowed_location_ids,
-        is_active=True,
-        ).values_list("number", flat=True)
-    )
+    allowed_numbers = await sync_to_async(
+        lambda: set(
+            _normalize_phone_number(n)
+            for n in PhoneNumber.objects.filter(
+            account = access.account,
+            location_id__in=allowed_location_ids,
+            is_active=True,
+            ).values_list("number", flat=True)
+        )
+    )()
 
     # 4. Resolev Live Session
     call_session = await CallSession.objects.filter(call_id=call_id).afirst()
@@ -47,7 +54,7 @@ async def sse_call_stream(request, call_id: str):
     
     normalized_to = _normalize_phone_number(call_session.to_number)
     if not normalized_to or normalized_to not in allowed_numbers:
-        raise Http404("call not found or access denied")
+        raise Http404("call not found")
     
     # Logs (safe-ish: shows repr. Consider masking later.)
     logger.warning("SSE DEBUG call_id=%s expected=%r received=%r match=%s",

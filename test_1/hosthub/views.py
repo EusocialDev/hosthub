@@ -261,36 +261,47 @@ def new_calls_for_pill(request):
     """This is a lightweight endpoint to check if new calls have been ingested since the page was loaded.
         It returns a boolean value indicating wheter new calls exist.
     """  
-    access = getattr(request.user, "hosthub_access", None)
-
-
     try:
+
+        access = getattr(request.user, "hosthub_access", None)
+        if not access or not access.is_active:
+            return JsonResponse({
+            "has_new":False,
+            "message":"No access to calls"
+        },status=200)
+
         page_loaded_at_raw =request.GET.get("page_loaded_at")
         page_loaded_at = dateparser.parse(page_loaded_at_raw) if page_loaded_at_raw else None
+
+        if not page_loaded_at:
+            return JsonResponse({
+                "ok": False,
+                "error": "Missing or invalid page_loaded_at",
+        }, status=400)
 
          # Ensure page_loaded_at is timezone-aware
 
 
-        if page_loaded_at and timezone.is_naive(page_loaded_at):
+        if timezone.is_naive(page_loaded_at):
             page_loaded_at = timezone.make_aware(page_loaded_at, timezone.get_current_timezone())
 
+        allowed_location_ids = access.locations.filter(
+            is_active=True,
+        ).values_list("id", flat=True)
 
-        new_call = Call.objects.filter(
+
+
+        has_new = Call.objects.filter(
             account=access.account,
+            location_id__in=allowed_location_ids,
             ingested_at__gt=page_loaded_at,
             ).exists()
 
-        if not new_call:
-            return JsonResponse({
-                "has_new":False,
-                "message":"No new calls since page load"
-            },status=200)
-        
-        else:
-            return JsonResponse({
-                "has_new":True,
-                "message":"New calls exist since page load"
-            }, status=200)
+        return JsonResponse({
+            "ok":True,
+            "has_new": has_new,
+            "message": "New calls exist since page load" if has_new else "No new calls since page load"
+        }, status=200)
 
     except Exception as e:
         return JsonResponse({
@@ -312,17 +323,17 @@ def bland_live_calls(request):
         return JsonResponse({
             "ok": True,
             "count": 0,
-            calls: []
+            "calls": []
         }, status=200)
     
     allowed_locations_ids = access.locations.filter(is_active=True).values_list("id", flat=True)
 
     allowed_numbers = set(
         PhoneNumber.objects.filter(
-            account=access.acount,
+            account=access.account,
             location_id__in=allowed_locations_ids,
             is_active=True,
-        ).valuer_list("number", flat=True)
+        ).values_list("number", flat=True)
     )
 
 
