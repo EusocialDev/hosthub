@@ -895,10 +895,9 @@ function renderTranscriptTurn(turn, panel) {
 
 async function pollTranscriptTurns(callId, panel) {
   try {
-    const res = await fetch(
-      `/test/api/calls/${callId}/turns/?limit=200`,
-      { credentials: "same-origin" }
-    );
+    const res = await fetch(`/test/api/calls/${callId}/turns/?limit=200`, {
+      credentials: "same-origin",
+    });
 
     if (!res.ok) return;
 
@@ -906,17 +905,26 @@ async function pollTranscriptTurns(callId, panel) {
     const turns = data.turns || [];
 
     turns.forEach((turn) => {
-      const seq = Number(turn.sequence || 0);
-
-      if (seq <= LIVE_TRANSCRIPT_LAST_SEQ) return;
-
-      const existing = panel?.querySelector(
+      const existingRow = panel?.querySelector(
         `.transcript-row[data-seq="${turn.sequence}"]`
       );
 
-      if (!existing) {
-        renderTranscriptTurn(turn, panel);
+      // Existing sequence: update text if changed
+      if (existingRow) {
+        const bubble = existingRow.querySelector(".bubble");
+        if (bubble && bubble.textContent !== (turn.text || "")) {
+          bubble.textContent = turn.text || "";
+        }
+
+        const seq = Number(turn.sequence || 0);
+        if (seq > LIVE_TRANSCRIPT_LAST_SEQ) {
+          LIVE_TRANSCRIPT_LAST_SEQ = seq;
+        }
+        return;
       }
+
+      // Missing sequence: append
+      renderTranscriptTurn(turn, panel);
     });
   } catch (err) {
     console.log("Transcript polling failed", err);
