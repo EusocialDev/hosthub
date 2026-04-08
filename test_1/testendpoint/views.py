@@ -1,21 +1,19 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse, JsonResponse, HttpResponseNotAllowed
+from django.http import JsonResponse, HttpResponseNotAllowed
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import authenticate, login, logout, get_user_model
-from django.contrib.auth.hashers import check_password
+from django.contrib.auth import login, logout
 from django.db import transaction
 from django.db.models import Q
-from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from dateutil import parser as dateparser
 from .models import Call, PhoneNumber, Account, UserAccess, Location
 from testendpoint.services.bland_ingest import ingest_bland_webhook_event
+from django.views.decorators.cache import never_cache
 import requests
 import json
 import re
-import logging
 
 
 
@@ -272,6 +270,7 @@ def account_entry_view(request, account_slug):
         })
 
 # Authentication Views
+@never_cache
 def login_view(request, account_slug, location_slug):
     account = get_object_or_404(Account, slug=account_slug, is_active=True)
     
@@ -314,6 +313,7 @@ def login_view(request, account_slug, location_slug):
         "employees": employees,
     })
 
+@never_cache
 def logout_view(request):
     """Logout view."""
     account_id = request.session.get("active_account_id")

@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.urls import reverse
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.cache import never_cache
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from testendpoint.models import Call
@@ -112,7 +113,7 @@ def filter_by_date(qs, date_filter, today, custom_date=None):
 
 
 # ---- Main view, PURELY handles the orchestration, no logic. ----
-
+@never_cache
 @login_required
 def hosthub_view(request):
     """
