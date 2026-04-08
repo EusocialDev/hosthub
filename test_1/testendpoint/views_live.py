@@ -3,7 +3,7 @@ from django.views.decorators.http import require_GET, require_POST
 from django.http import JsonResponse, HttpResponseNotAllowed
 from django.contrib.auth.decorators import login_required
 from django.http import Http404
-from .views import _normalize_phone_number
+from testendpoint.utils.phone import _normalize_phone_number
 
 from testendpoint.models import CallAlert, CallSession, TranscriptTurn, PhoneNumber
 
@@ -45,7 +45,7 @@ def get_transcript_turns(request, call_id:str):
 
     
     access = getattr(request.user, "has_access_to_call", None)
-    
+
     if not access or not access.is_active:
         raise Http404("call not found or access denied")
     allowed_location_ids = access.locations.filter(

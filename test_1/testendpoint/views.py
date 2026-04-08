@@ -13,6 +13,7 @@ from .models import Call, PhoneNumber, Account, UserAccess, Location
 from testendpoint.services.bland_ingest import ingest_bland_webhook_event
 from django.views.decorators.cache import never_cache
 from django.http import Http404
+from testendpoint.utils.phone import _normalize_phone_number
 import requests
 import json
 import re
@@ -373,17 +374,6 @@ def get_display_category_from_tags(pathway_tags):
         return "private_events"
     return "other"
 
-def _normalize_phone_number(value): 
-    """ 
-    Basic canonicalization to US phone numbers for consistent comparison.
-     It simply strips non-digit characters and ensures the number starts with +1 for US numbers.
-    """
-
-    if not value:
-        return None
-    digits = re.sub(r"\D", "", str(value))
-    digits = digits if digits.startswith("1") else "1" + digits  # Ensure it starts with USA country code
-    return f"+{digits}" or None
 
 def upsert_call_from_bland_json(call: dict):
     """

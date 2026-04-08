@@ -3,7 +3,7 @@ import logging
 from django.conf import settings
 from django.http import StreamingHttpResponse, JsonResponse, Http404
 from .models import PhoneNumber, CallSession
-from .views import _normalize_phone_number
+from testendpoint.utils.phone import _normalize_phone_number
 from asgiref.sync import sync_to_async
 from .sse import subscribe, unsubscribe  # your async pubsub
 
