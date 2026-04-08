@@ -311,7 +311,7 @@ def new_calls_for_pill(request):
 @login_required
 def bland_live_calls(request):
     """
-    Lightweight endpoint for showing list of live calls from Bland
+    Lightweight endpoint for showing list of live calls from Bland and populating CallSession phone number
     """
 
     url = "https://api.bland.ai/v1/calls/active"
@@ -361,11 +361,27 @@ def bland_live_calls(request):
     calls = []
 
     for c in data:
+        call_id = c.get("call_id")
         normalized_to = _normalize_phone_number(c.get("to"))
+        normalized_from = _normalize_phone_number(c.get("from"))
+        started_at = c.get("started_at")
+        status_value = (c.get("status") or "").lower()
         if not normalized_to:
             continue
         if normalized_to not in allowed_numbers:
             continue
+
+        # sync into callsession
+        CallSession.objects.update_or_create(
+            call_id=call_id,
+            defaults={
+                "to_number": normalized_to,
+                "from_number": normalized_from,
+                "status": status_value if status_value in CallSession.Status.values else CallSession.Status.ACTIVE,
+                "started_at": dateparser.parse(started_at) if started_at else None,
+                "last_event_at": timezone.now(),
+            }
+        )
 
         calls.append({
             "call_id":c.get("call_id"),
