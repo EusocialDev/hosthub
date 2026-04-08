@@ -44,7 +44,7 @@ def get_transcript_turns(request, call_id:str):
     limit = int(request.GET.get("limit", 200))
 
     
-    access = getattr(request.user, "has_access_to_call", None)
+    access = getattr(request.user, "hosthub_access", None)
 
     if not access or not access.is_active:
         raise Http404("call not found or access denied")
