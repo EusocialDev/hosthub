@@ -9,7 +9,8 @@ from testendpoint.services.alert_rules import evaluate_alerts_for_call
 from testendpoint.sse import publish
 from testendpoint.models import TranscriptTurn, CallSession
 from asgiref.sync import async_to_sync
-from hosthub.views import _normalize_phone_number
+
+from testendpoint.views import _normalize_phone_number
 
 AGENT_PREFIXES = ("Agent speech:", "Agent says:")
 USER_PREFIXES = ("Handling user speech:", "User speech:")
