@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'testendpoint',
     'hosthub',
+    "staff.apps.StaffConfig",
 ]
 
 MIDDLEWARE = [
