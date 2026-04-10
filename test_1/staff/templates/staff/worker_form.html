@@ -1,0 +1,109 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }}</title>
+    <link rel="stylesheet" href="{% static 'staff/staff.css' %}">
+</head>
+<body>
+    <header class="staff-header">
+        <div class="staff-header-left">
+            <a href="{% url 'staff:worker_list' %}" class="staff-back-button" aria-label="Go back">←</a>
+        </div>
+
+        <h1 class="staff-header-title">{{ page_title }}</h1>
+
+        <div class="staff-header-actions"></div>
+    </header>
+
+    <main class="staff-page-shell staff-page-shell-narrow">
+        {% if messages %}
+            <div class="staff-messages">
+                {% for message in messages %}
+                    <div class="staff-alert {{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <section class="staff-card">
+            <div class="staff-card-header">
+                <div>
+                    <h2 class="staff-card-title">{{ page_title }}</h2>
+                    <p class="staff-card-subtitle">
+                        Set worker details, assign locations, and manage PIN access.
+                    </p>
+                </div>
+            </div>
+
+            <form method="post" class="staff-form">
+                {% csrf_token %}
+
+                <div class="staff-form-grid">
+                    <div class="staff-field">
+                        <label for="{{ form.display_name.id_for_label }}">Display name</label>
+                        {{ form.display_name }}
+                        {% for error in form.display_name.errors %}
+                            <div class="staff-field-error">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="staff-field">
+                        <label for="{{ form.role.id_for_label }}">Role</label>
+                        {{ form.role }}
+                        {% for error in form.role.errors %}
+                            <div class="staff-field-error">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="staff-field">
+                        <label for="{{ form.locations.id_for_label }}">Locations</label>
+                        {{ form.locations }}
+                        <div class="staff-help-text">
+                            Hold Command on Mac or Ctrl on Windows to select multiple locations.
+                        </div>
+                        {% for error in form.locations.errors %}
+                            <div class="staff-field-error">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="staff-field">
+                        <label for="{{ form.pin.id_for_label }}">
+                            {% if page_title == "Edit worker" %}New PIN{% else %}PIN{% endif %}
+                        </label>
+                        {{ form.pin }}
+                        {% for error in form.pin.errors %}
+                            <div class="staff-field-error">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="staff-field">
+                        <label for="{{ form.confirm_pin.id_for_label }}">
+                            {% if page_title == "Edit worker" %}Confirm new PIN{% else %}Confirm PIN{% endif %}
+                        </label>
+                        {{ form.confirm_pin }}
+                        {% for error in form.confirm_pin.errors %}
+                            <div class="staff-field-error">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="staff-checkbox-row">
+                        {{ form.is_active }}
+                        <label for="{{ form.is_active.id_for_label }}">Active</label>
+                    </div>
+
+                    {% for error in form.is_active.errors %}
+                        <div class="staff-field-error">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="staff-form-actions">
+                    <button type="submit" class="staff-submit-btn">{{ submit_label }}</button>
+                    <a href="{% url 'staff:worker_list' %}" class="staff-cancel-btn">Cancel</a>
+                </div>
+            </form>
+        </section>
+    </main>
+</body>
+</html>

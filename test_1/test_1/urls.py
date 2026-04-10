@@ -21,5 +21,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('test/', include('testendpoint.urls')),
     path('', include("hosthub.urls")),
+    path("staff/", include("staff.urls")),
   
 ]

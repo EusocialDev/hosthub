@@ -1,0 +1,111 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workers</title>
+    <link rel="stylesheet" href="{% static 'staff/staff.css' %}">
+</head>
+<body>
+    <header class="staff-header">
+        <div class="staff-header-left">
+            <a href="javascript:history.back()" class="staff-back-button" aria-label="Go back">←</a>
+        </div>
+
+        <h1 class="staff-header-title">Workers</h1>
+
+        <div class="staff-header-actions">
+            <a href="{% url 'staff:worker_create' %}" class="staff-header-btn staff-header-btn-primary">
+                Create worker
+            </a>
+        </div>
+    </header>
+
+    <main class="staff-page-shell">
+        {% if messages %}
+            <div class="staff-messages">
+                {% for message in messages %}
+                    <div class="staff-alert {{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <section class="staff-card">
+            <div class="staff-card-header">
+                <div>
+                    <h2 class="staff-card-title">Team members</h2>
+                    <p class="staff-card-subtitle">
+                        Manage worker roles, assigned locations, and account status.
+                    </p>
+                </div>
+            </div>
+
+            <div class="staff-table-wrap">
+                <table class="staff-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Role</th>
+                            <th>Locations</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for access in workers %}
+                            <tr>
+                                <td>
+                                    <div class="staff-name">
+                                        {% if access.user.profile.display_name %}
+                                            {{ access.user.profile.display_name }}
+                                        {% else %}
+                                            {{ access.user.first_name|default:access.user.username }}
+                                        {% endif %}
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <span class="staff-role-badge">
+                                        {{ access.get_role_display }}
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <div class="staff-chip-list">
+                                        {% for location in access.locations.all %}
+                                            <span class="staff-chip">{{ location.name }}</span>
+                                        {% empty %}
+                                            <span class="staff-chip staff-chip-muted">—</span>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+
+                                <td>
+                                    {% if access.is_active %}
+                                        <span class="staff-status-badge active">Active</span>
+                                    {% else %}
+                                        <span class="staff-status-badge inactive">Inactive</span>
+                                    {% endif %}
+                                </td>
+
+                                <td class="staff-actions-cell">
+                                    <a href="{% url 'staff:worker_edit' access.id %}" class="staff-inline-btn">
+                                        Edit
+                                    </a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5">
+                                    <div class="staff-empty-state">No workers found.</div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
