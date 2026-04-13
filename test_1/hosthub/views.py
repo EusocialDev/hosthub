@@ -152,6 +152,14 @@ def hosthub_view(request):
     if access and access.is_active:
         has_multiple_locations = access.locations.count() > 1
 
+    show_manager_button = (
+        access is not None
+        and access.is_active
+        and access.role in ["manager", "owner"]
+    )
+
+
+
     # Computing counts for the headers (using base queryset with date filter only)
     base_qs = accessible_calls_for_user(request.user)
     base_qs = filter_by_date(base_qs, date_filter, today, custom_date)
@@ -171,6 +179,7 @@ def hosthub_view(request):
         "has_multiple_locations": has_multiple_locations,
         "CARRYOUT_DASHBOARD_SLUG": settings.CARRYOUT_DASHBOARD_SLUG,
         "HOSTHUB_SSE_TOKEN": settings.HOSTHUB_SSE_TOKEN,
+        "show_manager_button": show_manager_button,
     }
 
     return render(request, "hosthub/index.html", context)
