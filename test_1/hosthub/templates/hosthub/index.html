@@ -272,6 +272,8 @@
                                 {{ call.user_name }} - {{ call.location.name }}
                             {% elif call.user_name %}
                                 {{ call.user_name }}
+                            {% elif has_multiple_locations %}
+                                Guest - {{ call.location.name}}
                             {% else %}
                                 Guest
                             {% endif %}
