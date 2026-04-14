@@ -1,7 +1,8 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import Http404
+from django.http import Http404, JsonResponse
+from django.views.decorators.http import require_POST
 
 from .forms import WorkerForm
 from staff.services.permissions import get_manager_access, can_manage_target
@@ -9,11 +10,22 @@ from staff.services.services import create_worker, update_worker
 
 from testendpoint.models import UserAccess
 
+from testendpoint.views import get_api_headers
+
+from testendpoint.models import PhoneNumber
+
+
+import requests
+import json
+
 @login_required
 def worker_list_view(request):
+    accessible_locations = get_manager_access(request.user)
     manager_access = get_manager_access(request.user)
     if not manager_access:
         raise Http404("You do not have permission to view this page.")
+    
+    accessible_locations = manager_access.locations.filter(is_active=True).order_by("name")
     
     if manager_access.role == "owner":
         workers = (
@@ -37,6 +49,7 @@ def worker_list_view(request):
     return render(request, "staff/worker_list.html", {
         "workers": workers,
         "manager_access": manager_access,
+        "accessible_locations": accessible_locations,
         })
 
 @login_required
@@ -120,6 +133,80 @@ def worker_edit_view(request, access_id):
     })
 
 
+@login_required
+@require_POST
+def set_store_status(request):
+    manager_access = get_manager_access(request.user)
 
+    if not manager_access:
+        return JsonResponse({"error": "You do not have permission to perform this action."}, status=403)
+    
+    try:
+        payload = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON payload."}, status=400)
+    
+    status_value = payload.get("status")
+    location_slug = payload.get("location_slug")
+
+    if status_value not in ["open", "closed"]:
+        return JsonResponse({"error": "Invalid status value."}, status=400)
+    
+    if not location_slug:
+        return JsonResponse({"error": "Location slug is required."}, status=400)
+    
+    accessible_locations = manager_access.locations.filter(
+        account=manager_access.account,
+        is_active=True,
+        )
+    
+    location = accessible_locations.filter(slug=location_slug).first()
+    phone_number = PhoneNumber.filter(account=manager_access.account, location=location).first()
+
+    if not location:
+        return JsonResponse({"error": "Location not found or you do not have access to it."}, status=404)
+    
+    phone_number = PhoneNumber.objects.filter(
+        account=manager_access.account, 
+        location=location,
+        is_active=True,
+        ).first()
+    
+    if not phone_number:
+        return JsonResponse({"error": "No active phone number found for this location."}, status=404)
+    
+    if status_value == "open":
+        pathway_id = 'f532840d-d856-45cb-9952-189746a9edc3'
+    else:
+        pathway_id = '0dd8cf10-d2a4-4c44-978f-523fd79453be'
+
+    headers = get_api_headers()
+    url = f'https://api.bland.ai/v1/inbound/{phone_number.number}'
+
+    try:
+        response = requests.post(url, headers=headers, json={
+            "pathway_id": pathway_id,
+        }, timeout=15,)
+
+    except requests.RequestException as e:
+        return JsonResponse(
+            {"error": "No active phone number found for this location."},
+            status=404
+        )
+    
+    if not response.ok:
+        return JsonResponse(
+            {
+                "error": "Bland API rejected the request.",
+                "details": response.text,
+            },
+            status=502
+        )
+
+    return JsonResponse({
+        "message": f"{location.name} was set to {status_value}.",
+        "location": location.slug,
+        "status": status_value,
+    })
 
 

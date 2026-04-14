@@ -478,6 +478,143 @@ a {
     background: rgba(0, 0, 0, 0.06);
 }
 
+/* Store status section */
+
+.store-status-area {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    max-width: 560px;
+    padding: 24px;
+}
+
+.store-status-picker,
+.store-status-single-location {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.staff-label {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--staff-text);
+    letter-spacing: -0.01em;
+}
+
+/* Better dropdown */
+
+.staff-select {
+    width: 100%;
+    min-height: 48px;
+    padding: 0.78rem 0.95rem;
+    border-radius: 14px;
+    border: 1px solid var(--staff-border-strong);
+    background: #fff;
+    color: var(--staff-text);
+    font-size: 0.96rem;
+    font-family: inherit;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    box-shadow: var(--staff-shadow-soft);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    cursor: pointer;
+}
+
+.staff-select:focus {
+    border-color: rgba(17, 24, 39, 0.28);
+    box-shadow: 0 0 0 4px rgba(17, 24, 39, 0.05);
+}
+
+.staff-select:hover {
+    background: #fcfcfc;
+}
+
+/* Optional wrapper so the select looks more polished */
+.store-status-picker {
+    position: relative;
+}
+
+.store-status-picker::after {
+    content: "⌄";
+    position: absolute;
+    right: 16px;
+    top: 42px;
+    transform: translateY(-50%);
+    font-size: 0.95rem;
+    color: var(--staff-muted);
+    pointer-events: none;
+}
+
+/* Better action buttons */
+
+.button-area {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.button-area button {
+    flex: 1 1 220px;
+    min-height: 46px;
+    border-radius: 14px;
+    border: 1px solid var(--staff-border-strong);
+    font-size: 0.94rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease, opacity 0.18s ease;
+}
+
+/* Open button */
+#open-btn {
+    background: var(--staff-primary);
+    color: #fff;
+    border-color: transparent;
+}
+
+#open-btn:hover {
+    background: var(--staff-primary-hover);
+}
+
+/* Close button */
+#close-btn {
+    background: #fff;
+    color: var(--staff-text);
+    border-color: var(--staff-border-strong);
+}
+
+#close-btn:hover {
+    background: #f9fafb;
+    border-color: rgba(15, 23, 42, 0.2);
+}
+
+.button-area button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Feedback message */
+
+.staff-status-feedback {
+    min-height: 22px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.4;
+    padding-top: 2px;
+}
+
+.staff-status-feedback.success {
+    color: var(--staff-success-text);
+}
+
+.staff-status-feedback.error {
+    color: var(--staff-danger-text);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .staff-header {
