@@ -3,6 +3,7 @@ from django.urls import path, include
 from testendpoint import views, views_live
 from .views_sse import sse_call_stream
 from .views_live import get_transcript_turns
+from staff.views import set_store_status
 
 app_name = 'testendpoint'
 
@@ -13,6 +14,7 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('api/calls/<str:call_id>/live-transcript/', views.live_transcript_view, name='live_transcript'),
     path('api/calls/live-data/', views.live_calls_data_view, name='live_calls_data'),
+    path('api/bland/set-store-status/', set_store_status, name='set_store_status'),
 
     path('webhooks/bland/calls/<str:token>/', views.bland_calls_webhook, name='bland_calls_webhook'),
 
