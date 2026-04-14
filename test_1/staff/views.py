@@ -27,7 +27,7 @@ def worker_list_view(request):
     else:
         workers = (
             UserAccess.objects
-            .filter(account=manager_access.account, locations__in=manager_access.locations.all())
+            .filter(account=manager_access.account, locations__in=manager_access.locations.all(), role='host')
             .select_related("user", "account")
             .prefetch_related("locations")
             .distinct()
