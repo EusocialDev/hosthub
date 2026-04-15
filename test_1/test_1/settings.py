@@ -149,6 +149,9 @@ STORAGES = {
             "region_name": "auto",
         },
     },
+    "staticfiles": {
+         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
 }
 
 # Password validation
