@@ -37,9 +37,11 @@ body.login-page {
 
 /* Location Logo */
 .login-logo {
-    width: 130px;
-    height: 100px;
+    width: clamp(140px, 22vw, 240px);
+    height: auto;
+    max-height: 140px;
     object-fit: contain;
+    margin-bottom: 18px;
 }
 
 .location-name {
@@ -55,8 +57,9 @@ body.login-page {
     font-size: 2rem;
     line-height: 1.15;
     font-weight: 700;
-    color: #ff9800;
+    color: rgba(255, 255, 255, 0.72);
     letter-spacing: -0.02em;
+    margin-bottom: 1.2rem;
 }
 
 /* Employee selection */
