@@ -9,7 +9,11 @@
 </head>
 <body class="login-page">
     <div class="login-container">
+    {%if location.logo%}
         <img class='login-logo' src='{{ location.logo.url }}' alt= '{{ location.name }} logo'>
+    {%else%}
+        <div class='login-logo-placeholder'>{{ location.name|slice:":1" }}</div>
+    {%endif%}
         <h1 class="login-title">Eusocial Voice Agent</h1>
         
 
