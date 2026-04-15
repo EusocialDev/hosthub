@@ -37,12 +37,9 @@ body.login-page {
 
 /* Location Logo */
 .login-logo {
-    width: 80px;
-    height: 80px;
-    margin: 0 auto 1.5rem;
-    border-radius: 12px;
+    width: 130px;
+    height: 100px;
     object-fit: contain;
-    background: #222;
 }
 
 .location-name {
