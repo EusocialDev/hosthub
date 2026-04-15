@@ -25,6 +25,16 @@ DISPOSITION_CHOICES = [
     ("other", "Other"),
 ]
 
+WEEKDAY_CHOICES = [
+    (0, "Monday"),
+    (1, "Tuesday"),
+    (2, "Wednesday"),
+    (3, "Thursday"),
+    (4, "Friday"),
+    (5, "Saturday"),
+    (6, "Sunday"),
+]
+
 class Call(models.Model):
     # Tenant Info
     account = models.ForeignKey(
@@ -281,10 +291,15 @@ class Location(models.Model):
     slug = models.SlugField(max_length=255, unique=True, null=True, blank=True)
     bland_pathway_id_open = models.CharField(max_length=255, blank=True, null=True)
     bland_pathway_id_closed = models.CharField(max_length=255, blank=True, null=True)
+    expected_pathway_id = models.CharField(max_length=255, blank=True, null=True)
 
     # timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    # Business hours
+    timezone = models.CharField(max_length=50, default="UTC")
+    scheduling_enabled = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.account.name} - {self.name}"
@@ -364,5 +379,28 @@ class PhoneNumber(models.Model):
 
     def __str__(self):
         return f"{self.number} -> {self.location.name} ({self.account.name})"
+    
+class BusinessHour(models.Model):
+    location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name='business_hours')
+    day_of_week = models.IntegerField(choices=WEEKDAY_CHOICES)
+    open_time = models.TimeField()
+    close_time = models.TimeField()
+    is_closed = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('location', 'day_of_week')
+        indexes = [
+            models.Index(fields=['location', 'day_of_week']),
+        ]
+
+    def __str__(self):
+        if self.is_closed:
+            return f"{self.location.name} - {self.get_day_of_week_display()}: Closed"
+        
+        return (
+            f"{self.location.name} - "
+            f"{self.get_day_of_week_display()}: "
+            f"{self.open_time} to {self.close_time}"
+            )
 
 
