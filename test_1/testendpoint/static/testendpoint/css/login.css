@@ -36,13 +36,20 @@ body.login-page {
 }
 
 /* Location Logo */
-.location-logo {
+.login-logo {
     width: 80px;
     height: 80px;
     margin: 0 auto 1.5rem;
     border-radius: 12px;
     object-fit: cover;
     background: #222;
+}
+
+.location-name {
+    margin: 0 0 1.5rem;
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.75);
 }
 
 /* Title */
