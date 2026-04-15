@@ -353,31 +353,30 @@ body.login-page {
 /* Tablets */
 @media (min-width: 800px) and (max-width: 1200px) {
     body.login-page {
-        padding: 32px;
+        padding: 5px;
     }
 
     .login-container {
         max-width: 500px;
-        padding: 24px 12px;
+
     }
 
     .login-logo {
         width: clamp(170px, 24vw, 230px);
         height: auto;
         max-height: 140px;
-        margin: 0 auto 1rem;
+        margin: 0 auto 0.5rem;
         display: block;
         object-fit: contain;
     }
 
     .login-title {
         font-size: 1.9rem;
-        margin-bottom: 1.25rem;
         color: rgba(255, 255, 255, 0.72);
     }
 
     .employee-picker {
-        margin-bottom: 1.4rem;
+        margin-bottom: 1.0rem;
     }
 
     .employee-select {
@@ -400,7 +399,7 @@ body.login-page {
     }
 
     .keypad {
-        grid-template-columns: repeat(3, minmax(70px, 84px));
+        grid-template-columns: repeat(3, minmax(60px, 74px));
         gap: 0.8rem;
     }
 
