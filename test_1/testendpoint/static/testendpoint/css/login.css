@@ -41,7 +41,7 @@ body.login-page {
     height: 80px;
     margin: 0 auto 1.5rem;
     border-radius: 12px;
-    object-fit: cover;
+    object-fit: contain;
     background: #222;
 }
 
