@@ -161,7 +161,6 @@ def set_store_status(request):
         )
     
     location = accessible_locations.filter(slug=location_slug).first()
-    phone_number = PhoneNumber.filter(account=manager_access.account, location=location).first()
 
     if not location:
         return JsonResponse({"error": "Location not found or you do not have access to it."}, status=404)

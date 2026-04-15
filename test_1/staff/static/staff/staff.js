@@ -107,7 +107,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (closeBtn) {
         closeBtn.addEventListener("click", function () {
             const selectedLocation = getSelectedLocationSlug();
-            setStoreStatus("close", selectedLocation);
+            setStoreStatus("closed", selectedLocation);
         });
     }
 });
