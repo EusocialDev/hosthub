@@ -365,7 +365,7 @@ body.login-page {
         width: clamp(170px, 24vw, 230px);
         height: auto;
         max-height: 140px;
-        margin-bottom: 0.5rem;
+        margin: 0 auto 0.5rem;
         display: block;
         object-fit: contain;
     }
@@ -376,6 +376,7 @@ body.login-page {
     }
 
     .employee-picker {
+        margin-top: 1.0rem;
         margin-bottom: 1.0rem;
         max-width: 300px;
         margin-left: auto;
