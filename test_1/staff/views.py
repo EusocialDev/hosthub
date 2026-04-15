@@ -175,9 +175,9 @@ def set_store_status(request):
         return JsonResponse({"error": "No active phone number found for this location."}, status=404)
     
     if status_value == "open":
-        pathway_id = 'f532840d-d856-45cb-9952-189746a9edc3'
+        pathway_id = location.bland_pathway_id_open
     else:
-        pathway_id = '0dd8cf10-d2a4-4c44-978f-523fd79453be'
+        pathway_id = location.bland_pathway_id_closed
 
     headers = get_api_headers()
     url = f'https://api.bland.ai/v1/inbound/{phone_number.number}'
