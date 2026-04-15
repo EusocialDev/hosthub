@@ -54,7 +54,7 @@ function setStoreStatus(status, selectedLocation) {
         return;
     }
 
-    const url = "test/api/bland/set-store-status/";
+    const url = "staff/api/bland/set-store-status/";
 
     setButtonsDisabled(true);
     showStoreStatusMessage("Updating store status...");
