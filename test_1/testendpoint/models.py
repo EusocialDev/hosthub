@@ -278,8 +278,8 @@ class Location(models.Model):
     name = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
     slug = models.SlugField(max_length=255, unique=True, null=True, blank=True)
-    pathway_id_open = models.CharField(max_length=255, blank=True, null=True)
-    pathway_id_closed = models.CharField(max_length=255, blank=True, null=True)
+    bland_pathway_id_open = models.CharField(max_length=255, blank=True, null=True)
+    bland_pathway_id_closed = models.CharField(max_length=255, blank=True, null=True)
 
     # timestamps
     created_at = models.DateTimeField(auto_now_add=True)
