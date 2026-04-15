@@ -137,6 +137,19 @@ else:
             "PORT": env("POSTGRES_PORT"),
         }
     }
+        
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "bucket_name": "restaurant-logos",
+            "endpoint_url": "https://56e4207f265f5b63efaa44914284046c.r2.cloudflarestorage.com",
+            "access_key": os.getenv("R2_ACCESS_KEY_ID"),
+            "secret_key": os.getenv("R2_SECRET_ACCESS_KEY"),
+            "region_name": "auto",
+        },
+    },
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -208,3 +221,6 @@ RESEND_API_KEY=os.environ.get("RESEND_API_KEY", default='')
 RECIPIENT_EMAIL=os.environ.get("RECIPIENT_EMAIL", default='')
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", default='')
  
+
+# r2 Media Storage
+MEDIA_URL = 'https://mediahosthub.160maincarryout.com/'

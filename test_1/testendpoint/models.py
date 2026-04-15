@@ -276,6 +276,7 @@ class Account(models.Model):
 class Location(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='locations')
     name = models.CharField(max_length=255)
+    logo = models.ImageField(upload_to='location_logos/', blank=True, null=True)
     is_active = models.BooleanField(default=True)
     slug = models.SlugField(max_length=255, unique=True, null=True, blank=True)
     bland_pathway_id_open = models.CharField(max_length=255, blank=True, null=True)
