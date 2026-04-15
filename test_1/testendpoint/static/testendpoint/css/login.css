@@ -400,12 +400,12 @@ body.login-page {
     }
 
     .keypad {
-        grid-template-columns: repeat(3, minmax(82px, 96px));
-        gap: 1rem;
+        grid-template-columns: repeat(3, minmax(70px, 84px));
+        gap: 0.8rem;
     }
 
     .keypad-btn {
-        font-size: 1.8rem;
+        font-size: 1.6rem;
         border-radius: 18px;
     }
 }
