@@ -35,6 +35,15 @@ WEEKDAY_CHOICES = [
     (6, "Sunday"),
 ]
 
+TIME_ZONE_CHOICES = [
+    ("UTC", "UTC"),
+    ("America/Detroit", "America/Detroit"),
+    ("America/Chicago", "America/Chicago"),
+    ("America/Denver", "America/Denver"),
+    ("America/Los_Angeles", "America/Los_Angeles"),
+    ("Pacific/Honolulu", "Pacific/Honolulu"),
+]
+
 class Call(models.Model):
     # Tenant Info
     account = models.ForeignKey(
@@ -298,8 +307,23 @@ class Location(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     # Business hours
-    timezone = models.CharField(max_length=50, default="UTC")
+    timezone = models.CharField(max_length=50, default="UTC", choices=TIME_ZONE_CHOICES)
     scheduling_enabled = models.BooleanField(default=False)
+
+    expected_status = models.CharField(
+        max_length=20,
+        choices=[
+            ("open", "Open"),
+            ("closed", "Closed"),
+        ],
+        blank=True,
+        null=True,
+    )
+
+    expected_pathway_id = models.CharField(max_length=255, blank=True, null=True)
+    next_transition_at = models.DateTimeField(blank=True, null=True)
+    last_schedule_error = models.TextField(blank=True, null=True)
+
 
     def __str__(self):
         return f"{self.account.name} - {self.name}"
