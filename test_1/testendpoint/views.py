@@ -596,7 +596,7 @@ def sync_location_bland_pathway_id(location):
         return
     
     location.last_schedule_error = ""
-    location.last_pathway_sync_at = timezone.now()
+    location.last_pathway_synced_at = timezone.now()
     location.last_synced_pathway_id = pathway_id
 
     location.save(update_fields=["last_schedule_error", "last_pathway_sync_at", "last_synced_pathway_id"])
