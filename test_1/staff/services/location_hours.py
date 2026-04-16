@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from django.utils import timezone as dj_timezone
 
-from testendpoint.views import sync_location_bland_pathway_id
+from testendpoint.views import ensure_location_bland_matches_expected
 
 # --------- Override Button logic  ---------
 
@@ -225,6 +225,6 @@ def process_due_location_schedules():
         refresh_location_schedule_state(location)
         location.refresh_from_db()
         print(f"[Scheduler] Syncing {location.slug} → {location.expected_status}", flush=True)
-        sync_location_bland_pathway_id(location)
+        ensure_location_bland_matches_expected(location)
 
     

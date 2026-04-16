@@ -554,22 +554,40 @@ def get_final_transcripts(request, call_id):
     })
 
 
-def sync_location_bland_pathway_id(location):
+def ensure_location_bland_matches_expected(location):
+    expected_pathway_id = location.expected_pathway_id
+
+    if not expected_pathway_id:
+        location.last_schedule_error = "No expected pathway set"
+        location.save(update_fields=["last_schedule_error"])
+        return
+
+    current_pathway_id, error = get_current_bland_pathway_for_location(location)
+
+    if error:
+        location.last_schedule_error = error
+        location.save(update_fields=["last_schedule_error"])
+        return
+
+    # Already aligned
+    if current_pathway_id == expected_pathway_id:
+        location.last_synced_status = location.expected_status
+        location.last_synced_pathway_id = expected_pathway_id
+        location.last_pathway_synced_at = timezone.now()
+
+        location.save(update_fields=[
+            "last_synced_status",
+            "last_synced_pathway_id",
+            "last_pathway_synced_at",
+        ])
+
+        return
+
     phone_number = location.phone_numbers.filter(is_active=True).first()
 
     if not phone_number:
         location.last_schedule_error = "No active phone number found for location"
         location.save(update_fields=["last_schedule_error"])
-        return
-    
-    pathway_id = location.expected_pathway_id
-
-    if not pathway_id:
-        location.last_schedule_error = "Location does not have an expected pathway set"
-        location.save(update_fields=["last_schedule_error"])
-        return
-    
-    if location.last_synced_pathway_id == pathway_id:
         return
     
     headers = get_api_headers()
@@ -580,7 +598,7 @@ def sync_location_bland_pathway_id(location):
             url,
             headers=headers,
             json={
-                "pathway_id": pathway_id,
+                "pathway_id": expected_pathway_id,
             },
             timeout=15,
         )
@@ -596,7 +614,44 @@ def sync_location_bland_pathway_id(location):
         return
     
     location.last_schedule_error = ""
+    location.last_synced_status = location.expected_status
+    location.last_synced_pathway_id = expected_pathway_id
     location.last_pathway_synced_at = timezone.now()
-    location.last_synced_pathway_id = pathway_id
 
-    location.save(update_fields=["last_schedule_error", "last_pathway_synced_at", "last_synced_pathway_id"])
+    location.save(update_fields=[
+        "last_schedule_error",
+        "last_synced_status",
+        "last_synced_pathway_id",
+        "last_pathway_synced_at",
+    ])
+
+def get_current_bland_pathway_for_location(location) -> str:
+    phone_number = location.phone_numbers.filter(is_active=True).first()
+
+    if not phone_number:
+        return None, 'no active phone number'
+    
+    headers = get_api_headers()
+
+    url = f"https://api.bland.ai/v1/inbound/{phone_number.number}"
+
+    try:
+        response = requests.get(url, headers=headers, timeout=15)
+    
+    except requests.RequestException as e:
+        return None, f"Error fetching inbound config from Bland: {e}"
+
+    if not response.ok:
+        return None, (
+            f"Bland rejected inbound fetch request "
+            f"({response.status_code}): {response.text}"
+        )
+
+    data = response.json()
+
+    current_pathway_id = data.get("pathway_id")
+
+    if not current_pathway_id:
+        return None, "Inbound config returned no pathway_id"
+
+    return current_pathway_id, None
