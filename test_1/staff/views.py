@@ -195,7 +195,10 @@ def set_store_status(request):
     refresh_location_schedule_state(location, now)
     location.refresh_from_db()
     
-    pathway_id = location.expected_pathway_id
+    if status_value == "open":
+        pathway_id = location.bland_pathway_id_open
+    else:
+        pathway_id = location.bland_pathway_id_closed
     if not pathway_id:
         return JsonResponse({"error": "Location does not have an expected pathway set."}, status=400)
     
