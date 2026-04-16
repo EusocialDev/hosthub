@@ -292,57 +292,75 @@ class Account(models.Model):
     def __str__(self):
         return self.name
 
+from django.conf import settings
+from django.db import models
+
+
 class Location(models.Model):
-    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='locations')
+    STATUS_CHOICES = [
+        ("open", "Open"),
+        ("closed", "Closed"),
+    ]
+
+    account = models.ForeignKey(
+        "Account",
+        on_delete=models.CASCADE,
+        related_name="locations",
+    )
     name = models.CharField(max_length=255)
-    logo = models.ImageField(upload_to='location_logos/', blank=True, null=True)
+    logo = models.ImageField(upload_to="location_logos/", blank=True, null=True)
     is_active = models.BooleanField(default=True)
-    slug = models.SlugField(max_length=255, unique=True, null=True, blank=True)
-    bland_pathway_id_open = models.CharField(max_length=255, blank=True, null=True)
-    bland_pathway_id_closed = models.CharField(max_length=255, blank=True, null=True)
-    expected_pathway_id = models.CharField(max_length=255, blank=True, null=True)
+    slug = models.SlugField(max_length=255, unique=True, blank=True, null=True)
 
-    # timestamps
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    # Business hours
+    # Configuration
     timezone = models.CharField(max_length=50, default="UTC", choices=TIME_ZONE_CHOICES)
     scheduling_enabled = models.BooleanField(default=False)
+    bland_pathway_id_open = models.CharField(max_length=255, blank=True, null=True)
+    bland_pathway_id_closed = models.CharField(max_length=255, blank=True, null=True)
 
+    # Computed desired state
     expected_status = models.CharField(
         max_length=20,
-        choices=[
-            ("open", "Open"),
-            ("closed", "Closed"),
-        ],
+        choices=STATUS_CHOICES,
         blank=True,
         null=True,
     )
-
     expected_pathway_id = models.CharField(max_length=255, blank=True, null=True)
     next_transition_at = models.DateTimeField(blank=True, null=True)
     last_schedule_evaluated_at = models.DateTimeField(blank=True, null=True)
     last_schedule_error = models.TextField(blank=True, null=True)
+
+    # Last successfully applied state in Bland
+    last_synced_status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        blank=True,
+        null=True,
+    )
+    last_synced_pathway_id = models.CharField(max_length=255, blank=True, null=True)
+    last_pathway_synced_at = models.DateTimeField(blank=True, null=True)
+    last_sync_error = models.TextField(blank=True, null=True)
+
+    # Manual override
     manual_override_status = models.CharField(
-    max_length=10,
-    choices=[
-        ("open", "Open"),
-        ("closed", "Closed"),
-    ],
-    blank=True,
-    null=True,
+        max_length=10,
+        choices=STATUS_CHOICES,
+        blank=True,
+        null=True,
     )
     manual_override_until = models.DateTimeField(blank=True, null=True)
     manual_override_set_at = models.DateTimeField(blank=True, null=True)
     manual_override_set_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
         related_name="manual_overrides",
+        blank=True,
+        null=True,
     )
 
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.account.name} - {self.name}"
