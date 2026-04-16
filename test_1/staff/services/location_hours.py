@@ -227,4 +227,49 @@ def process_due_location_schedules():
         print(f"[Scheduler] Syncing {location.slug} → {location.expected_status}", flush=True)
         ensure_location_bland_matches_expected(location)
 
+
+def reconcile_location_bland_state():
+    now = dj_timezone.now()
+
+    locations = Location.objects.filter(
+        is_active=True,
+        scheduling_enabled=True,
+    )
+
+    print(f"[Reconcile] Found {locations.count()} scheduled locations", flush=True)
+
+    for location in locations:
+        try:
+            print(f"[Reconcile] Checking {location.slug}", flush=True)
+
+            refresh_location_schedule_state(location)
+            location.refresh_from_db()
+
+            if not location.expected_pathway_id:
+                print(
+                    f"[Reconcile] Skipping {location.slug}: no expected pathway id",
+                    flush=True,
+                )
+                continue
+
+            print(
+                f"[Reconcile] Ensuring Bland matches {location.slug} → "
+                f"{location.expected_status}",
+                flush=True,
+            )
+
+            ensure_location_bland_matches_expected(location)
+
+        except Exception as e:
+            location.last_schedule_error = f"Reconciliation error: {e}"
+            location.last_schedule_evaluated_at = dj_timezone.now()
+            location.save(update_fields=[
+                "last_schedule_error",
+                "last_schedule_evaluated_at",
+            ])
+
+            print(
+                f"[Reconcile] Error while checking {location.slug}: {e}",
+                flush=True,
+            )
     
