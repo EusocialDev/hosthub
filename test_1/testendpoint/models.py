@@ -322,6 +322,7 @@ class Location(models.Model):
 
     expected_pathway_id = models.CharField(max_length=255, blank=True, null=True)
     next_transition_at = models.DateTimeField(blank=True, null=True)
+    last_schedule_evaluated_at = models.DateTimeField(blank=True, null=True)
     last_schedule_error = models.TextField(blank=True, null=True)
     manual_override_status = models.CharField(
     max_length=10,
