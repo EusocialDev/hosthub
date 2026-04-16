@@ -323,6 +323,24 @@ class Location(models.Model):
     expected_pathway_id = models.CharField(max_length=255, blank=True, null=True)
     next_transition_at = models.DateTimeField(blank=True, null=True)
     last_schedule_error = models.TextField(blank=True, null=True)
+    manual_override_status = models.CharField(
+    max_length=10,
+    choices=[
+        ("open", "Open"),
+        ("closed", "Closed"),
+    ],
+    blank=True,
+    null=True,
+    )
+    manual_override_until = models.DateTimeField(blank=True, null=True)
+    manual_override_set_at = models.DateTimeField(blank=True, null=True)
+    manual_override_set_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="manual_overrides",
+    )
 
 
     def __str__(self):

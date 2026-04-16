@@ -3,6 +3,40 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from django.utils import timezone as dj_timezone
 
+# --------- Override Button logic  ---------
+
+def clear_expired_manual_override(location, now=None):
+    now = now or get_location_local_now(location)
+
+    if (
+        location.manual_override_status
+        and location.manual_override_until
+        and location.manual_override_until <= now
+    ):
+        location.manual_override_status = None
+        location.manual_override_until = None
+        location.manual_override_set_at = None
+        location.manual_override_set_by = None
+        location.save(update_fields=[
+            "manual_override_status",
+            "manual_override_until",
+            "manual_override_set_at",
+            "manual_override_set_by",
+        ])
+
+def get_active_manual_override(location, now=None) -> str | None:
+    now = now or get_location_local_now(location)
+
+    if (
+        location.manual_override_status
+        and location.manual_override_until
+        and location.manual_override_until > now
+    ):
+        return location.manual_override_status
+
+    return None
+ # --------- End Clean Override Button logic ---------
+
 
 def get_location_local_now(location) -> datetime:
     try:
@@ -14,7 +48,20 @@ def get_location_local_now(location) -> datetime:
 def get_business_hour_for_day(location, weekday) -> BusinessHour | None:
     return location.business_hours.filter(day_of_week=weekday).first()
 
-def is_location_open_now(location, now=None) -> bool:
+def is_location_effectively_open(location, now=None) -> bool:
+    now = now or get_location_local_now(location)
+
+    clear_expired_manual_override(location, now)
+    override = get_active_manual_override(location, now)
+
+    if override == "open":
+        return True
+    
+    if override == "closed":
+        return False
+    return is_location_open_now_by_hours(location, now)
+
+def is_location_open_now_by_hours(location, now=None) -> bool:
     now = now or get_location_local_now(location)
     weekday = now.weekday()
 
@@ -47,6 +94,7 @@ def is_location_open_now(location, now=None) -> bool:
                 return True
     return False
 
+
 def get_desired_pathway(location, now=None) -> str | None:
     open_pathway_id = location.bland_pathway_id_open
     closed_pathway_id = location.bland_pathway_id_closed
@@ -54,7 +102,7 @@ def get_desired_pathway(location, now=None) -> str | None:
     if not location.scheduling_enabled:
         return None
 
-    if is_location_open_now(location, now):
+    if is_location_effectively_open(location, now):
         return open_pathway_id
     
     else:
@@ -62,25 +110,48 @@ def get_desired_pathway(location, now=None) -> str | None:
     
 def get_next_transition_datetime(location, now=None) -> datetime | None:
     now = now or get_location_local_now(location)
+    tz = now.tzinfo
+    weekday = now.weekday()
+    current_time = now.time()
 
-    for offset in range(0, 8):
-        day_dt = now + timedelta(days=offset)
-        weekday = day_dt.weekday()
-        bh = get_business_hour_for_day(location, weekday)
+    yesterday_weekday = (weekday - 1) % 7
+    yesterday = get_business_hour_for_day(location, yesterday_weekday)
+
+    if yesterday and not yesterday.is_closed and yesterday.open_time and yesterday.close_time:
+        if yesterday.close_time < yesterday.open_time:
+            spill_close_dt = datetime.combine(now.date(), yesterday.close_time, tzinfo=tz)
+            if current_time < yesterday.close_time:
+                return spill_close_dt
+    
+    today = get_business_hour_for_day(location, weekday)
+    if today and not today.is_closed and today.open_time and today.close_time:
+        open_dt = datetime.combine(now.date(), today.open_time, tzinfo=tz)
+
+        if today.open_time < today.close_time:
+            close_dt = datetime.combine(now.date(), today.close_time, tzinfo=tz)
+
+            if now < open_dt:
+                return open_dt
+            if open_dt <= now < close_dt:
+                return close_dt
+        
+        elif today.close_time < today.open_time:
+            close_dt = datetime.combine(now.date(), today.close_time, tzinfo=tz) + timedelta(days=1)
+
+            if current_time < today.open_time:
+                return open_dt
+            if current_time >= today.open_time:
+                return close_dt
+
+    for offset in range(1, 8):
+        future_day = now + timedelta(days=offset)
+        future_weekday = future_day.weekday()
+        bh = get_business_hour_for_day(location, future_weekday)
 
         if not bh or bh.is_closed or not bh.open_time or not bh.close_time:
             continue
-
-        open_dt = datetime.combine(day_dt.date(), bh.open_time, tzinfo=now.tzinfo)
-
-        if bh.open_time < bh.close_time:
-            close_dt = datetime.combine(day_dt.date(), bh.close_time, tzinfo=now.tzinfo)
-        else:
-            close_dt = datetime.combine(day_dt.date(), bh.close_time, tzinfo=now.tzinfo) + timedelta(days=1)
-
-        candidates = [dt for dt in (open_dt, close_dt) if dt > now]
-        if candidates:
-            return min(candidates)
+        
+        return datetime.combine(future_day.date(), bh.open_time, tzinfo=tz)
     return None
 
 def refresh_location_schedule_state(location, now=None) -> Location:
@@ -103,9 +174,15 @@ def refresh_location_schedule_state(location, now=None) -> Location:
         return location
     
     try:
-        is_open = is_location_open_now(location, now)
+        clear_expired_manual_override(location, now)
+
+        is_open = is_location_effectively_open(location, now)
         desired_pathway = get_desired_pathway(location, now)
-        next_transition = get_next_transition_datetime(location, now)
+        override = get_active_manual_override(location, now)
+        if override:
+            next_transition = location.manual_override_until
+        else:
+            next_transition = get_next_transition_datetime(location, now)
 
         location.expected_status = "open" if is_open else "closed"
         location.expected_pathway_id = desired_pathway
@@ -119,7 +196,6 @@ def refresh_location_schedule_state(location, now=None) -> Location:
             "next_transition_at",
             "last_schedule_evaluated_at",
             "last_schedule_error",
-            "updated_at",
         ])
     except Exception as e:
         location.last_schedule_evaluated_at = dj_timezone.now()
@@ -127,7 +203,6 @@ def refresh_location_schedule_state(location, now=None) -> Location:
         location.save(update_fields=[
             "last_schedule_evaluated_at",
             "last_schedule_error",
-            "updated_at",
         ])
 
     return location
@@ -143,4 +218,4 @@ def process_due_location_schedules():
     )
 
     for location in due_locations:
-        refresh_location_schedule_state(location, now)
+        refresh_location_schedule_state(location)
