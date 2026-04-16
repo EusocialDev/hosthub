@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from django.utils import timezone as dj_timezone
 
+from testendpoint.views import sync_location_bland_pathway_id
+
 # --------- Override Button logic  ---------
 
 def clear_expired_manual_override(location, now=None):
@@ -169,7 +171,6 @@ def refresh_location_schedule_state(location, now=None) -> Location:
             "next_transition_at",
             "last_schedule_evaluated_at",
             "last_schedule_error",
-            "updated_at",
         ])
         return location
     
@@ -219,3 +220,13 @@ def process_due_location_schedules():
 
     for location in due_locations:
         refresh_location_schedule_state(location)
+
+        location.refresh_from_db()
+
+        sync_location_bland_pathway_id(location)
+
+        print(
+        f"Syncing {location.slug} → {location.expected_status}"
+        )
+
+    

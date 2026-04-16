@@ -4,6 +4,7 @@ from django.db import transaction
 from staff.models import UserProfile 
 from staff.services.utils import generate_unique_username
 from testendpoint.models import UserAccess
+from django.http import Http404, JsonResponse
 
 @transaction.atomic
 def create_worker(*, manager_access, display_name, role, locations, pin, is_active):
@@ -55,4 +56,4 @@ def update_worker(*, target_access, display_name, role, locations, pin, is_activ
     return user, target_access
 
     
-
+    

@@ -202,7 +202,7 @@ def set_store_status(request):
     if not pathway_id:
         return JsonResponse({"error": "Location does not have an expected pathway set."}, status=400)
     
-    display_override_until = dj_timezone.localtime(override_until).strftime("%Y-%m-%d %H:%M:%S")
+    display_override_until = dj_timezone.localtime(override_until).strftime("%H:%M")
 
     headers = get_api_headers()
     url = f'https://api.bland.ai/v1/inbound/{phone_number.number}'
