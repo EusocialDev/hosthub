@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import Http404, JsonResponse
 from django.views.decorators.http import require_POST
+from django.utils import timezone as dj_timezone
 
 from .forms import WorkerForm
 from staff.services.permissions import get_manager_access, can_manage_target
@@ -13,6 +14,8 @@ from testendpoint.models import UserAccess
 from testendpoint.views import get_api_headers
 
 from testendpoint.models import PhoneNumber
+
+from staff.services.location_hours import get_location_local_now, get_next_transition_datetime, refresh_location_schedule_state
 
 
 import requests
@@ -161,23 +164,42 @@ def set_store_status(request):
         )
     
     location = accessible_locations.filter(slug=location_slug).first()
-
     if not location:
         return JsonResponse({"error": "Location not found or you do not have access to it."}, status=404)
+
+    now = get_location_local_now(location)
+    override_until = get_next_transition_datetime(location, now)
+    if override_until is None:
+        return JsonResponse({"error": "Unable to determine when the override should end."}, status=400)
     
     phone_number = PhoneNumber.objects.filter(
         account=manager_access.account, 
         location=location,
         is_active=True,
-        ).first()
-    
+    ).first()
+
     if not phone_number:
         return JsonResponse({"error": "No active phone number found for this location."}, status=404)
+
+    location.manual_override_status = status_value
+    location.manual_override_until = override_until
+    location.manual_override_set_at = dj_timezone.now()
+    location.manual_override_set_by = request.user
+    location.save(update_fields=[
+        "manual_override_status",
+        "manual_override_until",
+        "manual_override_set_at",
+        "manual_override_set_by",
+    ])
+
+    refresh_location_schedule_state(location, now)
+    location.refresh_from_db()
     
-    if status_value == "open":
-        pathway_id = location.bland_pathway_id_open
-    else:
-        pathway_id = location.bland_pathway_id_closed
+    pathway_id = location.expected_pathway_id
+    if not pathway_id:
+        return JsonResponse({"error": "Location does not have an expected pathway set."}, status=400)
+    
+    display_override_until = dj_timezone.localtime(override_until).strftime("%Y-%m-%d %H:%M:%S")
 
     headers = get_api_headers()
     url = f'https://api.bland.ai/v1/inbound/{phone_number.number}'
@@ -203,7 +225,7 @@ def set_store_status(request):
         )
 
     return JsonResponse({
-        "message": f"{location.name} was set to {status_value}.",
+        "message": f"{location.name} was set to {status_value} until {display_override_until}.",
         "location": location.slug,
         "status": status_value,
     })
