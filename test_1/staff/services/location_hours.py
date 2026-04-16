@@ -218,15 +218,13 @@ def process_due_location_schedules():
         next_transition_at__lte=now
     )
 
+    print(f"[Scheduler] Found {due_locations.count()} due locations", flush=True)
+
     for location in due_locations:
+        print(f"[Scheduler] Processing {location.slug}", flush=True)
         refresh_location_schedule_state(location)
-
         location.refresh_from_db()
-
+        print(f"[Scheduler] Syncing {location.slug} → {location.expected_status}", flush=True)
         sync_location_bland_pathway_id(location)
-
-        print(
-        f"Syncing {location.slug} → {location.expected_status}"
-        )
 
     
