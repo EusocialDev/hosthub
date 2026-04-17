@@ -42,30 +42,31 @@ body {
     align-items: center;
     justify-content: center;
 
-    padding: 10px 20px;
+    padding: 8px 18px;
 
     border-radius: 999px;
 
-    font-weight: 700;
-    font-size: 0.9rem;
+    font-weight: 600;
+    font-size: 0.85rem;
     letter-spacing: 0.02em;
 
     text-decoration: none;
 
     color: #fff;
-    background: #ff9800;
 
-    border: 1px solid rgba(255, 152, 0, 0.6);
+    background: rgba(255, 255, 255, 0.06);
+
+    border: 1px solid rgba(255, 255, 255, 0.12);
+
+    backdrop-filter: blur(6px);
 
     transition: all 0.18s ease;
 }
 
 .login-button:hover {
-    background: #ffa726;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 18px rgba(255, 152, 0, 0.25);
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.22);
 }
-
 .login-button:active {
     transform: translateY(0);
 }
