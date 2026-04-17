@@ -380,6 +380,43 @@ body {
 .check-icon {
     color: #28a745;
     font-size: 20px;
+
+    
+}
+
+.phone-search-form {
+    display: flex;
+    gap: 8px;
+    margin: 12px 0 16px;
+    align-items: center;
+}
+
+.phone-search-input {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid #d0d5dd;
+    border-radius: 10px;
+    font-size: 14px;
+    background: #fff;
+}
+
+.phone-search-btn,
+.phone-search-clear {
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid rgba(0,0,0,0.12);
+    background: rgba(0,0,0,0.03);
+    color: #111827;
+}
+
+.phone-search-state {
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: #667085;
 }
 
 @media (max-width: 992px) {
@@ -1445,6 +1482,8 @@ background: white;
 .mobile-shell.live-open .mobile-live-sheet {
     transform: translateY(0);
 }
+
+
 
 /* =========================
    MOBILE DETAILS VIEW

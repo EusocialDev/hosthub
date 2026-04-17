@@ -129,19 +129,25 @@ def hosthub_view(request):
     qs = accessible_calls_for_user(request.user)
     date_filter = request.GET.get("date")
     custom_date = request.GET.get("custom_date")
+    phone_search = request.GET.get("phone_search", '').strip()
+    host_status = request.GET.get("host_status", "needs_action")        
+    category = request.GET.get("category")
     # Get today's date in local timezone (will be used in filter_by_date, but filter_by_date uses localtime)
     today = timezone.localtime(timezone.now()).date()
 
-    # Get calls with host status = needs_action Only
-    host_status = request.GET.get("host_status", "needs_action")
-    qs = filter_by_status(qs, host_status)
-
-    # Get calls by category
-    category = request.GET.get("category")
-    qs = filter_by_category(qs, category)
-
-    # Filter by date
-    qs = filter_by_date(qs, date_filter, today, custom_date)
+    if phone_search:
+        normalized_phone = _normalize_phone_number(phone_search)
+        if normalized_phone:
+           qs = qs.filter(from_number=normalized_phone).order_by("-created_at")
+        else:
+           qs = qs.none()
+    else:
+        # Get calls with host status = needs_action Only
+        qs = filter_by_status(qs, host_status)
+        # Get calls by category
+        qs = filter_by_category(qs, category)
+        # Filter by date
+        qs = filter_by_date(qs, date_filter, today, custom_date)
 
     page_loaded_at = timezone.now()
 
@@ -180,6 +186,7 @@ def hosthub_view(request):
         "CARRYOUT_DASHBOARD_SLUG": settings.CARRYOUT_DASHBOARD_SLUG,
         "HOSTHUB_SSE_TOKEN": settings.HOSTHUB_SSE_TOKEN,
         "show_manager_button": show_manager_button,
+        "phone_search": phone_search,
     }
 
     return render(request, "hosthub/index.html", context)

@@ -217,6 +217,27 @@
         <div class="content-grid">
             <section class="message-list" id="callsList" aria-label="Messages List">
 
+            <form method="get" class="phone-search-form">
+              <input
+                  type="text"
+                  name="phone_search"
+                  value="{{ phone_search|default:'' }}"
+                  placeholder="Search by phone number"
+                  class="phone-search-input"
+              >
+              <button type="submit" class="phone-search-btn">Search</button>
+
+              {% if phone_search %}
+                  <a href="{% url 'hosthub:hosthub_dashboard' %}" class="phone-search-clear">Clear</a>
+              {% endif %}
+            </form>
+
+            {% if phone_search %}
+                <div class="phone-search-state">
+                    Showing all accessible calls for {{ phone_search }}
+                </div>
+            {% endif %}
+
                 <div class="sticky-overlay">
                     <div id="newCallsPill" class="new-calls-pill hidden" role="button" tabindex="0">
                       <span class="ptr-spinner always-on"></span>
