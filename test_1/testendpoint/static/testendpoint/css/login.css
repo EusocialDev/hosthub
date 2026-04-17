@@ -289,6 +289,15 @@ body.login-page {
         padding: 12px 0;
     }
 
+    .login-logo {
+        width: clamp(190px, 50vw, 260px);
+        height: auto;
+        max-height: 260px;
+        margin: 0 auto 0.5rem;
+        display: block;
+        object-fit: contain;
+    }
+
     .login-title {
         margin-bottom: 1rem;
         font-size: 1.8rem;
@@ -333,6 +342,16 @@ body.login-page {
         padding-bottom: 16px;
     }
 
+    .login-logo {
+        width: clamp(190px, 50vw, 260px);
+        height: auto;
+        max-height: 260px;
+        margin: 0 auto 0.5rem;
+        display: block;
+        object-fit: contain;
+    }
+
+
     .login-title {
         margin-bottom: 0.9rem;
     }
@@ -362,9 +381,9 @@ body.login-page {
     }
 
     .login-logo {
-        width: clamp(230px, 40vw, 340px);
+        width: clamp(170px, 24vw, 230px);
         height: auto;
-        max-height: 340px;
+        max-height: 140px;
         margin: 0 auto 0.5rem;
         display: block;
         object-fit: contain;
