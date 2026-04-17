@@ -54,7 +54,7 @@
                         {{ location.name }} currently set to:
                     </span>
 
-                    <span class="store-status-badge {% if location.is_store_open %}open{% else %}closed{% endif %}">
+                    <span id='store-status-badge' class="store-status-badge {% if location.is_store_open %}open{% else %}closed{% endif %}">
                         {% if location.is_store_open %}Open{% else %}Closed{% endif %}
                     </span>
                 </div>
