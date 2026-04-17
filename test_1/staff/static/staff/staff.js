@@ -140,12 +140,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const buttons = document.querySelectorAll('.toggle-worker-btn');
 
-    buttons.forEach(button =>{
-
+    buttons.forEach(button => {
         button.addEventListener('click', function () {
-
             const workerId = this.dataset.workerId;
-
+            const clickedButton = this;
+    
             fetch('toggle-worker-status/', {
                 method: "POST",
                 headers: {
@@ -153,16 +152,21 @@ document.addEventListener("DOMContentLoaded", function () {
                     "X-CSRFToken": getCookie("csrftoken")
                 },
                 body: JSON.stringify({
-                    worker_id:workerId
+                    worker_id: workerId
                 })
             })
-            .then(response => response.json())
-            .then(data => {
-
-                if (!data.success) {
+            .then(response => {
+                return response.json().then(data => ({
+                    ok: response.ok,
+                    data: data
+                }));
+            })
+            .then(({ ok, data }) => {
+                if (!ok) {
                     throw new Error(data.error || "Failed to update worker status.");
                 }
-                updateWorkerRowUI(this, data.is_active);
+    
+                updateWorkerRowUI(clickedButton, data.is_active);
             })
             .catch(err => {
                 alert(err.message);
