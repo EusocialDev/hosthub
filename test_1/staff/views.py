@@ -276,6 +276,9 @@ def toggle_worker_active_status(request):
         
         if not target_access.locations.filter(id__in=manager_access.locations.values_list('id', flat=True)).exists():
             return JsonResponse({'error': 'You do not have permission to change this worker'}, status=403)
+    
+    if target_access.user == request.user:
+        return JsonResponse({"error": "You cannot deactivate yourself."}, status=403)
         
     target_access.is_active = not target_access.is_active
     target_access.save(update_fields=['is_active'])
