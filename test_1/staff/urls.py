@@ -7,5 +7,6 @@ urlpatterns = [
     path('', views.worker_list_view, name='worker_list'),
     path("create/", views.worker_create_view, name="worker_create"),
     path("<int:access_id>/edit/", views.worker_edit_view, name="worker_edit"),
+    path('toggle-worker-status/', views.toggle_worker_active_status, name='toggle_worker_status'),
     path('api/bland/set-store-status/', views.set_store_status, name='set_store_status'),
 ]

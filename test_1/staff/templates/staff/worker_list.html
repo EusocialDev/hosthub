@@ -143,6 +143,17 @@
                                 </td>
 
                                 <td class="staff-actions-cell">
+                                    <button
+                                    class="staff-inline-btn toggle-worker-btn"
+                                    data-worker-id="{{ access.id }}"
+                                    data-current-status="{{ access.is_active|yesno:'active,inactive' }}"
+                                    >
+                                        {% if access.is_active %}
+                                            Deactivate
+                                        {% else %}
+                                            Activate
+                                        {% endif %}
+                                    </button>
                                     <a href="{% url 'staff:worker_edit' access.id %}" class="staff-inline-btn">
                                         Edit
                                     </a>

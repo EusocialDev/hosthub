@@ -244,3 +244,48 @@ def set_store_status(request):
     })
 
 
+def toggle_worker_active_status(request):
+    manager_access = get_manager_access(request.user)
+
+    if not manager_access:
+        return JsonResponse({"error": "You do not have permission for this action"}, status=403)
+    
+    try:
+        payload = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON payload"}, status=400)
+    
+    worker_id = payload.get('worker_id')
+    if not worker_id:
+        return JsonResponse({"error": "Worker ID is required"}, status=400)
+    
+    try:
+        target_access = (
+            UserAccess.objects
+            .select_related("user", "account")
+            .prefetch_related("locations")
+            .get(id=worker_id, account=manager_access.account)
+        )
+
+    except UserAccess.DoesNotExist:
+        return JsonResponse({'error': "Worker not found"}, status=404)
+    
+    if manager_access.role == "manager":
+        if target_access != 'host':
+            return JsonResponse({'error': 'You can only change host workers'}, status=403)
+        
+        if not target_access.locations.filter(id__in=manager_access.locations.values_list('id', flat=True)).exists():
+            return JsonResponse({'error': 'You do not have permission to change this worker'}, status=403)
+        
+    target_access.is_active = not target_access.is_active
+    target_access.save(update_fields=['is_active'])
+
+    return JsonResponse({
+        "Success": True,
+        "is_active": target_access.is_active,
+        "message": (
+            "worker reactivated successfully."
+            if target_access.is_active
+            else "Worker deactivated sucessfully."
+        )
+    })

@@ -108,9 +108,67 @@ function setStoreStatus(status, selectedLocation) {
     });
 }
 
+function updateWorkerRowUI(button, isActive) {
+
+    const row = button.closest("tr");
+
+    const badge = row.querySelector(".staff-status-badge");
+
+    badge.classList.remove("active", "inactive");
+
+    if (isActive) {
+
+        badge.classList.add("active");
+        badge.textContent = "Active";
+
+        button.textContent = "Deactivate";
+
+    } else {
+
+        badge.classList.add("inactive");
+        badge.textContent = "Inactive";
+
+        button.textContent = "Activate";
+
+    }
+
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     const openBtn = document.getElementById("open-btn");
     const closeBtn = document.getElementById("close-btn");
+
+    const buttons = document.querySelectorAll('.toggle-worker-btn');
+
+    buttons.forEach(button =>{
+
+        button.addEventListener('click', function () {
+
+            const workerId = this.dataset.workerId;
+
+            fetch('toggle-worker-status/', {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                },
+                body: JSON.stringify({
+                    worker_id:workerId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+
+                if (!data.sucess) {
+                    throw new Error(data.error || "Failed to update worker status.");
+                }
+                updateWorkerRowUI(this, data.is_active);
+            })
+            .catch(err => {
+                alert(err.message);
+            });
+        });
+    });
 
     if (openBtn) {
         openBtn.addEventListener("click", function () {
