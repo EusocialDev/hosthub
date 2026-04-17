@@ -293,7 +293,7 @@ body.login-page {
         width: clamp(190px, 50vw, 260px);
         height: auto;
         max-height: 260px;
-        margin: 0 auto 0.5rem;
+        margin-bottom: 3rem;
         display: block;
         object-fit: contain;
     }
