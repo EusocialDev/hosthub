@@ -364,6 +364,10 @@ class Location(models.Model):
 
     def __str__(self):
         return f"{self.account.name} - {self.name}"
+    
+    @property
+    def is_store_open(self):
+        return self.last_synced_pathway_id == self.bland_pathway_id_open
 
 class UserAccess(models.Model):
     ROLE_CHOICES = [

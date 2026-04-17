@@ -31,25 +31,28 @@
             </div>
         {% endif %}
 
-        <section class='staff-card'>
+        <section class="staff-card">
             <div class="staff-card-header">
-                <div>
-                    <h2 class="staff-card-title">Early Open and Closing</h2>
-                    <p class="staff-card-subtitle">
-                        Close or open restaurant early by pressing the buttons bellow.
-                    </p>
-                </div>
+                <h2 class="staff-card-title">Early Open and Closing</h2>
+                <p class="staff-card-subtitle">
+                    Close or open restaurant early by pressing the buttons below.
+                </p>
+
             </div>
 
             <div class="store-status-area">
+                <div class="store-status-row">
+                    <span class="store-status-text">
+                        {{ location.name }} currently set to:
+                    </span>
+
+                    <span class="store-status-badge {% if location.is_store_open %}open{% else %}closed{% endif %}">
+                        {% if location.is_store_open %}Open{% else %}Closed{% endif %}
+                    </span>
+                </div>
                 {% if accessible_locations|length == 1 %}
                     {% for location in accessible_locations %}
                         <div class="store-status-single-location">
-                            <label class="staff-label">Location</label>
-                            <div class="staff-chip-list">
-                                <span class="staff-chip">{{ location.name }}</span>
-                            </div>
-
                             <input type="hidden" id="selected-location-slug" value="{{ location.slug }}">
                         </div>
                     {% endfor %}

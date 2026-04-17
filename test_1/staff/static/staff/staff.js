@@ -47,6 +47,20 @@ function setButtonsDisabled(disabled) {
     if (closeBtn) closeBtn.disabled = disabled;
 }
 
+function updateStoreStatusBadge(status) {
+    const badge = document.getElementById("store-status-badge");
+    if (!badge) return;
+
+    badge.classList.remove("open", "closed");
+
+    if (status === "open") {
+        badge.classList.add("open");
+        badge.textContent = "OPEN";
+    } else {
+        badge.classList.add("closed");
+        badge.textContent = "CLOSED";
+    }
+}
 
 function setStoreStatus(status, selectedLocation) {
     if (!selectedLocation) {
@@ -82,6 +96,7 @@ function setStoreStatus(status, selectedLocation) {
         }
 
         showStoreStatusMessage(data.message || "Store status updated successfully.");
+        updateStoreStatusBadge(status);
         console.log("Store Status Updated:", data);
     })
     .catch((error) => {
