@@ -29,6 +29,14 @@ def worker_list_view(request):
         raise Http404("You do not have permission to view this page.")
     
     accessible_locations = manager_access.locations.filter(is_active=True).order_by("name")
+    location_id = request.session.get('active_location_id')
+
+    location = manager_access.locations.filter(
+        id = location_id,
+        is_active=True
+    ).first()
+
+    is_store_open = location.is_store_open if location else False
     
     if manager_access.role == "owner":
         workers = (
@@ -53,6 +61,8 @@ def worker_list_view(request):
         "workers": workers,
         "manager_access": manager_access,
         "accessible_locations": accessible_locations,
+        "location": location,
+        "is_store_open": is_store_open,
         })
 
 @login_required
@@ -161,7 +171,7 @@ def set_store_status(request):
     accessible_locations = manager_access.locations.filter(
         account=manager_access.account,
         is_active=True,
-        )
+    )
     
     location = accessible_locations.filter(slug=location_slug).first()
     if not location:
