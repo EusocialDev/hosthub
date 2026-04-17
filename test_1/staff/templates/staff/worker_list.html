@@ -16,8 +16,16 @@
         <h1 class="staff-header-title">Manager Area</h1>
 
         <div class="staff-header-actions">
-            <a href="{% url 'staff:worker_create' %}" class="staff-header-btn staff-header-btn-primary">
-                Create worker
+            <a href="https://160maincarryout.com/payment/dashboard/carryout_dashboard/{{ CARRYOUT_DASHBOARD_SLUG }}/"
+               class="header-btn home-btn"
+            >
+                Carryouts
+            </a>
+            
+            <a href="{% url 'testendpoint:logout' %}"
+            class="header-btn logout-btn"
+            >
+                Logout
             </a>
         </div>
     </header>
@@ -85,14 +93,21 @@
         <br><br>
 
         <section class="staff-card">
-            <div class="staff-card-header">
+            <div class="staff-team-header">
                 <div>
                     <h2 class="staff-card-title">Team members</h2>
                     <p class="staff-card-subtitle">
                         Manage worker roles, assigned locations, and account status.
                     </p>
                 </div>
+
+                <div class="staff-card-actions">
+                    <a href="{% url 'staff:worker_create' %}" class="staff-inline-btn staff-create-worker-btn">
+                        Create worker
+                    </a>
+                </div>
             </div>
+
 
             <div class="staff-table-wrap">
                 <table class="staff-table">
