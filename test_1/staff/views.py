@@ -207,8 +207,16 @@ def set_store_status(request):
     
     if status_value == "open":
         pathway_id = location.bland_pathway_id_open
+        location.last_synced_pathway_id = pathway_id
+        location.save(update_fields=[
+            "last_synced_pathway_id",
+        ])
     else:
         pathway_id = location.bland_pathway_id_closed
+        location.last_synced_pathway_id = pathway_id
+        location.save(update_fields=[
+            "last_synced_pathway_id",
+        ])
     if not pathway_id:
         return JsonResponse({"error": "Location does not have an expected pathway set."}, status=400)
     
