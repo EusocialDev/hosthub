@@ -11,6 +11,7 @@ from testendpoint.models import Call, PhoneNumber, CallSession
 from testendpoint.views import _normalize_phone_number
 from dateutil import parser as dateparser
 import requests
+import re
 
 from testendpoint.services.access import get_visible_calls_queryset
 
@@ -136,9 +137,9 @@ def hosthub_view(request):
     today = timezone.localtime(timezone.now()).date()
 
     if phone_search:
-        normalized_phone = _normalize_phone_number(phone_search)
-        if normalized_phone:
-           qs = qs.filter(from_number=normalized_phone).order_by("-created_at")
+        digits = re.sub(r"\D", "", phone_search)
+        if digits:
+           qs = qs.filter(from_number__icontains=digits).order_by("-created_at")
         else:
            qs = qs.none()
     else:
