@@ -159,7 +159,7 @@ document.addEventListener("DOMContentLoaded", function () {
             .then(response => response.json())
             .then(data => {
 
-                if (!data.sucess) {
+                if (!data.success) {
                     throw new Error(data.error || "Failed to update worker status.");
                 }
                 updateWorkerRowUI(this, data.is_active);
