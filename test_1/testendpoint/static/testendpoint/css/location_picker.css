@@ -175,7 +175,7 @@ body.location-picker-page {
     }
 
     .location-shell {
-        align-items: flex-start;
+        align-items: center;
         padding-top: 24px;
         padding-bottom: 24px;
     }
