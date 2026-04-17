@@ -31,6 +31,56 @@
             </div>
         {% endif %}
 
+        <section class='staff-card'>
+            <div class="staff-card-header">
+                <div>
+                    <h2 class="staff-card-title">Early Open and Closing</h2>
+                    <p class="staff-card-subtitle">
+                        Close or open restaurant early by pressing the buttons bellow.
+                    </p>
+                </div>
+            </div>
+
+            <div class="store-status-area">
+                {% if accessible_locations|length == 1 %}
+                    {% for location in accessible_locations %}
+                        <div class="store-status-single-location">
+                            <label class="staff-label">Location</label>
+                            <div class="staff-chip-list">
+                                <span class="staff-chip">{{ location.name }}</span>
+                            </div>
+
+                            <input type="hidden" id="selected-location-slug" value="{{ location.slug }}">
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="store-status-picker">
+                        <label for="location-select" class="staff-label">Select location</label>
+                        <select id="location-select" class="staff-select">
+                            <option value="">Choose a location</option>
+                            {% for location in accessible_locations %}
+                                <option value="{{ location.slug }}">{{ location.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                {% endif %}
+
+                <div class="button-area">
+                    <button id="open-btn" type="button" class="staff-header-btn staff-header-btn-secondary">
+                        Open restaurant
+                    </button>
+
+                    <button id="close-btn" type="button" class="staff-header-btn staff-header-btn-secondary">
+                        Close restaurant
+                    </button>
+                </div>
+
+                <div id="store-status-message" class="staff-status-feedback"></div>
+            </div>
+        </section>
+
+        <br><br>
+
         <section class="staff-card">
             <div class="staff-card-header">
                 <div>
@@ -105,56 +155,6 @@
                     </tbody>
                 </table>
             </div>
-        </section>
-        <br><br>
-        <section class='staff-card'>
-            <div class="staff-card-header">
-                <div>
-                    <h2 class="staff-card-title">Early Open and Closing</h2>
-                    <p class="staff-card-subtitle">
-                        Close or open restaurant early by pressing the buttons bellow.
-                    </p>
-                </div>
-            </div>
-
-            <div class="store-status-area">
-                {% if accessible_locations|length == 1 %}
-                    {% for location in accessible_locations %}
-                        <div class="store-status-single-location">
-                            <label class="staff-label">Location</label>
-                            <div class="staff-chip-list">
-                                <span class="staff-chip">{{ location.name }}</span>
-                            </div>
-
-                            <input type="hidden" id="selected-location-slug" value="{{ location.slug }}">
-                        </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="store-status-picker">
-                        <label for="location-select" class="staff-label">Select location</label>
-                        <select id="location-select" class="staff-select">
-                            <option value="">Choose a location</option>
-                            {% for location in accessible_locations %}
-                                <option value="{{ location.slug }}">{{ location.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                {% endif %}
-
-                <div class="button-area">
-                    <button id="open-btn" type="button" class="staff-header-btn staff-header-btn-secondary">
-                        Open restaurant
-                    </button>
-
-                    <button id="close-btn" type="button" class="staff-header-btn staff-header-btn-secondary">
-                        Close restaurant
-                    </button>
-                </div>
-
-                <div id="store-status-message" class="staff-status-feedback"></div>
-            </div>
-
-
         </section>
     </main>
     <script src="{% static 'staff/staff.js' %}"></script>
