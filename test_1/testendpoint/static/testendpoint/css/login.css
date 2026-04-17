@@ -362,7 +362,7 @@ body.login-page {
     }
 
     .login-logo {
-        width: clamp(170px, 24vw, 230px);
+        width: clamp(230px, 40vw, 340px);
         height: auto;
         max-height: 140px;
         margin: 0 auto 0.5rem;
