@@ -12,8 +12,26 @@ class WorkerForm(forms.Form):
         queryset=Location.objects.none(),
         required=False,
     )
-    pin = forms.CharField(max_length=4, required=True)
-    confirm_pin = forms.CharField(max_length=4, required=True)
+    pin = forms.CharField(
+        max_length=4, 
+        min_length=4,
+        required=True,
+        widget=forms.PasswordInput(attrs={
+            "max_length":"4",
+            "inputmode": "numeric",
+            "pattern": "[0-9]*",
+        })
+        )
+    confirm_pin = forms.CharField(
+        max_length=4, 
+        min_length=4,
+        required=True,
+        widget=forms.PasswordInput(attrs={
+            "max_length":"4",
+            "inputmode": "numeric",
+            "pattern": "[0-9]*",
+        })
+        )
     is_active = forms.BooleanField(required=False, initial=True)
 
     def __init__(self, *args, manager_access=None, editing=False, **kwargs):
