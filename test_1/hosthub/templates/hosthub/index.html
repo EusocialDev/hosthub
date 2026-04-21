@@ -440,13 +440,13 @@
             data-party-message="{{call.variables.party_message|default:''}}"
             data-leave-message="{{call.variables.user_message|default:''}}"
             data-handled-by="{{ call.handled_by|default:'' }}"
-            data-handled-by-display="{% if call.handled_by_user %}{{ call.get_handled_by_display }}{% endif %}"
+            data-handled-by-display="{% if call.handled_by_user %}{{ call.handled_by_user.first_name|default:call.handled_by_user.username }}{% endif %}"
             data-handled-at="{{ call.handled_at|date:'c' }}"
             data-disposition="{{ call.disposition|default:'' }}"
             data-disposition-display="{% if call.disposition %}{{ call.get_disposition_display }}{% endif %}"
             onclick="selectMobileCall(this)"
         >
-
+ 
             <div class="mobile-call-top">
                 <span class="mobile-call-category">
                     {{ call.get_display_category_display}}
