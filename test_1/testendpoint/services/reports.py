@@ -108,24 +108,10 @@ def _format_calls_for_display(calls, category_choices, disposition_choices):
         })
     return formatted
 
-
-# ============= Main function ===================
-def build_daily_call_report(report_date=None):
-    """
-    Function to orchestrate the creation of a Report based on the date of calls that were created, 
-    how they were handled, and who they were handled by. 
-    First implementation will be for a daily email, but same function can be later used for dashboards.
-    """
-    report_date, start_of_day, end_of_day = _get_report_window(report_date)
-
-    calls_qs = Call.objects.filter(
-        created_at__gte = start_of_day,
-        created_at__lt = end_of_day
-    )
-
+def _build_call_report_section(calls_qs):
     total_calls = calls_qs.count()
     resolved_calls = calls_qs.filter(host_status="resolved").count()
-    unresolved_calls = calls_qs.exclude(host_status='resolved').count()
+    unresolved_calls = calls_qs.exclude(host_status="resolved").count()
 
     raw_category_counts = list(
         calls_qs.values("display_category")
@@ -133,39 +119,39 @@ def build_daily_call_report(report_date=None):
         .order_by("-count")
     )
 
-    raw_disposition_counts = list (
+    raw_disposition_counts = list(
         calls_qs.exclude(disposition__isnull=True)
-        .exclude(disposition__exact='')
+        .exclude(disposition__exact="")
         .values("disposition")
-        .annotate(count=Count('id'))
-        .order_by('-count')
+        .annotate(count=Count("id"))
+        .order_by("-count")
     )
 
     raw_handler_counts = list(
         calls_qs.filter(host_status="resolved")
         .exclude(handled_by__isnull=True)
-        .exclude(handled_by__exact='')
+        .exclude(handled_by__exact="")
         .values("handled_by")
-        .annotate(count=Count('id'))
+        .annotate(count=Count("id"))
         .order_by("-count")
     )
 
     by_category = _format_choice_counts(
-        raw_counts = raw_category_counts,
+        raw_counts=raw_category_counts,
         field_name="display_category",
         choices=Call._meta.get_field("display_category").choices,
     )
 
     by_disposition = _format_choice_counts(
-        raw_counts= raw_disposition_counts,
-        field_name = "disposition",
+        raw_counts=raw_disposition_counts,
+        field_name="disposition",
         choices=Call._meta.get_field("disposition").choices,
     )
 
     by_handler = _format_handler_counts(raw_handler_counts)
 
     avg_duration_seconds = calls_qs.aggregate(
-        avg = Avg("duration_seconds")
+        avg=Avg("duration_seconds")
     )["avg"]
 
     resolution_qs = calls_qs.filter(
@@ -174,10 +160,9 @@ def build_daily_call_report(report_date=None):
         created_at__isnull=False,
     ).annotate(
         resolution_time=ExpressionWrapper(
-            F('handled_at') - F('created_at'),
+            F("handled_at") - F("created_at"),
             output_field=DurationField(),
         )
-
     )
 
     avg_resolution_time = resolution_qs.aggregate(
@@ -187,11 +172,8 @@ def build_daily_call_report(report_date=None):
     avg_resolution_display = None
 
     if avg_resolution_time:
-
         days = avg_resolution_time.days
         seconds = avg_resolution_time.seconds
-
-
         hours = seconds // 3600
         minutes = (seconds % 3600) // 60
 
@@ -203,7 +185,6 @@ def build_daily_call_report(report_date=None):
             avg_resolution_display = f"{minutes}m"
         else:
             avg_resolution_display = f"{seconds}s"
-        
 
     needs_action = _format_calls_for_display(
         list(
@@ -214,6 +195,7 @@ def build_daily_call_report(report_date=None):
                 "bland_call_id",
                 "user_name",
                 "from_number",
+                "location__name",
                 "display_category",
                 "summary",
                 "created_at",
@@ -221,15 +203,15 @@ def build_daily_call_report(report_date=None):
                 "notes",
             )
         ),
-    category_choices=Call._meta.get_field("display_category").choices,
-    disposition_choices=Call._meta.get_field("disposition").choices,
+        category_choices=Call._meta.get_field("display_category").choices,
+        disposition_choices=Call._meta.get_field("disposition").choices,
     )
 
     calls_by_hour = list(
         calls_qs.annotate(hour=TruncHour("created_at"))
-        .values('hour')
+        .values("hour")
         .annotate(count=Count("id"))
-        .order_by('hour')
+        .order_by("hour")
     )
 
     detailed_calls = _format_calls_for_display(
@@ -240,6 +222,7 @@ def build_daily_call_report(report_date=None):
                 "user_name",
                 "from_number",
                 "to_number",
+                "location__name",
                 "created_at",
                 "started_at",
                 "ended_at",
@@ -258,7 +241,7 @@ def build_daily_call_report(report_date=None):
     )
 
     handled_calls_by_person = _group_handled_calls_by_person(
-        calls = [
+        calls=[
             call for call in detailed_calls
             if call["handled_by"] and call["host_status"] == "resolved"
         ],
@@ -267,9 +250,6 @@ def build_daily_call_report(report_date=None):
     )
 
     return {
-        "report_date": report_date,
-        "start_of_day": start_of_day,
-        "end_of_day": end_of_day,
         "total_calls": total_calls,
         "resolved_calls": resolved_calls,
         "unresolved_calls": unresolved_calls,
@@ -282,7 +262,43 @@ def build_daily_call_report(report_date=None):
         "calls_by_hour": calls_by_hour,
         "needs_action": needs_action,
         "detailed_calls": detailed_calls,
-        "handled_calls_by_person":handled_calls_by_person,
+        "handled_calls_by_person": handled_calls_by_person,
     }
 
-    
+
+# ============= Main function ===================
+def build_daily_call_report(account, report_date=None):
+    """
+    Function to orchestrate the creation of a Report based on the date of calls that were created, 
+    how they were handled, and who they were handled by. 
+    First implementation will be for a daily email, but same function can be later used for dashboards.
+    """
+    report_date, start_of_day, end_of_day = _get_report_window(report_date)
+
+    base_qs = Call.objects.filter(
+        account = account,
+        created_at__gte = start_of_day,
+        created_at__lt = end_of_day
+    ).select_related("account", "location", "phone_number")
+
+    summary = _build_call_report_section(base_qs)
+
+    location_sections = []
+
+    locations = account.locations.filter(is_active=True).order_by("name")
+
+    for location in locations:
+        location_qs = base_qs.filter(location=location)
+
+        section = _build_call_report_section(location_qs)
+        section["location"] = location
+        location_sections.append(section)
+
+    return {
+        "account": account,
+        "report_date": report_date,
+        "start_of_day": start_of_day,
+        "end_of_day": end_of_day,
+        "summary": summary,
+        "locations": location_sections,
+    }

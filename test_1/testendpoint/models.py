@@ -284,7 +284,8 @@ class Account(models.Model):
 
     #For future integration with Eusocial
     external_platform_id = models.CharField(max_length=255, blank=True, null=True)
-
+    daily_report_email = models.EmailField(verbose_name="Report Email", blank=True, null=True)
+    daily_report_email_enabled = models.BooleanField(default=False)
     # timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
