@@ -166,6 +166,16 @@ class Call(models.Model):
         
         self.save()
 
+    def get_handled_by_display(self):
+        if not self.handled_by_user:
+            return ""
+
+        return (
+            self.handled_by_user.first_name
+            or self.handled_by_user.get_full_name()
+            or self.handled_by_user.username
+        )
+
     def __str__(self):
         return f"Call from {self.user_name} phone number: {self.from_number} about: ({self.display_category})"
 
