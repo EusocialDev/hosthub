@@ -11,7 +11,7 @@ class Command(BaseCommand):
 
         accounts = (
             Account.objects.
-            filter(is_active=True, daily_report_enabled=True)
+            filter(is_active=True, daily_report_email_enabled=True)
             .exclude(daily_report_email__isnull=True)
             .exclude(daily_report_email__exact="")
             .order_by("name")
