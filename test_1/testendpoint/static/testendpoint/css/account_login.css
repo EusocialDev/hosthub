@@ -1,0 +1,201 @@
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+}
+
+body.account-login-page {
+    min-height: 100vh;
+    min-height: 100svh;
+    background: #000;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.account-login-container {
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+    padding: 24px 20px;
+}
+
+.account-login-brand {
+    margin: 0 0 0.75rem;
+    font-size: 1.15rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.58);
+}
+
+.account-login-title {
+    margin: 0 0 0.65rem;
+    font-size: 1.95rem;
+    line-height: 1.15;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.92);
+}
+
+.account-login-subtitle {
+    margin: 0 0 1.7rem;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.98rem;
+    font-weight: 500;
+}
+
+.account-login-form {
+    display: grid;
+    gap: 0.9rem;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.account-login-field {
+    width: 100%;
+}
+
+.account-login-field input {
+    width: 100%;
+    min-height: 56px;
+    padding: 0 1rem;
+    border: 2px solid rgba(255, 255, 255, 0.18);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    outline: none;
+    transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.account-login-field input::placeholder {
+    color: rgba(255, 255, 255, 0.52);
+}
+
+.account-login-field input:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 152, 0, 0.72);
+}
+
+.account-login-field input:focus {
+    background: rgba(255, 255, 255, 0.13);
+    border-color: #ff9800;
+    box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.18);
+}
+
+.account-login-submit {
+    width: 100%;
+    min-height: 56px;
+    margin-top: 0.35rem;
+    border: 2px solid rgba(40, 167, 69, 0.6);
+    border-radius: 14px;
+    background: rgba(40, 167, 69, 0.18);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.account-login-submit:hover {
+    background: rgba(40, 167, 69, 0.28);
+    border-color: #28a745;
+    transform: translateY(-2px);
+}
+
+.account-login-submit:focus-visible {
+    outline: 3px solid rgba(40, 167, 69, 0.34);
+    outline-offset: 2px;
+}
+
+.login-alerts {
+    margin-top: 1.25rem;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.login-alert {
+    padding: 0.95rem 1rem;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.login-alert-error {
+    background: rgba(220, 53, 69, 0.18);
+    border: 1px solid rgba(220, 53, 69, 0.45);
+    color: #ffb3bd;
+}
+
+.login-alert-success {
+    background: rgba(40, 167, 69, 0.18);
+    border: 1px solid rgba(40, 167, 69, 0.45);
+    color: #b8f5c8;
+}
+
+@media (max-width: 799px) {
+    body.account-login-page {
+        padding: 16px;
+    }
+
+    .account-login-container {
+        padding: 12px 4px;
+    }
+
+    .account-login-title {
+        font-size: 1.75rem;
+    }
+
+    .account-login-subtitle {
+        margin-bottom: 1.45rem;
+    }
+
+    .account-login-field input,
+    .account-login-submit {
+        min-height: 54px;
+    }
+}
+
+@media (max-height: 700px) {
+    body.account-login-page {
+        align-items: flex-start;
+    }
+
+    .account-login-container {
+        padding-top: 16px;
+        padding-bottom: 16px;
+    }
+
+    .account-login-subtitle {
+        margin-bottom: 1rem;
+    }
+
+    .account-login-form {
+        gap: 0.75rem;
+    }
+}
+
+@media (min-width: 800px) and (max-width: 1200px) {
+    body.account-login-page {
+        padding: 5px;
+    }
+
+    .account-login-container {
+        max-width: 500px;
+    }
+
+    .account-login-form {
+        max-width: 360px;
+    }
+}

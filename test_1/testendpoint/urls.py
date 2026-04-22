@@ -8,12 +8,22 @@ from .views_live import get_transcript_turns
 app_name = 'testendpoint'
 
 urlpatterns = [
-    path("login/", views.account_picker_view, name="account_picker"),
-    path('login/<slug:account_slug>/',views.account_entry_view , name='account_entry'),
-    path('login/<slug:account_slug>/<slug:location_slug>/', views.login_view, name='location_login'),
-    path('logout/', views.logout_view, name='logout'),
-    path('api/calls/<str:call_id>/live-transcript/', views.live_transcript_view, name='live_transcript'),
-    path('api/calls/live-data/', views.live_calls_data_view, name='live_calls_data'),
+    path("login/", views.account_login_view, name="account_login"),
+    path(
+        "login/<slug:account_slug>/locations",
+        views.location_picker_view,
+        name='location_picker',
+    ),
+
+    path(
+        "login/<slug:account_slug>/<slug:location_slug>",
+        views.worker_login,
+        name='location_login'
+    ),
+    path("logout/", views.worker_logout_view, name='logout'),
+    path("account-logout/", views.account_logout_view, name="account_logout"),
+    path("api/calls/<str:call_id>/live-transcript/", views.live_transcript_view, name='live_transcript'),
+    path("api/calls/live-data/", views.live_calls_data_view, name='live_calls_data'),
 
     path('webhooks/bland/calls/<str:token>/', views.bland_calls_webhook, name='bland_calls_webhook'),
 

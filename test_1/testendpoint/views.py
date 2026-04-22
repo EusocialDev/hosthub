@@ -16,6 +16,8 @@ from django.http import Http404
 from testendpoint.utils.phone import _normalize_phone_number
 import requests
 import json
+from testendpoint.services.account_preauth import *
+from testendpoint.forms import AccountLoginForm
 
 
 
@@ -165,55 +167,91 @@ def live_calls_data_view(request):
         return JsonResponse({"error": f"Error fetching calls data: {e}"}, status=500)
     
 
-    
-def account_picker_view(request):
-    accounts = Account.objects.filter(is_active=True).order_by("name")
+def account_login_view(request):
+    if request.method == 'POST':
+        form = AccountLoginForm(request.POST)
 
-    count = accounts.count()
+        if form.is_valid():
+            username = form.cleaned_data["username"].strip()
+            password = form.cleaned_data['password']
 
-    if count == 0:
-        raise Http404("No active accounts found")
+            account = Account.objects.filter(
+                login_username=username,
+                is_active = True,
+            ).first()
 
-    if count == 1:
-        account = accounts.first()
-        return redirect("testendpoint:account_entry", account_slug=account.slug)
+            if not account or not account.check_login_password(password):
+                messages.error(request, "Invalid account username or password.")
+            else:
+                locations = account.locations.filter(is_active=True)
 
-    return render(request, "testendpoint/account_picker.html", {
-        "accounts": accounts,
+                if not locations.exists():
+                    messages.error(request, "No active locations are avaiable for this account")
+
+                else:
+                    set_account_preauth(
+                        request,
+                        account=account,
+                        locations=locations,
+                    )
+
+                    return redirect(
+                        "testendpoint:location_picker",
+                        account_slug=account.slug
+                    )
+    else:
+        form = AccountLoginForm()
+
+    return render(request, "testendpoint/account_login.html", {
+        "form": form,
     })
+    
 
-
-def account_entry_view(request, account_slug):
+    
+def location_picker_view(request, account_slug):
     account = get_object_or_404(Account, slug=account_slug, is_active=True)
-    locations = account.locations.filter(is_active=True).order_by("name")
 
-    count = locations.count()
+    if not has_account_preauth(request, account=account):
+        return redirect("testendpoint:account_login")
+    
+    locations = get_preauth_locations(request, account=account)
 
-    if count == 0:
-        raise Http404("No active location found for this account")
-
-    if count == 1:
+    if not locations.exists():
+        raise Http404("No active locations found for this account.")
+    
+    if locations.count() == 1:
         location = locations.first()
+        set_active_location(request, account=account, location=location)
+
         return redirect(
             "testendpoint:location_login",
             account_slug=account.slug,
-            location_slug=location.slug,
+            location_slug = location.slug,
         )
-
     return render(request, "testendpoint/location_picker.html", {
         "account": account,
         "locations": locations,
     })
 
+
+
+
 # Authentication Views
 @never_cache
-def login_view(request, account_slug, location_slug):
+def worker_login(request, account_slug, location_slug):
     account = get_object_or_404(Account, slug=account_slug, is_active=True)
-    
-    location = get_object_or_404(
-        account.locations.filter(is_active=True),
-        slug=location_slug,
+
+    location = get_preauth_location(
+        request,
+        account=account,
+        location_slug=location_slug
     )
+
+    if not location:
+        return redirect("testendpoint:account_login")
+    
+    
+    set_active_location(request, account=account, location=location)
 
     accesses = UserAccess.objects.filter(
         account=account,
@@ -237,12 +275,24 @@ def login_view(request, account_slug, location_slug):
             messages.error(request, "Invalid PIN.")
 
         else:
+            preauth_account_id = request.session.get("preauth_account_id")
+            preauth_location_ids = request.session.get("preauth_location_ids", [])
+            preauth_started_at = request.session.get("preauth_started_at")
+
+
             login(request, access.user)
-            request.session["active_account_id"] = account.id
-            request.session["active_location_id"] = location.id
+
+            restore_account_preauth(
+                request,
+                preauth_account_id=preauth_account_id or account.id,
+                preauth_location_ids=preauth_location_ids or [location.id],
+                preauth_started_at=preauth_started_at,
+            )
+
+            set_active_location(request, account=account, location=location)
 
             return redirect("hosthub:hosthub_dashboard")
-
+        
     return render(request, "testendpoint/login.html", {
         "account": account, 
         "location": location,
@@ -250,28 +300,72 @@ def login_view(request, account_slug, location_slug):
     })
 
 @never_cache
-def logout_view(request):
-    """Logout view."""
-    account_id = request.session.get("active_account_id")
-    location_id = request.session.get("active_location_id")
+@never_cache
+def worker_logout_view(request):
+    preauth_account_id = request.session.get("preauth_account_id")
+    preauth_location_ids = request.session.get("preauth_location_ids", [])
+    preauth_started_at = request.session.get("preauth_started_at")
 
-    if account_id and location_id:
-        try:
-            account = Account.objects.get(id=account_id, is_active=True)
-            location = Location.objects.get(id=location_id, account=account, is_active=True)
+    active_account_id = request.session.get("active_account_id")
+    active_location_id = request.session.get("active_location_id")
+
+    account_slug = None
+    location_slug = None
+
+    if active_account_id and active_location_id:
+        account = Account.objects.filter(
+            id=active_account_id,
+            is_active=True,
+        ).first()
+
+        location = None
+        if account:
+            location = Location.objects.filter(
+                id=active_location_id,
+                account=account,
+                is_active=True,
+            ).first()
+
+        if account and location:
             account_slug = account.slug
             location_slug = location.slug
-        except (Account.DoesNotExist, Location.DoesNotExist):
-            pass
+
     logout(request)
+
+    restore_account_preauth(
+        request,
+        preauth_account_id=preauth_account_id,
+        preauth_location_ids=preauth_location_ids,
+        preauth_started_at=preauth_started_at,
+    )
+
+    restore_active_location(
+        request,
+        active_account_id=active_account_id,
+        active_location_id=active_location_id,
+    )
+
     if account_slug and location_slug:
         return redirect(
             "testendpoint:location_login",
             account_slug=account_slug,
             location_slug=location_slug,
         )
-    
-    return redirect('testendpoint:hosthub_home')
+
+    if account_slug:
+        return redirect(
+            "testendpoint:location_picker",
+            account_slug=account_slug,
+        )
+
+    return redirect("testendpoint:account_login")
+
+@never_cache
+def account_logout_view(request):
+    logout(request)
+    return redirect("testendpoint:account_login")
+
+
 
 def get_display_category_from_tags(pathway_tags):
     """

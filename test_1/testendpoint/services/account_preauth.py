@@ -16,6 +16,22 @@ def set_account_preauth(request, *, account, locations):
     )
     request.session[PREAUTH_STARTED_AT] =timezone.now().isoformat()
 
+def restore_account_preauth(
+    request,
+    *,
+    preauth_account_id,
+    preauth_location_ids,
+    preauth_started_at,
+):
+    if preauth_account_id:
+        request.session[PREAUTH_ACCOUNT_ID] = preauth_account_id
+
+    if preauth_location_ids:
+        request.session[PREAUTH_LOCATION_IDS] = preauth_location_ids
+
+    if preauth_started_at:
+        request.session[PREAUTH_STARTED_AT] = preauth_started_at
+
 def clear_account_preauth(request):
     request.session.pop(PREAUTH_ACCOUNT_ID, None)
     request.session.pop(PREAUTH_LOCATION_IDS, None)
@@ -38,6 +54,13 @@ def get_preauth_location_ids(request):
 
 def has_account_preauth(request, *, account):
     return request.session.get(PREAUTH_ACCOUNT_ID) == account.id
+
+def restore_active_location(request, *, active_account_id, active_location_id):
+    if active_account_id:
+        request.session[ACTIVE_ACCOUNT_ID] = active_account_id
+
+    if active_location_id:
+        request.session[ACTIVE_LOCATION_ID] = active_location_id
 
 def get_preauth_locations(request, *, account):
     location_ids = get_preauth_location_ids(request)

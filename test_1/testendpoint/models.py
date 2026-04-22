@@ -306,6 +306,16 @@ class Account(models.Model):
 
     def __str__(self):
         return self.name
+    
+    def set_login_password(self, raw_password):
+        if not raw_password or len(raw_password) < 6:
+            raise ValueError("Password must be at least 6 characters.")
+        self.login_password_hash = make_password(raw_password)
+
+    def check_login_password(self, raw_password):
+        if not self.login_password_hash:
+            return False
+        return check_password(raw_password, self.login_password_hash)
 
 class Location(models.Model):
     STATUS_CHOICES = [

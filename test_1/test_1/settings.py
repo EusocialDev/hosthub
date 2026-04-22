@@ -20,6 +20,13 @@ import dj_database_url # type: ignore
 # Environment Distinction
 ENVIRONMENT = os.getenv("ENVIRONMENT", '')
 
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 365
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SESSION_COOKIE_HTTPONLY = True
+
+if ENVIRONMENT == 'production':
+     SESSION_COOKIE_SECURE = True
+     CSRF_COOKIE_SECURE = True
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
