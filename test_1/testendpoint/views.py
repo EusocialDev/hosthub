@@ -16,8 +16,6 @@ from django.http import Http404
 from testendpoint.utils.phone import _normalize_phone_number
 import requests
 import json
-import re
-
 
 
 
@@ -31,93 +29,6 @@ def get_api_headers():
         "authorization": getattr(settings, "BLAND_API_KEY", ""),
     }
 
-
-# Function to fetch call statistics from the Bland API Depricated
-# def fetch_call_stats()
-    """Fetch call statistics from Bland API."""
-    url = "https://api.bland.ai/v1/calls"  # API endpoint for calls
-    headers = get_api_headers()  # Authorization headers
-
-    try:
-        # Make a GET request to the API
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()  # Raise an error if request fails
-
-        # Extract calls data from JSON response
-        calls = response.json().get("calls", [])
-
-        # Normalize and compute durations (seconds)
-        def get_duration_seconds(call):
-            # Prefer corrected_duration if available
-            cd = call.get("corrected_duration")
-            if isinstance(cd, (int, float)):
-                try:
-                    return int(cd)
-                except Exception:
-                    pass
-            if isinstance(cd, str) and cd.isdigit():
-                return int(cd)
-
-
-            try:
-                started = call.get("started_at")
-                ended = call.get("end_at") or call.get("ended_at")
-                if started and ended:
-                    dt_start = dateparser.parse(started)
-                    dt_end = dateparser.parse(ended)
-                    return max(0, int((dt_end - dt_start).total_seconds()))
-            except Exception:
-                pass
-
-            # Fallback: call_length in minutes
-            cl = call.get("call_length")
-            if isinstance(cl, (int, float)):
-                return int(cl * 60)
-            try:
-                return int(float(cl) * 60)
-            except Exception:
-                return 0
-
-        # Count calls by status and abandoned by duration < 20s
-        def is_completed_status(s):
-            return s in ("complete", "completed")
-
-        abandoned_count = sum(1 for c in calls if get_duration_seconds(c) > 0 and get_duration_seconds(c) < 20)
-        completed_count = sum(1 for c in calls if is_completed_status(c.get("queue_status"))) - sum(
-            1 for c in calls if is_completed_status(c.get("queue_status")) and get_duration_seconds(c) > 0 and get_duration_seconds(c) < 20
-        )
-        in_progress_count = max(0, sum(1 for c in calls if c.get("queue_status") == "started") - 1)
-
-        # Annotate each call with a consistent computed status for templates and API
-        def compute_status(call):
-            duration = get_duration_seconds(call)
-            if duration > 0 and duration < 20:
-                return "abandoned"
-            qs = call.get("queue_status") or ""
-            if qs in ("complete", "completed"):
-                return "completed"
-            if qs == "started":
-                return "in-progress"
-            return "unknown"
-
-        for c in calls:
-            try:
-                c["computed_status"] = compute_status(c)
-                c["computed_duration"] = get_duration_seconds(c)
-
-                # extract variables 
-                vars_ = c.get("variables") or {}
-                c["user_name"] = vars_.get("user_name")
-            except Exception:
-                c["computed_status"] = c.get("queue_status") or "unknown"
-                c["computed_duration"] = 0
-            upsert_call_from_bland_json(c)
-        # Return full calls list and counts
-        return calls, completed_count, abandoned_count, in_progress_count
-    except requests.RequestException as e:
-        # Handle request errors gracefully
-        print(f"Error fetching calls: {e}")
-        return [], 0, 0, 0
 
 
 
@@ -545,7 +456,7 @@ def get_final_transcripts(request, call_id):
         location_id__in=allowed_location_ids,
         ).first()
     if not call:
-        return Http404("Call not found or access denied")
+        raise Http404("Call not found or access denied")
     
     return JsonResponse({
         "ok": True,

@@ -1,10 +1,23 @@
 from ..models import Call
 from datetime import datetime, time, timedelta
-from django.db.models import Avg, Count, F, ExpressionWrapper, DurationField
+from django.db.models import Avg, Count, F, ExpressionWrapper, DurationField, Q
 from django.utils import timezone
 from django.db.models.functions import TruncHour
 
 # ========== Handlers ===========================
+def _get_handled_by_display(call):
+    first_name = call.get("handled_by_user__first_name")
+    last_name = call.get("handled_by_user__last_name")
+    username = call.get("handled_by_user__username")
+    legacy_handler = call.get("handled_by")
+
+    full_name = " ".join(part for part in (first_name, last_name) if part)
+
+    return first_name or full_name or username or (
+        legacy_handler.title() if legacy_handler else None
+    )
+
+
 def _get_report_window(report_date=None):
     local_now = timezone.localtime()
     # for now if no date is passed to function, it will return report date as previous day
@@ -29,14 +42,28 @@ def _format_choice_counts(raw_counts, field_name, choices):
     ]
 
 def _format_handler_counts(raw_counts):
-    return [
-        {
-            "value": row['handled_by'],
-            "label": row["handled_by"].title(),
-            "count": row["count"],
-        } 
-        for row in raw_counts
-    ]
+    grouped_counts = {}
+
+    for row in raw_counts:
+        label = _get_handled_by_display(row)
+
+        if not label:
+            continue
+
+        if label not in grouped_counts:
+            grouped_counts[label] = {
+                "value": label,
+                "label": label,
+                "count": 0,
+            }
+
+        grouped_counts[label]["count"] += row["count"]
+
+    return sorted(
+        grouped_counts.values(),
+        key=lambda handler: handler["count"],
+        reverse=True,
+    )
 
 
 def _group_handled_calls_by_person(calls, category_choices, disposition_choices):
@@ -46,14 +73,14 @@ def _group_handled_calls_by_person(calls, category_choices, disposition_choices)
     grouped = {}
 
     for call in calls:
-        handler = call.get("handled_by")
+        handler = call.get("handled_by_label")
         if not handler:
             continue
         
         if handler not in grouped:
             grouped[handler] = {
                 "value": handler,
-                "label": handler.title(),
+                "label": handler,
                 "count": 0,
                 "calls": [],
             }
@@ -103,8 +130,7 @@ def _format_calls_for_display(calls, category_choices, disposition_choices):
                 call.get("disposition"),
                 call.get("disposition"),
             ) if call.get("disposition") else None,
-            "handled_by_label": call.get("handled_by").title()
-            if call.get("handled_by") else None,
+            "handled_by_label": _get_handled_by_display(call),
         })
     return formatted
 
@@ -129,9 +155,16 @@ def _build_call_report_section(calls_qs):
 
     raw_handler_counts = list(
         calls_qs.filter(host_status="resolved")
-        .exclude(handled_by__isnull=True)
-        .exclude(handled_by__exact="")
-        .values("handled_by")
+        .filter(
+            Q(handled_by_user__isnull=False)
+            | (Q(handled_by__isnull=False) & ~Q(handled_by__exact=""))
+        )
+        .values(
+            "handled_by_user__first_name",
+            "handled_by_user__last_name",
+            "handled_by_user__username",
+            "handled_by",
+        )
         .annotate(count=Count("id"))
         .order_by("-count")
     )
@@ -231,6 +264,9 @@ def _build_call_report_section(calls_qs):
                 "host_status",
                 "handled_at",
                 "handled_by",
+                "handled_by_user__first_name",
+                "handled_by_user__last_name",
+                "handled_by_user__username",
                 "disposition",
                 "summary",
                 "notes",
@@ -243,7 +279,7 @@ def _build_call_report_section(calls_qs):
     handled_calls_by_person = _group_handled_calls_by_person(
         calls=[
             call for call in detailed_calls
-            if call["handled_by"] and call["host_status"] == "resolved"
+            if call["handled_by_label"] and call["host_status"] == "resolved"
         ],
         category_choices=Call._meta.get_field("display_category").choices,
         disposition_choices=Call._meta.get_field("disposition").choices,
