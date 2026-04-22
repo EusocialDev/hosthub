@@ -5,6 +5,8 @@ from django.contrib.auth.hashers import make_password, check_password
 from django.core.exceptions import ValidationError
 from django.conf import settings
 
+
+
 # Disposition (how the call was handled) choices
 DISPOSITION_CHOICES = [
     ("reservation_placed", "Reservation Placed by Host"),
@@ -291,6 +293,8 @@ class Account(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255, unique=True)
     is_active = models.BooleanField(default=True)
+    login_username = models.CharField(max_length=255, unique=True, blank=True, null=True)
+    login_password_hash = models.CharField(max_length=128, blank=True, null=True)
 
     #For future integration with Eusocial
     external_platform_id = models.CharField(max_length=255, blank=True, null=True)
@@ -302,10 +306,6 @@ class Account(models.Model):
 
     def __str__(self):
         return self.name
-
-from django.conf import settings
-from django.db import models
-
 
 class Location(models.Model):
     STATUS_CHOICES = [
