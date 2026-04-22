@@ -296,11 +296,7 @@
                             <div class="stat-card">
                                 <div class="stat-label">Average Duration</div>
                                 <div class="stat-value">
-                                    {% if summary.avg_duration_seconds %}
-                                        {{ summary.avg_duration_seconds|floatformat:0 }}s
-                                    {% else %}
-                                        -
-                                    {% endif %}
+                                    {{ summary.avg_duration_display|default:'-' }}
                                 </div>
                             </div>
                         </td>
@@ -369,11 +365,7 @@
                                 <div class="stat-card">
                                     <div class="stat-label">Average Duration</div>
                                     <div class="stat-value">
-                                        {% if section.avg_duration_seconds %}
-                                            {{ section.avg_duration_seconds|floatformat:0 }}s
-                                        {% else %}
-                                            -
-                                        {% endif %}
+                                        {{ section.avg_duration_display|default:"-" }}
                                     </div>
                                 </div>
                             </td>

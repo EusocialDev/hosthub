@@ -187,6 +187,18 @@ def _build_call_report_section(calls_qs):
         avg=Avg("duration_seconds")
     )["avg"]
 
+    avg_duration_display = None
+
+    if avg_duration_seconds:
+        total_seconds = int(round(avg_duration_seconds))
+        minutes = total_seconds // 60
+        seconds = total_seconds % 60
+
+        if minutes > 0:
+            avg_duration_display = f'{minutes}m {seconds}s'
+        else:
+            avg_duration_display = f'{seconds}s'
+
     resolution_qs = calls_qs.filter(
         host_status="resolved",
         handled_at__isnull=False,
@@ -290,6 +302,7 @@ def _build_call_report_section(calls_qs):
         "resolved_calls": resolved_calls,
         "unresolved_calls": unresolved_calls,
         "avg_duration_seconds": avg_duration_seconds,
+        "avg_duration_display": avg_duration_display,
         "avg_resolution_time": avg_resolution_time,
         "avg_resolution_display": avg_resolution_display,
         "by_category": by_category,
