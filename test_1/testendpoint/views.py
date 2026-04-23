@@ -206,15 +206,29 @@ def account_login_view(request):
                 messages.error(request, "Invalid account username or password.")
             else:
                 locations = account.locations.filter(is_active=True)
+                location_count = locations.count()
 
-                if not locations.exists():
-                    messages.error(request, "No active locations are available for this account.")
+                if location_count == 0:
+                    messages.error(request, "No Active locations are avaiable for this account.")
 
                 else:
                     set_account_preauth(
                         request,
                         account=account,
                         locations=locations,
+                    )
+
+                    if location_count > 1:
+                        return redirect(
+                            "testendpoint:location_picker",
+                            account_slug=account.slug,
+                        )
+                    
+                    location = locations.first()
+                    set_active_location(
+                        request,
+                        account=account,
+                        location=location,
                     )
 
                     return redirect(
