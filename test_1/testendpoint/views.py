@@ -187,20 +187,19 @@ def account_login_view(request):
                 account_slug=preauth_account.slug,
                 location_slug=location.slug,
             )
-        
         else:
             clear_account_preauth(request)
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = AccountLoginForm(request.POST)
 
         if form.is_valid():
             username = form.cleaned_data["username"].strip()
-            password = form.cleaned_data['password']
+            password = form.cleaned_data["password"]
 
             account = Account.objects.filter(
                 login_username=username,
-                is_active = True,
+                is_active=True,
             ).first()
 
             if not account or not account.check_login_password(password):
@@ -210,8 +209,7 @@ def account_login_view(request):
                 location_count = locations.count()
 
                 if location_count == 0:
-                    messages.error(request, "No Active locations are avaiable for this account.")
-
+                    messages.error(request, "No active locations are available for this account.")
                 else:
                     set_account_preauth(
                         request,
@@ -224,7 +222,7 @@ def account_login_view(request):
                             "testendpoint:location_picker",
                             account_slug=account.slug,
                         )
-                    
+
                     location = locations.first()
                     set_active_location(
                         request,
@@ -233,7 +231,7 @@ def account_login_view(request):
                     )
 
                     return redirect(
-                        "testendpoint:location_picker",
+                        "testendpoint:location_login",
                         account_slug=account.slug,
                         location_slug=location.slug,
                     )
