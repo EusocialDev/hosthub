@@ -262,6 +262,11 @@ def worker_login(request, account_slug, location_slug):
 
     employees = [ua.user for ua in accesses]
 
+    location_count = Location.objects.filter(
+        account=account,
+        is_active=True,
+    ).count()
+
     
     if request.method == "POST":
         user_id = request.POST.get("user_id", "")
@@ -297,6 +302,7 @@ def worker_login(request, account_slug, location_slug):
         "account": account, 
         "location": location,
         "employees": employees,
+        "has_multiple_locations": location_count > 1,
     })
 
 
