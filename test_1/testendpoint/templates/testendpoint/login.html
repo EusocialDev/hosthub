@@ -8,6 +8,13 @@
     <link rel="stylesheet" href="{% static 'testendpoint/css/login.css' %}">
 </head>
 <body class="login-page">
+    <div class="worker-login-back">
+        <a href="{% url 'testendpoint:location_picker' account.slug %}"
+           class="staff-back-button"
+           aria-label="Back to locations">
+            ←
+        </a>
+    </div>
     <div class="login-container">
     {%if location.logo%}
         <img class='login-logo' src='{{ location.logo.url }}' alt= '{{ location.name }} logo'>

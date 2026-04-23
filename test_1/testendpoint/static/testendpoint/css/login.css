@@ -23,7 +23,39 @@ body.login-page {
     touch-action: manipulation;
     overscroll-behavior: none;
     padding: 24px;
+    position: relative;
 
+}
+
+.worker-login-back {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    z-index: 10;
+}
+
+.staff-back-button {
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+
+    font-size: 1rem;
+
+    text-decoration: none;  
+
+    transition: background 0.18s ease, transform 0.18s ease;
+}
+
+.staff-back-button:hover {
+    background: rgba(255,255,255,0.14);
+    transform: translateY(-1px);
+    text-decoration: none;  
 }
 
 /* Main container */
