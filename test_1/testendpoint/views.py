@@ -299,7 +299,7 @@ def worker_login(request, account_slug, location_slug):
         "employees": employees,
     })
 
-@never_cache
+
 @never_cache
 def worker_logout_view(request):
     preauth_account_id = request.session.get("preauth_account_id")
