@@ -9,35 +9,40 @@
     <link rel="stylesheet" href="{% static 'testendpoint/css/account_login.css' %}">
 </head>
 <body class="account-login-page">
-    <div class="account-login-container">
-        <div class="account-login-brand">HostHub</div>
-        <h1 class="account-login-title">Account Access</h1>
-        <p class="account-login-subtitle">Sign in to choose a location</p>
-
-        <form method="post" class="account-login-form" novalidate>
-            {% csrf_token %}
-
-            <div class="account-login-field">
-                {{ form.username }}
-            </div>
-            <div class="account-login-field">
-                {{ form.password }}
+    <main class="account-login-shell">
+        <section class="account-login-container">
+            <div class="account-login-header">
+                <div class="account-login-brand">HostHub</div>
+                <h1 class="account-login-title">Account Access</h1>
+                <p class="account-login-subtitle">Sign in to choose a location</p>
             </div>
 
-            <button type="submit" class="account-login-submit">
-                Continue
-            </button>
-        </form>
+            <form method="post" class="account-login-form" novalidate>
+                {% csrf_token %}
 
-        {% if messages %}
-            <div class="login-alerts">
-                {% for message in messages %}
-                    <div class="login-alert {% if message.tags == 'error' %}login-alert-error{% else %}login-alert-success{% endif %}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            </div>
+                <div class="account-login-field">
+                    {{ form.username }}
+                </div>
+
+                <div class="account-login-field">
+                    {{ form.password }}
+                </div>
+
+                <button type="submit" class="account-login-submit">
+                    Continue
+                </button>
+            </form>
+
+            {% if messages %}
+                <div class="login-alerts">
+                    {% for message in messages %}
+                        <div class="login-alert {% if message.tags == 'error' %}login-alert-error{% else %}login-alert-success{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
             {% endif %}
-    </div>
+        </section>
+    </main>
 </body>
 </html>

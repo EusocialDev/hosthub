@@ -144,6 +144,50 @@ body.location-picker-page {
     font-size: 0.95rem;
 }
 
+.location-account-logout {
+    margin-top: 10px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 100%;
+    min-height: 52px;
+
+    border-radius: 14px;
+
+    font-size: 0.95rem;
+    font-weight: 650;
+    letter-spacing: 0.02em;
+
+    text-decoration: none;
+
+    color: rgba(255, 255, 255, 0.75);
+    background: rgba(255, 255, 255, 0.04);
+
+    border: 1px solid rgba(255, 255, 255, 0.12);
+
+    transition:
+        background 0.18s ease,
+        border-color 0.18s ease,
+        transform 0.18s ease,
+        color 0.18s ease;
+}
+
+.location-account-logout:hover {
+    background: rgba(255, 82, 82, 0.08);
+    border-color: rgba(255, 82, 82, 0.45);
+    color: #ff5252;
+
+    transform: translateY(-1px);
+}
+
+.location-account-logout:active {
+    transform: translateY(0);
+}
+
+
+
 @media (max-width: 640px) {
     .location-shell {
         padding: 16px;
