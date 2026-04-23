@@ -185,12 +185,12 @@ def account_login_view(request):
             return redirect(
                 "testendpoint:location_login",
                 account_slug=preauth_account.slug,
-                location=location.slug,
+                location_slug=location.slug,
             )
         
         else:
             clear_account_preauth(request)
-            
+
     if request.method == 'POST':
         form = AccountLoginForm(request.POST)
 
@@ -234,7 +234,8 @@ def account_login_view(request):
 
                     return redirect(
                         "testendpoint:location_picker",
-                        account_slug=account.slug
+                        account_slug=account.slug,
+                        location_slug=location.slug,
                     )
     else:
         form = AccountLoginForm()
