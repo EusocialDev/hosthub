@@ -168,6 +168,28 @@ def live_calls_data_view(request):
     
 
 def account_login_view(request):
+    preauth_account = get_preauth_account(request)
+
+    if preauth_account:
+        preauth_locations = get_preauth_locations(request, account=preauth_account)
+        preauth_location_count = preauth_locations.count()
+
+        if preauth_location_count > 1:
+            return redirect(
+                "testendpoint:location_picker",
+                account_slug=preauth_account.slug,
+            )
+        elif preauth_location_count == 1:
+            location = preauth_locations.first()
+            set_active_location(request, account=preauth_account, location=location)
+            return redirect(
+                "testendpoint:worker_login",
+                account_slug=preauth_account.slug,
+                location_slug=location.slug
+            )
+        
+        else:
+            clear_account_preauth(request)
     if request.method == 'POST':
         form = AccountLoginForm(request.POST)
 
@@ -186,7 +208,7 @@ def account_login_view(request):
                 locations = account.locations.filter(is_active=True)
 
                 if not locations.exists():
-                    messages.error(request, "No active locations are avaiable for this account")
+                    messages.error(request, "No active locations are available for this account.")
 
                 else:
                     set_account_preauth(
