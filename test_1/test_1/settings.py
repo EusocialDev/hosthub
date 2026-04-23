@@ -107,7 +107,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'test_1.wsgi.application'
 
-LOGIN_URL = '/test/login/'
+LOGIN_URL = "testendpoint:account_login"
 
 
 # Database
