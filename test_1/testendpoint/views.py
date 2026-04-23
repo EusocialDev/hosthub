@@ -183,13 +183,14 @@ def account_login_view(request):
             location = preauth_locations.first()
             set_active_location(request, account=preauth_account, location=location)
             return redirect(
-                "testendpoint:worker_login",
+                "testendpoint:location_login",
                 account_slug=preauth_account.slug,
-                location_slug=location.slug
+                location=location.slug,
             )
         
         else:
             clear_account_preauth(request)
+            
     if request.method == 'POST':
         form = AccountLoginForm(request.POST)
 
