@@ -334,6 +334,12 @@ class Location(models.Model):
     slug = models.SlugField(max_length=255, unique=True, blank=True, null=True)
 
     transfer_number = models.CharField(max_length=255, blank=True, null=True, verbose_name="Transfer Phone Number")
+    transfer_target = models.CharField(
+    max_length=255,
+    blank=True,
+    null=True,
+    verbose_name="OnSip Target",
+)
 
     # Configuration
     timezone = models.CharField(max_length=50, default="UTC", choices=TIME_ZONE_CHOICES)
