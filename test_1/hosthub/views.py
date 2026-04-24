@@ -422,7 +422,7 @@ def bland_transfer_call(request):
         return JsonResponse({"ok": False, "error": "Missing call_id"}, status=400)
 
     access = getattr(request.user, "hosthub_access", None)
-    if not access:
+    if not access or not access.is_active:
         return JsonResponse({"ok": False, "error": "Unathorized"}, status=403)
     
     session = CallSession.objects.filter(call_id=call_id).first()
@@ -433,7 +433,7 @@ def bland_transfer_call(request):
     phone_number = PhoneNumber.objects.filter(
         number=session.to_number,
         account=access.account,
-        location_in=access.locations.filter(is_active=True),
+        location__in=access.locations.filter(is_active=True),
         is_active=True,
     ).select_related("account", "location").first()
 
@@ -444,7 +444,7 @@ def bland_transfer_call(request):
 
 
     if not transfer_number:
-        return JsonResponse({"ok": "False", "error": "No transfer number configured"}, status=400)
+        return JsonResponse({"ok": False, "error": "No transfer number configured"}, status=400)
 
     url = "https://api.bland.ai/v1/calls/active/transfer"
 
