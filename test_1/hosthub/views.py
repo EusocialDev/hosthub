@@ -415,7 +415,8 @@ def bland_live_calls(request):
 
 @csrf_exempt
 def bland_transfer_call(request):
-    call_id = request.POST.get("call_id")
+    call_id = request.POST.get("call_id") or request.POST.get("c_id")
+
 
     if not call_id:
         return JsonResponse({"ok": False, "error": "Missing call_id"}, status=400)
