@@ -420,11 +420,36 @@ def bland_transfer_call(request):
     if not call_id:
         return JsonResponse({"ok": False, "error": "Missing call_id"}, status=400)
 
+    access = getattr(request.user, "hosthub_access", None)
+    if not access:
+        return JsonResponse({"ok": False, "error": "Unathorized"}, status=403)
+    
+    session = CallSession.objects.filter(call_id=call_id).first()
+
+    if not session:
+        return JsonResponse({"ok": False, "error": "Call session not found"}, status=404)
+    
+    phone_number = PhoneNumber.objects.filter(
+        number=session.to_number,
+        account=access.account,
+        location_in=access.locations.filter(is_active=True),
+        is_active=True,
+    ).select_related("account", "location").first()
+
+    if not phone_number:
+        return JsonResponse({"ok": False, "error": "Call not allowed for this user"})
+    
+    transfer_number = phone_number.location.transfer_number
+
+
+    if not transfer_number:
+        return JsonResponse({"ok": "False", "error": "No transfer number configured"}, status=400)
+
     url = "https://api.bland.ai/v1/calls/active/transfer"
 
     payload = {
         "call_id": call_id,
-        "transfer_number": "+12487737976",  # <-- ALWAYS THIS NUMBER
+        "transfer_number": transfer_number
     }
 
     try:

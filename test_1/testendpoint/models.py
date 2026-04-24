@@ -333,6 +333,8 @@ class Location(models.Model):
     is_active = models.BooleanField(default=True)
     slug = models.SlugField(max_length=255, unique=True, blank=True, null=True)
 
+    transfer_number = models.CharField(max_length=20, blank=True, null=True, verbose_name="Transfer Phone Number")
+
     # Configuration
     timezone = models.CharField(max_length=50, default="UTC", choices=TIME_ZONE_CHOICES)
     scheduling_enabled = models.BooleanField(default=False)
