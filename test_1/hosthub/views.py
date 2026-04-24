@@ -438,13 +438,16 @@ def bland_transfer_call(request):
     ).select_related("account", "location").first()
 
     if not phone_number:
-        return JsonResponse({"ok": False, "error": "Call not allowed for this user"})
+        return JsonResponse({"ok": False, "error": "Call not allowed for this user"}, status=403)
     
-    transfer_number = phone_number.location.transfer_number
-
+    transfer_number = (
+        phone_number.location.transfer_target or phone_number.location.transfer_number
+    )
 
     if not transfer_number:
-        return JsonResponse({"ok": False, "error": "No transfer number configured"}, status=400)
+        return JsonResponse({"ok": False, "error":"no transfer target configured"}, status=400)
+
+
 
     url = "https://api.bland.ai/v1/calls/active/transfer"
 
