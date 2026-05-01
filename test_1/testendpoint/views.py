@@ -443,6 +443,37 @@ def get_display_category_from_tags(pathway_tags):
         return "private_events"
     return "other"
 
+def clean_bland_transcript(raw):
+    if not isinstance(raw, str):
+        return []
+    
+    cleaned = []
+    seen_text = set()
+
+    for item in raw:
+        text = (item.get('text') or '').strip()
+        role = item.get("user")
+
+        if not text:
+            continue
+        if "<Block interruptions enabled" in text:
+            continue
+
+        if role == 'agent':
+            continue
+        if text in seen_text:
+            continue 
+
+        seen_text.add(text)
+
+        cleaned.append({
+            "id":item.get('id'),
+            "text":text,
+            "user": "agent" if role == 'assistant' else role,
+            "created_at": item.get("created_at")
+        })
+
+    return cleaned
 
 def upsert_call_from_bland_json(call: dict):
     """
@@ -557,7 +588,7 @@ def upsert_call_from_bland_json(call: dict):
         "completed": bool(call.get("completed", False)),
         "summary": call.get("summary"),
         "full_transcript": call.get("concatenated_transcript"),
-        "transcripts": call.get("transcripts", []),
+        "transcripts": clean_bland_transcript(call.get('transcripts')),
         "pathway_tags": pathway_tags,
         "variables": call.get("variables"),
         "metadata": call.get("metadata"),
