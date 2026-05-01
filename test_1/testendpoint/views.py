@@ -444,7 +444,7 @@ def get_display_category_from_tags(pathway_tags):
     return "other"
 
 def clean_bland_transcript(raw):
-    if not isinstance(raw, str):
+    if not isinstance(raw, list):
         return []
     
     cleaned = []
