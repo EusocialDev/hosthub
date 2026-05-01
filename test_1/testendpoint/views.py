@@ -456,9 +456,6 @@ def clean_bland_transcript(raw):
 
         if not text:
             continue
-        if "<Block interruptions enabled" in text:
-            continue
-
         if role == 'agent':
             continue
         if text in seen_text:
