@@ -66,7 +66,11 @@ function renderFinalTranscriptItem(item) {
   if (!container) return;
 
   // Bland: item.user is "assistant" or "user"
-  const roleClass = item.user === "assistant" ? "agent-bubble" : "user-bubble";
+  const roleClass = 
+  item.user === "assistant" || item.user === "agent"
+    ? "agent-bubble"
+    : "user-bubble";
+
 
   const div = document.createElement("div");
   div.className = `transcript-row ${roleClass}`;
