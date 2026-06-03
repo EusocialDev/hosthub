@@ -10,6 +10,7 @@ from django.conf import settings
 # Disposition (how the call was handled) choices
 DISPOSITION_CHOICES = [
     ("reservation_placed", "Reservation Placed by Host"),
+    ("reservation_confirmed", "Reservation Confirmed with Caller"),
     ("reservation_link", "Reservation Placed via Link Sent to Caller"),
     ("reservation_update", "Reservation Successfully Updated by Host"),
     ("reservation_canceled", "Reservation Canceled by Host"),
