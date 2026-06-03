@@ -10,6 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from testendpoint.models import Call, PhoneNumber, CallSession
 from testendpoint.views import _normalize_phone_number
 from dateutil import parser as dateparser
+from hosthub.services.call_service import confirm_reservation_and_notify
 import requests
 import re
 
@@ -469,3 +470,22 @@ def bland_transfer_call(request):
         }, status=r.status_code)
 
     return JsonResponse({"ok": True})
+
+@login_required
+@require_http_methods(["POST"])
+def confirm_reservation(request,call_id):
+    call = get_object_or_404(
+        accessible_calls_for_user(request.user), 
+        id=call_id
+    )
+
+    success, error = confirm_reservation_and_notify(
+        call=call,
+        user= request.user,
+    )
+
+    if not success:
+        return JsonResponse({"ok": False, "error": error}, status=400)
+    
+    return JsonResponse({"ok": True, "message": "Reservation confirmed and caller notified"})
+

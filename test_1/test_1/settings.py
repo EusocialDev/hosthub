@@ -234,3 +234,9 @@ DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", default='')
 
 # r2 Media Storage
 MEDIA_URL = 'https://mediahosthub.160maincarryout.com/'
+
+# GHL SMS CONFIRMATION ON RESERVATION
+GHL_RESERVATION_CONFIRMATION_WEBHOOK_URL = env(
+    "GHL_RESERVATION_CONFIRMATION_WEBHOOK_URL",
+    default=""
+)

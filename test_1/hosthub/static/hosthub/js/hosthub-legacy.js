@@ -234,6 +234,26 @@ function selectCall(element) {
     dispositionDisplay: element.dataset.dispositionDisplay || "",
   };
 
+  const smsButtonContainer = document.getElementById("smsButtonContainer");
+  const smsButton = document.getElementById("smsButton");
+  if (
+    smsButtonContainer &&
+    smsButton &&
+    call.categoryValue === 'reservation' &&
+    call.hostStatus !== 'resolved'
+  ) {
+    smsButtonContainer.style.display = "block";
+    smsButton.dataset.callId = call.id;
+    smsButton.dataset.phone = call.fromNumber;
+    smsButton.dataset.guestName = call.userName;
+    smsButton.dataset.reservationDate = call.reservationDate;
+    smsButton.dataset.reservationTime = call.reservationTime;
+    smsButton.dataset.reservationGuests = call.reservationGuests;
+
+  } else if (smsButtonContainer) {
+    smsButtonContainer.style.display = "none";
+  }
+
   document.getElementById("panelTitle").textContent = call.category || "Call Details";
 
   const customerInfo = document.getElementById("customerInfo");
@@ -364,6 +384,52 @@ function selectCall(element) {
   }
 
   loadFinalTranscriptsForDashboard(call.id);
+}
+
+async function confirmReservationAndNotify() {
+  const button = document.getElementById("smsButton");
+  const callId = button.dataset.callId;
+  const phone = button.dataset.phone;
+  const guestName = button.dataset.guestName;
+  const reservationDate = button.dataset.reservationDate;
+  const reservationTime = button.dataset.reservationTime;
+  const reservationGuests = button.dataset.reservationGuests;
+
+  if (!callId) return;
+
+  try {
+    button.disabled = true;
+    button.textContent = "Sending SMS…";
+
+    const response = await fetch(
+      `/calls/${callId}/confirm-reservation/`,
+      {
+        method: "POST",
+        headers: {
+          'X-CSRFToken': getCSRFToken(),
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || "Failed to confirm reservation");
+    }
+
+    alert('Guest Notify Successfully.');
+  } catch (error) {
+    console.error(error);
+    alert('Failed to notify guest')
+  } finally {
+    button.disabled = false;
+    button.textContent = "Reservation all set, notify guest";
+  }
+
+
+
 }
 
 // ======= CSRF + Status Update ========

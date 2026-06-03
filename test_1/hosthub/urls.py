@@ -8,6 +8,7 @@ urlpatterns =[
     path('', views.landing_view, name='landing_page'),
     path("dashboard/", views.hosthub_view, name='hosthub_dashboard'),
     path("calls/<int:call_id>/mark-handled/", views.mark_call_handled, name='mark_call_handled'),
+    path('calls/<int:call_id>/confirm-reservation/', views.confirm_reservation, name='confirm_reservation'),
     path("api/check-new-calls/", views.check_new_calls, name='hosthub_check_new_calls'),
     path("api/new-calls-boolean/", views.new_calls_for_pill, name='hosthub_new_calls_for_pill'),
     path("api/bland/live-calls/", views.bland_live_calls, name='hosthub_bland_live_calls'),
