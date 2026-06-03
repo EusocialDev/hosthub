@@ -34,7 +34,7 @@ def confirm_reservation_and_notify(call ,user):
         return False, f"Failed to send reservation confirmation: {error}"
     
     call.mark_resolved(
-        handled_by=user,
+        handled_by_user=user,
         disposition='reservation_confirmed',
     )
 
