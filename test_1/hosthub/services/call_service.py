@@ -22,6 +22,7 @@ def confirm_reservation_and_notify(call ,user):
     payload = {
         "call_id": call.id,
         "guest_name": call.user_name or 'Guest',
+        "guest_phone": call.from_number,
         "reservation_date": reservation_date,
         "reservation_time": reservation_time,
         "reservation_guests": reservation_guests,
