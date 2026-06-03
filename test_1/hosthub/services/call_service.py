@@ -15,7 +15,7 @@ def confirm_reservation_and_notify(call ,user):
 
     reservation_date = variables.get('date')
     reservation_time = variables.get('time')
-    reservation_guests = variables.get('guests')
+    reservation_guests = variables.get('guest')
 
 
     # Send reservation confirmation to GHL
