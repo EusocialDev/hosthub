@@ -491,11 +491,57 @@ class BusinessHour(models.Model):
     def __str__(self):
         if self.is_closed:
             return f"{self.location.name} - {self.get_day_of_week_display()}: Closed"
-        
+
         return (
             f"{self.location.name} - "
             f"{self.get_day_of_week_display()}: "
             f"{self.open_time} to {self.close_time}"
             )
+
+
+class DateOverride(models.Model):
+    location = models.ForeignKey(
+        Location,
+        on_delete=models.CASCADE,
+        related_name="date_overrides",
+    )
+    name = models.CharField(max_length=255)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    is_closed = models.BooleanField(default=True)
+    open_time = models.TimeField(null=True, blank=True)
+    close_time = models.TimeField(null=True, blank=True)
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="date_overrides",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["start_date"]
+        indexes = [
+            models.Index(fields=["location", "start_date", "end_date"]),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.end_date and self.start_date and self.end_date < self.start_date:
+            raise ValidationError("end_date cannot be before start_date.")
+        if not self.is_closed:
+            if not self.open_time or not self.close_time:
+                raise ValidationError("open_time and close_time are required for special hours overrides.")
+
+    def __str__(self):
+        if self.is_closed:
+            return f"{self.location.name} - {self.name} ({self.start_date} to {self.end_date}): Closed"
+        return (
+            f"{self.location.name} - {self.name} "
+            f"({self.start_date} to {self.end_date}): "
+            f"{self.open_time} to {self.close_time}"
+        )
 
 

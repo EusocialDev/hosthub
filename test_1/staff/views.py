@@ -9,11 +9,11 @@ from .forms import WorkerForm
 from staff.services.permissions import get_manager_access, can_manage_target
 from staff.services.services import create_worker, update_worker
 
-from testendpoint.models import UserAccess
+from testendpoint.models import DateOverride, UserAccess, PhoneNumber
 
 from testendpoint.views import get_api_headers
 
-from testendpoint.models import PhoneNumber
+from datetime import date as date_type
 
 from staff.services.location_hours import get_location_local_now, get_next_transition_datetime, refresh_location_schedule_state
 
@@ -57,12 +57,22 @@ def worker_list_view(request):
             .order_by("user__first_name", "user__username")
         )
 
+    today = date_type.today()
+    location_overrides = [
+        {
+            "location": loc,
+            "overrides": loc.date_overrides.filter(end_date__gte=today).order_by("start_date"),
+        }
+        for loc in accessible_locations
+    ]
+
     return render(request, "staff/worker_list.html", {
         "workers": workers,
         "manager_access": manager_access,
         "accessible_locations": accessible_locations,
         "location": location,
         "is_store_open": is_store_open,
+        "location_overrides": location_overrides,
         })
 
 @login_required
@@ -300,3 +310,61 @@ def toggle_worker_active_status(request):
             else "Worker deactivated sucessfully."
         )
     })
+
+
+@login_required
+@require_POST
+def create_date_override(request):
+    manager_access = get_manager_access(request.user)
+    if not manager_access:
+        raise Http404
+
+    location_slug = request.POST.get("location_slug", "").strip()
+    name = request.POST.get("name", "").strip()
+    start_date = request.POST.get("start_date", "").strip()
+    end_date = request.POST.get("end_date", "").strip()
+    is_closed = "is_closed" in request.POST
+    open_time = request.POST.get("open_time") or None
+    close_time = request.POST.get("close_time") or None
+
+    location = manager_access.locations.filter(slug=location_slug, is_active=True).first()
+    if not location:
+        messages.error(request, "Location not found.")
+        return redirect("staff:worker_list")
+
+    try:
+        override = DateOverride(
+            location=location,
+            name=name,
+            start_date=start_date,
+            end_date=end_date,
+            is_closed=is_closed,
+            open_time=open_time if not is_closed else None,
+            close_time=close_time if not is_closed else None,
+            created_by=request.user,
+        )
+        override.full_clean()
+        override.save()
+        messages.success(request, f"'{name}' added.")
+    except Exception as e:
+        messages.error(request, f"Could not add override: {e}")
+
+    return redirect("staff:worker_list")
+
+
+@login_required
+@require_POST
+def delete_date_override(request, override_id):
+    manager_access = get_manager_access(request.user)
+    if not manager_access:
+        raise Http404
+
+    override = get_object_or_404(
+        DateOverride,
+        id=override_id,
+        location__in=manager_access.locations.all(),
+    )
+    name = override.name
+    override.delete()
+    messages.success(request, f"'{name}' removed.")
+    return redirect("staff:worker_list")

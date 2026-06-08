@@ -1,4 +1,4 @@
-from testendpoint.models import BusinessHour, Location
+from testendpoint.models import BusinessHour, DateOverride, Location
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from django.utils import timezone as dj_timezone
@@ -50,6 +50,13 @@ def get_location_local_now(location) -> datetime:
 def get_business_hour_for_day(location, weekday) -> BusinessHour | None:
     return location.business_hours.filter(day_of_week=weekday).first()
 
+def get_active_date_override(location, date) -> DateOverride | None:
+    return DateOverride.objects.filter(
+        location=location,
+        start_date__lte=date,
+        end_date__gte=date,
+    ).first()
+
 def is_location_effectively_open(location, now=None) -> bool:
     now = now or get_location_local_now(location)
 
@@ -65,35 +72,44 @@ def is_location_effectively_open(location, now=None) -> bool:
 
 def is_location_open_now_by_hours(location, now=None) -> bool:
     now = now or get_location_local_now(location)
+    today_date = now.date()
+    current_time = now.time()
     weekday = now.weekday()
 
-    current_time = now.time()
+    # DateOverride takes full precedence over BusinessHour
+    date_override = get_active_date_override(location, today_date)
+    if date_override:
+        if date_override.is_closed:
+            return False
+        if date_override.open_time and date_override.close_time:
+            open_time = date_override.open_time
+            close_time = date_override.close_time
+            if open_time < close_time:
+                return open_time <= current_time < close_time
+            return current_time >= open_time  # overnight special hours
+        return False
 
-
+    # No override — fall through to regular BusinessHour logic
     today = get_business_hour_for_day(location, weekday)
-    
     if today and not today.is_closed and today.open_time and today.close_time:
         open_time = today.open_time
         close_time = today.close_time
-
         if open_time < close_time:
             if open_time <= current_time < close_time:
                 return True
-        
         if close_time < open_time:
             if current_time >= open_time:
                 return True
+
     yesterday_weekday = (weekday - 1) % 7
     yesterday = get_business_hour_for_day(location, yesterday_weekday)
-
     if yesterday and not yesterday.is_closed and yesterday.open_time and yesterday.close_time:
         y_open = yesterday.open_time
         y_close = yesterday.close_time
-
-        # Yesterday spills into today
         if y_close < y_open:
             if current_time < y_close:
                 return True
+
     return False
 
 
@@ -115,31 +131,54 @@ def get_next_transition_datetime(location, now=None) -> datetime | None:
     tz = now.tzinfo
     weekday = now.weekday()
     current_time = now.time()
+    today_date = now.date()
+    midnight = datetime.min.time()
 
+    # If a DateOverride is active today, derive the transition from it
+    active_override = get_active_date_override(location, today_date)
+    if active_override:
+        if active_override.is_closed:
+            return datetime.combine(
+                active_override.end_date + timedelta(days=1), midnight, tzinfo=tz
+            )
+        open_time = active_override.open_time
+        close_time = active_override.close_time
+        if open_time and close_time:
+            open_dt = datetime.combine(today_date, open_time, tzinfo=tz)
+            if open_time < close_time:
+                close_dt = datetime.combine(today_date, close_time, tzinfo=tz)
+                if now < open_dt:
+                    return open_dt
+                if open_dt <= now < close_dt:
+                    return close_dt
+            else:  # overnight special hours
+                close_dt = datetime.combine(today_date + timedelta(days=1), close_time, tzinfo=tz)
+                if current_time < open_time:
+                    return open_dt
+                return close_dt
+        # After close or no times set — wake at midnight to re-evaluate next day
+        return datetime.combine(today_date + timedelta(days=1), midnight, tzinfo=tz)
+
+    # No active DateOverride today — regular BusinessHour logic
     yesterday_weekday = (weekday - 1) % 7
     yesterday = get_business_hour_for_day(location, yesterday_weekday)
-
     if yesterday and not yesterday.is_closed and yesterday.open_time and yesterday.close_time:
         if yesterday.close_time < yesterday.open_time:
             spill_close_dt = datetime.combine(now.date(), yesterday.close_time, tzinfo=tz)
             if current_time < yesterday.close_time:
                 return spill_close_dt
-    
+
     today = get_business_hour_for_day(location, weekday)
     if today and not today.is_closed and today.open_time and today.close_time:
         open_dt = datetime.combine(now.date(), today.open_time, tzinfo=tz)
-
         if today.open_time < today.close_time:
             close_dt = datetime.combine(now.date(), today.close_time, tzinfo=tz)
-
             if now < open_dt:
                 return open_dt
             if open_dt <= now < close_dt:
                 return close_dt
-        
         elif today.close_time < today.open_time:
             close_dt = datetime.combine(now.date(), today.close_time, tzinfo=tz) + timedelta(days=1)
-
             if current_time < today.open_time:
                 return open_dt
             if current_time >= today.open_time:
@@ -147,13 +186,22 @@ def get_next_transition_datetime(location, now=None) -> datetime | None:
 
     for offset in range(1, 8):
         future_day = now + timedelta(days=offset)
+        future_date = future_day.date()
         future_weekday = future_day.weekday()
-        bh = get_business_hour_for_day(location, future_weekday)
 
+        future_override = get_active_date_override(location, future_date)
+        if future_override:
+            if future_override.is_closed:
+                return datetime.combine(future_override.start_date, midnight, tzinfo=tz)
+            if future_override.open_time:
+                return datetime.combine(future_date, future_override.open_time, tzinfo=tz)
+            continue
+
+        bh = get_business_hour_for_day(location, future_weekday)
         if not bh or bh.is_closed or not bh.open_time or not bh.close_time:
             continue
-        
-        return datetime.combine(future_day.date(), bh.open_time, tzinfo=tz)
+        return datetime.combine(future_date, bh.open_time, tzinfo=tz)
+
     return None
 
 def refresh_location_schedule_state(location, now=None) -> Location:

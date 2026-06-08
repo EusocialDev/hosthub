@@ -9,4 +9,6 @@ urlpatterns = [
     path("<int:access_id>/edit/", views.worker_edit_view, name="worker_edit"),
     path('toggle-worker-status/', views.toggle_worker_active_status, name='toggle_worker_status'),
     path('api/bland/set-store-status/', views.set_store_status, name='set_store_status'),
+    path('date-override/create/', views.create_date_override, name='create_date_override'),
+    path('date-override/<int:override_id>/delete/', views.delete_date_override, name='delete_date_override'),
 ]

@@ -37,6 +37,9 @@ urlpatterns = [
 
     # Final transcript endpoint
     path("transcript/call/<str:call_id>/", views.get_final_transcripts, name="final_transcript_view"),
+
+    # Public hours endpoint for AI agent
+    path("api/hours/<slug:location_slug>/", views.location_hours, name="location_hours"),
 ]
 
  

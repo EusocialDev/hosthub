@@ -1,3 +1,10 @@
+function toggleOverrideHours(checkbox) {
+    const form = checkbox.closest('form');
+    const hoursDiv = form.querySelector('.staff-override-hours');
+    if (!hoursDiv) return;
+    hoursDiv.style.display = checkbox.checked ? 'none' : 'flex';
+}
+
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {

@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponseNotAllowed
+from django.views.decorators.http import require_GET
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, logout
@@ -9,7 +10,8 @@ from django.db.models import Q
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from dateutil import parser as dateparser
-from .models import Call, PhoneNumber, Account, UserAccess, Location
+from .models import BusinessHour, Call, DateOverride, PhoneNumber, Account, UserAccess, Location
+from datetime import date as date_type
 from testendpoint.services.bland_ingest import ingest_bland_webhook_event
 from django.views.decorators.cache import never_cache
 from django.http import Http404
@@ -730,3 +732,42 @@ def get_current_bland_pathway_for_location(location) -> str:
         return None, "Inbound config returned no pathway_id"
 
     return current_pathway_id, None
+
+DAY_NAMES = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+
+@require_GET
+def location_hours(request, location_slug):
+    location = get_object_or_404(Location, slug=location_slug, is_active=True)
+    today = date_type.today()
+
+    regular_hours = {}
+    for bh in location.business_hours.all().order_by("day_of_week"):
+        day_name = DAY_NAMES[bh.day_of_week]
+        if bh.is_closed or not bh.open_time or not bh.close_time:
+            regular_hours[day_name] = {"closed": True}
+        else:
+            regular_hours[day_name] = {
+                "closed": False,
+                "open": bh.open_time.strftime("%H:%M"),
+                "close": bh.close_time.strftime("%H:%M"),
+            }
+
+    date_overrides = []
+    for ov in DateOverride.objects.filter(location=location, end_date__gte=today).order_by("start_date"):
+        entry = {
+            "name": ov.name,
+            "start_date": ov.start_date.isoformat(),
+            "end_date": ov.end_date.isoformat(),
+            "closed": ov.is_closed,
+        }
+        if not ov.is_closed and ov.open_time and ov.close_time:
+            entry["open"] = ov.open_time.strftime("%H:%M")
+            entry["close"] = ov.close_time.strftime("%H:%M")
+        date_overrides.append(entry)
+
+    return JsonResponse({
+        "location": location.name,
+        "timezone": str(location.timezone),
+        "regular_hours": regular_hours,
+        "date_overrides": date_overrides,
+    })

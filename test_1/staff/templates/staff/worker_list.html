@@ -93,6 +93,85 @@
         <br><br>
 
         <section class="staff-card">
+            <div class="staff-card-header">
+                <h2 class="staff-card-title">Holiday & Special Hours</h2>
+                <p class="staff-card-subtitle">Set days the restaurant is closed or opens with different hours.</p>
+            </div>
+
+            {% for item in location_overrides %}
+            <div class="staff-overrides-group {% if not forloop.last %}staff-overrides-group-divider{% endif %}">
+
+                {% if location_overrides|length > 1 %}
+                <div class="staff-overrides-location-header">
+                    <h3 class="staff-overrides-location-name">{{ item.location.name }}</h3>
+                </div>
+                {% endif %}
+
+                {% if item.overrides %}
+                <div class="staff-table-wrap">
+                    <table class="staff-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Dates</th>
+                                <th>Hours</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for override in item.overrides %}
+                            <tr>
+                                <td><strong>{{ override.name }}</strong></td>
+                                <td>{{ override.start_date }} → {{ override.end_date }}</td>
+                                <td>
+                                    {% if override.is_closed %}
+                                        <span class="staff-status-badge inactive">Closed</span>
+                                    {% else %}
+                                        {{ override.open_time|time:"g:i A" }} – {{ override.close_time|time:"g:i A" }}
+                                    {% endif %}
+                                </td>
+                                <td class="staff-actions-cell">
+                                    <form method="post" action="{% url 'staff:delete_date_override' override.id %}" style="display:inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="staff-inline-btn staff-inline-btn-danger" onclick="return confirm('Remove {{ override.name }}?')">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="staff-overrides-empty">No upcoming overrides.</p>
+                {% endif %}
+
+                <form method="post" action="{% url 'staff:create_date_override' %}" class="staff-override-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="location_slug" value="{{ item.location.slug }}">
+                    <div class="staff-override-form-row">
+                        <input type="text" name="name" placeholder="Name (e.g. Christmas Day)" class="staff-override-input staff-override-name" required>
+                        <input type="date" name="start_date" class="staff-override-input" required>
+                        <input type="date" name="end_date" class="staff-override-input" required>
+                        <label class="staff-override-closed-toggle">
+                            <input type="checkbox" name="is_closed" checked onchange="toggleOverrideHours(this)">
+                            <span>Closed all day</span>
+                        </label>
+                        <div class="staff-override-hours" style="display:none;">
+                            <input type="time" name="open_time" class="staff-override-input">
+                            <span class="staff-override-to">to</span>
+                            <input type="time" name="close_time" class="staff-override-input">
+                        </div>
+                        <button type="submit" class="staff-inline-btn staff-create-worker-btn">Add</button>
+                    </div>
+                </form>
+
+            </div>
+            {% endfor %}
+        </section>
+
+        <br><br>
+
+        <section class="staff-card">
             <div class="staff-team-header">
                 <div>
                     <h2 class="staff-card-title">Team members</h2>
