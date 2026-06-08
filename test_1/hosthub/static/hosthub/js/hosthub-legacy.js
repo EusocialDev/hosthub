@@ -419,13 +419,14 @@ async function confirmReservationAndNotify() {
       throw new Error(data.error || "Failed to confirm reservation");
     }
 
-    alert('Guest Notify Successfully.');
+    alert('Guest Notified Successfully.');
+    updateCallStatus(callId, "resolve", "reservation_confirmed", true);
   } catch (error) {
     console.error(error);
     alert('Failed to notify guest')
   } finally {
     button.disabled = false;
-    button.textContent = "Reservation all set, notify guest";
+    button.textContent = "Notify Guest";
   }
 
 
