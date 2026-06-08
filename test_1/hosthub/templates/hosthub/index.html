@@ -8,6 +8,7 @@
     <title>Host Space</title>
     <link rel="stylesheet" href="{% static 'hosthub/css/styles.css' %}?v=12">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
     <meta name="csrf-token" content="{{ csrf_token }}">
 </head>
 <body>
@@ -149,7 +150,7 @@
           >
             All Time
           </a>
-          <!-- 📅 opens modal -->
+          <!-- opens modal -->
           <button
           type="button"
           class="date-pill icon {% if active_date_filter == 'custom' %}active{% endif %}"
@@ -339,7 +340,7 @@
 
                     <div class='sms-button-container' id='smsButtonContainer' style='dispaly: none;'>
                         <button id="smsButton" class="sms-button" type="button" onclick='confirmReservationAndNotify()'>
-                        Reservation all set, notify guest
+                        <i class="ti ti-send"></i> Send SMS Confirmation
                         </button>
                     </div>
                 </div>
