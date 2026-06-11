@@ -87,7 +87,12 @@ def bland_calls_webhook(request, token:str):
         if "message" in payload and payload.get("category") == "call":
             ingest_bland_webhook_event(payload)
         else:
-            upsert_call_from_bland_json(payload)
+            obj = upsert_call_from_bland_json(payload)
+            if obj:
+                try:
+                    maybe_send_recovery_sms(obj)
+                except Exception as e:
+                    print(f"Recovery SMS failed for call {obj.bland_call_id}: {e}")
 
     except Exception as e:
         return JsonResponse({"ok": False, "error": str(e)}, status=500)
@@ -473,6 +478,92 @@ def clean_bland_transcript(raw):
         })
 
     return cleaned
+
+# Carryout SMS recovery cart feature 
+
+def extract_cart_items(variables: dict) -> list:
+    cart = (variables or {}).get("order_cart")
+
+    if isinstance(cart, str):
+        try:
+            cart = json.loads(cart)
+        except (ValueError, TypeError):
+            return []
+
+    if not isinstance(cart, dict):
+        return []
+
+    items = cart.get("items")
+    if not isinstance(items, list):
+        return []
+
+    cleaned = []
+    for entry in items:
+        if not isinstance(entry, dict) or not entry.get("item"):
+            continue
+        cleaned.append({
+            "item": entry["item"],
+            "quantity": int(entry.get("quantity", 1) or 1),
+            "modifiers": entry.get("modifiers") or [],
+        })
+    return cleaned
+
+
+def create_cart_link(items: list) -> str:
+    resp = requests.post(
+        "https://160maincarryout.com/cart/import-link/",
+        headers={
+            "Authorization": f"Bearer {settings.CART_IMPORT_TOKEN}",
+            "Content-Type": "application/json",
+        },
+        json={"items": items},
+        timeout=10,
+    )
+    resp.raise_for_status()
+    return resp.json()["url"]   # confirmed response shape
+
+
+def trigger_recovery_sms(phone: str, cart_url: str, items: list):
+    summary = ", ".join(f"{i['quantity']}x {i['item']}" for i in items[:4])
+    if len(items) > 4:
+        summary += f" +{len(items) - 4} more"
+
+    resp = requests.post(
+        settings.RECOVERY_SMS_WEBHOOK_URL,
+        json={
+            "phone": phone,
+            "cart_url": cart_url,
+            "items_summary": summary,
+        },
+        timeout=10,
+    )
+    resp.raise_for_status()
+
+
+def maybe_send_recovery_sms(call_obj):
+    if call_obj.display_category != "carryout":
+        return
+    if call_obj.recovery_sms_sent_at is not None:
+        return
+
+    variables = call_obj.variables or {}
+    if variables.get("kitchen_print") in (True, "true", "True"):
+        return
+
+    items = extract_cart_items(variables)
+    if not items:
+        return
+
+    phone = _normalize_phone_number(call_obj.from_number)
+    if not phone:
+        return  # empty, "anonymous", "restricted", unparseable
+
+    cart_url = create_cart_link(items)
+    trigger_recovery_sms(phone, cart_url, items)
+
+    call_obj.recovery_sms_sent_at = timezone.now()
+    call_obj.save(update_fields=["recovery_sms_sent_at"])
+
 
 def upsert_call_from_bland_json(call: dict):
     """

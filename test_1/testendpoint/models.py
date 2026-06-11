@@ -158,6 +158,10 @@ class Call(models.Model):
     )
     disposition = models.CharField(max_length=50, choices=DISPOSITION_CHOICES, null=True, blank=True)
 
+    recovery_sms_sent_at = models.DateTimeField(null=True, blank=True, help_text="When a carryout cart recovery SMS was sent to the caller")
+
+
+
 
     def mark_resolved(self, handled_by_user=None, disposition=None):
         self.host_status = "resolved"
