@@ -220,8 +220,10 @@ BLAND_WEBHOOK_TOKEN = os.environ.get("BLAND_WEBHOOK_TOKEN", "")
 
 BLAND_ORG_ID = os.environ.get("BLAND_ORG_ID", "")
 
+
 # Endpoint secret to access Carryout Dashboard
 CARRYOUT_DASHBOARD_SLUG=os.environ.get("CARRYOUT_DASHBOARD_SLUG", "")
+CART_IMPORT_TOKEN=os.environ.get("CART_IMPORT_TOKEN", "")
 
 HOSTHUB_SSE_TOKEN = os.environ.get("HOSTHUB_SSE_TOKEN", default="")
 
