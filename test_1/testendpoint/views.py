@@ -80,8 +80,16 @@ def bland_calls_webhook(request, token:str):
     try:
         raw_body = request.body
         payload = json.loads(raw_body.decode("utf-8"))
-    except Exception:
-        return JsonResponse({"ok":False, "error": "Invalid JSON"}, status=400)
+    except Exception as e:
+        print("=== BLAND WEBHOOK JSON ERROR ===")
+        print("ERROR:", repr(e))
+        print("CONTENT TYPE:", request.headers.get("Content-Type"))
+        print("BODY SIZE:", len(raw_body) if 'raw_body' in locals() else 0)
+
+        return JsonResponse(
+        {"ok": False, "error": str(e)},
+            status=400,
+        )
     
     try:
         if "message" in payload and payload.get("category") == "call":
