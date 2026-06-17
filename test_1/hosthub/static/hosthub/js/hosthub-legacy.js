@@ -347,7 +347,10 @@ function selectCall(element) {
     }
 
     if (call.totalPrice) requestDetails.push({ label: "Total price", value: `$${call.totalPrice}` });
+
+    if (call.leaveMessage) requestDetails.push({ label: "User Message", value: call.leaveMessage });
   }
+
 
   if (call.categoryValue === "leave_message") {
     if (call.leaveMessage) requestDetails.push({ label: "User Message", value: call.leaveMessage});
