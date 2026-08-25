@@ -31,6 +31,9 @@ def get_api_headers():
 def landing_view(request):
     return render(request, "testendpoint/landing_hosthub.html")
 
+def docs_view(request):
+    return render(request, "hosthub/docs.html")
+
 
 # Order by newest first
 def accessible_calls_for_user(user):
@@ -488,4 +491,3 @@ def confirm_reservation(request,call_id):
         return JsonResponse({"ok": False, "error": error}, status=400)
     
     return JsonResponse({"ok": True, "message": "Reservation confirmed and caller notified"})
-

@@ -42,6 +42,7 @@
             {% if show_manager_button %}
               <a href="{% url 'staff:worker_list' %}" class="header-btn home-btn">Manager Area</a>
             {% endif %}
+            <a href="{% url 'hosthub:docs' %}" class="header-btn home-btn">Docs</a>
             <a href="https://160maincarryout.com/payment/dashboard/carryout_dashboard/{{ CARRYOUT_DASHBOARD_SLUG }}/"
                class="header-btn home-btn">Carryouts</a>
             <a href="{% url 'testendpoint:logout' %}"

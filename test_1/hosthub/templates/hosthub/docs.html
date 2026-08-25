@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HostHub Docs</title>
+    <style>
+        :root {
+            --bg: #f6f7f9;
+            --surface: #ffffff;
+            --ink: #17202a;
+            --muted: #5d6978;
+            --line: #d9dee7;
+            --accent: #155eef;
+            --accent-soft: #eaf1ff;
+            --green-soft: #eaf7ef;
+            --green: #166534;
+            --orange-soft: #fff4e6;
+            --orange: #9a3412;
+            --code-bg: #101828;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            color: var(--ink);
+            background: var(--bg);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            line-height: 1.55;
+        }
+
+        a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .docs-header {
+            background: #15191f;
+            color: #ffffff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .docs-nav {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .brand {
+            font-weight: 750;
+            letter-spacing: 0;
+            font-size: 18px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a {
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 6px;
+            padding: 7px 12px;
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .hero {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 54px 24px 48px;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            color: #b9c7d8;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 14px;
+        }
+
+        h1 {
+            margin: 0;
+            max-width: 850px;
+            font-size: clamp(34px, 5vw, 58px);
+            line-height: 1.02;
+            letter-spacing: 0;
+        }
+
+        .hero p {
+            max-width: 800px;
+            color: #d7dee8;
+            font-size: 18px;
+            margin: 22px 0 0;
+        }
+
+        .docs-layout {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 28px 24px 80px;
+            display: grid;
+            grid-template-columns: 260px minmax(0, 1fr);
+            gap: 28px;
+        }
+
+        .toc {
+            position: sticky;
+            top: 18px;
+            align-self: start;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .toc-title {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 10px;
+        }
+
+        .toc a {
+            display: block;
+            padding: 7px 0;
+            color: var(--ink);
+            font-size: 14px;
+        }
+
+        .content {
+            min-width: 0;
+        }
+
+        section {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 28px;
+            margin-bottom: 18px;
+        }
+
+        h2 {
+            margin: 0 0 12px;
+            font-size: 28px;
+            letter-spacing: 0;
+        }
+
+        h3 {
+            margin: 26px 0 8px;
+            font-size: 19px;
+            letter-spacing: 0;
+        }
+
+        p {
+            margin: 10px 0;
+            color: var(--muted);
+        }
+
+        ul, ol {
+            color: var(--muted);
+            padding-left: 22px;
+        }
+
+        li {
+            margin: 7px 0;
+        }
+
+        code {
+            background: #eef2f7;
+            color: #111827;
+            border-radius: 4px;
+            padding: 2px 5px;
+            font-family: "SFMono-Regular", Consolas, monospace;
+            font-size: 0.92em;
+        }
+
+        pre {
+            overflow-x: auto;
+            background: var(--code-bg);
+            color: #f8fafc;
+            border-radius: 8px;
+            padding: 16px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        pre code {
+            background: transparent;
+            color: inherit;
+            padding: 0;
+        }
+
+        .callout {
+            border: 1px solid #bfd0ff;
+            background: var(--accent-soft);
+            color: #102a56;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin: 16px 0;
+        }
+
+        .callout strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .mini-card {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 14px;
+            background: #fbfcfe;
+        }
+
+        .mini-card strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 4px 9px;
+            font-size: 12px;
+            font-weight: 800;
+            margin-right: 6px;
+            margin-bottom: 6px;
+        }
+
+        .tag.public {
+            color: var(--green);
+            background: var(--green-soft);
+        }
+
+        .tag.internal {
+            color: var(--orange);
+            background: var(--orange-soft);
+        }
+
+        .endpoint {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 14px 0;
+            background: #fbfcfe;
+        }
+
+        .endpoint-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+
+        .method {
+            display: inline-flex;
+            font-size: 12px;
+            font-weight: 900;
+            color: #ffffff;
+            background: #1f2937;
+            border-radius: 4px;
+            padding: 3px 7px;
+        }
+
+        .method.get {
+            background: #166534;
+        }
+
+        .method.post {
+            background: #155eef;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        th, td {
+            border: 1px solid var(--line);
+            padding: 10px 12px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f1f4f8;
+            color: #344054;
+        }
+
+        @media (max-width: 900px) {
+            .docs-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .toc {
+                position: static;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 620px) {
+            .docs-nav {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            section {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="docs-header">
+        <nav class="docs-nav">
+            <div class="brand">HostHub Docs</div>
+            <div class="nav-links">
+                <a href="{% url 'hosthub:landing_page' %}">Home</a>
+                <a href="{% url 'testendpoint:account_login' %}">Login</a>
+                <a href="#during-call">During-Call APIs</a>
+            </div>
+        </nav>
+        <div class="hero">
+            <div class="eyebrow">Open integration documentation</div>
+            <h1>How HostHub, Bland, and restaurant operations connect.</h1>
+            <p>
+                This page explains the API calls and workflows around HostHub so new contributors can understand
+                what happens during a Bland conversation, after a call ends, and inside the restaurant dashboard.
+            </p>
+        </div>
+    </header>
+
+    <main class="docs-layout">
+        <aside class="toc" aria-label="Documentation navigation">
+            <div class="toc-title">Contents</div>
+            <a href="#overview">System overview</a>
+            <a href="#tenant-model">Tenant model</a>
+            <a href="#during-call">During-call Bland API calls</a>
+            <a href="#post-call">Post-call ingestion</a>
+            <a href="#dashboard">Dashboard APIs</a>
+            <a href="#side-effects">External side effects</a>
+            <a href="#categories">Categories and variables</a>
+            <a href="#hours">Hours and pathways</a>
+            <a href="#adding-calls">Adding new API calls</a>
+            <a href="#legacy">Legacy notes</a>
+        </aside>
+
+        <div class="content">
+            <section id="overview">
+                <h2>System Overview</h2>
+                <p>
+                    HostHub is a Django dashboard for restaurant teams using Bland.ai voice agents. Bland handles the
+                    guest conversation. HostHub stores the outcome, routes the call to the right restaurant/location,
+                    and gives staff a workflow for review, follow-up, live monitoring, transfer, reports, and operations.
+                </p>
+                <div class="grid">
+                    <div class="mini-card">
+                        <strong>During the call</strong>
+                        <p>Bland may call public HostHub endpoints for real-time context, such as restaurant hours.</p>
+                    </div>
+                    <div class="mini-card">
+                        <strong>After the call</strong>
+                        <p>Bland posts final call data to HostHub, where the call is categorized and tenant-routed.</p>
+                    </div>
+                    <div class="mini-card">
+                        <strong>Inside HostHub</strong>
+                        <p>Staff see only calls for their authorized account and locations.</p>
+                    </div>
+                    <div class="mini-card">
+                        <strong>External actions</strong>
+                        <p>HostHub can trigger GHL reservation messages, carryout recovery SMS, and daily reports.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tenant-model">
+                <h2>Tenant Model</h2>
+                <p>
+                    HostHub is multi-tenant by restaurant account and location. The operational routing key is the
+                    phone number the guest dialed.
+                </p>
+                <pre><code>Account
+  Location
+    PhoneNumber
+      Call</code></pre>
+                <p>
+                    When a final Bland call arrives, HostHub normalizes the Bland <code>to</code> number and matches it
+                    to an active <code>PhoneNumber</code>. That match assigns the call to the correct
+                    <code>Account</code> and <code>Location</code>.
+                </p>
+                <div class="callout">
+                    <strong>Tenant safety rule</strong>
+                    If a final call cannot be matched to an active phone number, it should not appear in any dashboard.
+                </div>
+            </section>
+
+            <section id="during-call">
+                <h2>During-Call Bland API Calls</h2>
+                <p>
+                    These are API calls Bland can make while the guest is still on the phone. They are different from
+                    final webhooks because the AI may use the response immediately to decide what to say or do next.
+                </p>
+
+                <div class="endpoint">
+                    <div class="endpoint-title">
+                        <span class="method get">GET</span>
+                        <code>/test/api/hours/&lt;location_slug&gt;/</code>
+                        <span class="tag public">public</span>
+                        <span class="tag internal">used by Bland</span>
+                    </div>
+                    <p>
+                        Returns regular hours, special date overrides, and timezone for one active location. Bland can
+                        call this during a conversation when it needs current restaurant-hours context.
+                    </p>
+                    <h3>When Bland should call it</h3>
+                    <ul>
+                        <li>When a caller asks if the restaurant is open today.</li>
+                        <li>When a caller asks about hours for a specific day.</li>
+                        <li>When a pathway needs date overrides before answering holiday or closure questions.</li>
+                        <li>When the AI needs location-specific hours instead of hardcoded pathway text.</li>
+                    </ul>
+                    <h3>Response shape</h3>
+                    <pre><code>{
+  "location": "160 Main",
+  "timezone": "America/Detroit",
+  "regular_hours": {
+    "monday": {"closed": false, "open": "11:00", "close": "21:00"},
+    "tuesday": {"closed": false, "open": "11:00", "close": "21:00"},
+    "sunday": {"closed": true}
+  },
+  "date_overrides": [
+    {
+      "name": "Christmas Day",
+      "start_date": "2026-12-25",
+      "end_date": "2026-12-25",
+      "closed": true
+    }
+  ]
+}</code></pre>
+                    <h3>Bland configuration notes</h3>
+                    <ul>
+                        <li>Use the location slug that belongs to the restaurant/location pathway.</li>
+                        <li>Do not hardcode secrets in this call. This endpoint is public by design.</li>
+                        <li>If Bland stores the location slug in a variable, keep that variable synchronized with the HostHub <code>Location.slug</code>.</li>
+                        <li>A wrong or inactive slug returns a not-found response and Bland should fall back gracefully.</li>
+                    </ul>
+                </div>
+
+                <div class="callout">
+                    <strong>Where to document additional Bland tool calls</strong>
+                    If a Bland pathway calls another HostHub endpoint during the conversation, add it to this section
+                    with the method, path, purpose, required pathway variables, request payload, response shape, and
+                    fallback behavior.
+                </div>
+            </section>
+
+            <section id="post-call">
+                <h2>Post-Call Ingestion</h2>
+                <p>
+                    After a call ends, Bland sends the final payload to HostHub. This is where the system creates the
+                    dashboard call record, stores transcripts, maps categories, and triggers post-call automation.
+                </p>
+
+                <div class="endpoint">
+                    <div class="endpoint-title">
+                        <span class="method post">POST</span>
+                        <code>/test/webhooks/bland/calls/&lt;token&gt;/</code>
+                        <span class="tag internal">Bland webhook</span>
+                    </div>
+                    <p>
+                        Receives both live transcript events and final call payloads. The URL token must match
+                        <code>BLAND_WEBHOOK_TOKEN</code>.
+                    </p>
+                    <h3>Routing logic</h3>
+                    <pre><code>if "message" in payload and payload.get("category") == "call":
+    ingest_bland_webhook_event(payload)
+else:
+    upsert_call_from_bland_json(payload)</code></pre>
+                    <h3>Final payload behavior</h3>
+                    <ol>
+                        <li>Read <code>call_id</code> or <code>c_id</code>.</li>
+                        <li>Ignore very short calls under 16 seconds.</li>
+                        <li>Map <code>pathway_tags</code> into <code>display_category</code>.</li>
+                        <li>Match Bland <code>to</code> number to an active <code>PhoneNumber</code>.</li>
+                        <li>Upsert the <code>Call</code> by <code>bland_call_id</code>.</li>
+                        <li>For carryout calls, optionally trigger cart recovery SMS.</li>
+                    </ol>
+                </div>
+
+                <div class="endpoint">
+                    <div class="endpoint-title">
+                        <span class="method post">POST</span>
+                        <code>live transcript event to Bland webhook</code>
+                        <span class="tag internal">streaming transcript</span>
+                    </div>
+                    <p>
+                        Live transcript events create or update <code>CallSession</code> and <code>TranscriptTurn</code>
+                        rows. They are used by the live-call transcript panel.
+                    </p>
+                    <p>Recognized message prefixes:</p>
+                    <ul>
+                        <li><code>Agent speech:</code> or <code>Agent says:</code> maps to agent text.</li>
+                        <li><code>Handling user speech:</code> or <code>User speech:</code> maps to user text.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="dashboard">
+                <h2>Dashboard APIs</h2>
+                <p>
+                    These endpoints are used by the HostHub dashboard after a worker logs in. They are scoped to the
+                    logged-in user's account and authorized locations unless noted otherwise.
+                </p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Path</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>GET</td>
+                            <td><code>/api/bland/live-calls/</code></td>
+                            <td>Poll active Bland calls and filter them to authorized phone numbers.</td>
+                        </tr>
+                        <tr>
+                            <td>POST</td>
+                            <td><code>/api/bland/transfer-call/</code></td>
+                            <td>Transfer an active Bland call to the location transfer target.</td>
+                        </tr>
+                        <tr>
+                            <td>GET</td>
+                            <td><code>/test/api/calls/&lt;call_id&gt;/turns/</code></td>
+                            <td>Load live transcript history for a call session.</td>
+                        </tr>
+                        <tr>
+                            <td>GET</td>
+                            <td><code>/test/sse/call/&lt;call_id&gt;/</code></td>
+                            <td>Stream live transcript updates with SSE.</td>
+                        </tr>
+                        <tr>
+                            <td>GET</td>
+                            <td><code>/test/transcript/call/&lt;call_id&gt;/</code></td>
+                            <td>Load final transcript JSON for a stored call.</td>
+                        </tr>
+                        <tr>
+                            <td>POST</td>
+                            <td><code>/calls/&lt;call_id&gt;/mark-handled/</code></td>
+                            <td>Mark a call resolved or move it back to needs action.</td>
+                        </tr>
+                        <tr>
+                            <td>POST</td>
+                            <td><code>/calls/&lt;call_id&gt;/confirm-reservation/</code></td>
+                            <td>Send reservation confirmation through GHL and resolve the call.</td>
+                        </tr>
+                        <tr>
+                            <td>GET</td>
+                            <td><code>/api/new-calls-boolean/</code></td>
+                            <td>Show the dashboard refresh pill when new calls were ingested after page load.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="side-effects">
+                <h2>External Side Effects</h2>
+                <p>
+                    Some workflows create external effects. These are the parts that operators and developers need to
+                    understand before changing pathway variables, payload shapes, or timing.
+                </p>
+
+                <h3>Reservation confirmation through GHL</h3>
+                <p>
+                    Triggered from the dashboard when staff clicks the reservation confirmation button. HostHub sends a
+                    payload to <code>GHL_RESERVATION_CONFIRMATION_WEBHOOK_URL</code>. On success, the call is resolved
+                    with disposition <code>reservation_confirmed</code>.
+                </p>
+                <pre><code>{
+  "call_id": 123,
+  "guest_name": "Guest",
+  "guest_phone": "+15555550123",
+  "reservation_date": "2026-08-25",
+  "reservation_time": "7:00 PM",
+  "reservation_guests": "4",
+  "restaurant_name": "Restaurant"
+}</code></pre>
+
+                <h3>Carryout cart recovery SMS</h3>
+                <p>
+                    Triggered after final carryout ingestion when there is an <code>order_cart</code>, the kitchen did
+                    not print, and no recovery SMS was already sent. HostHub creates a cart import link, then posts to
+                    <code>RECOVERY_SMS_WEBHOOK_URL</code>.
+                </p>
+                <p>Skip conditions:</p>
+                <ul>
+                    <li>The call is not categorized as carryout.</li>
+                    <li><code>recovery_sms_sent_at</code> is already set.</li>
+                    <li><code>variables.kitchen_print</code> is true.</li>
+                    <li>No valid cart items exist.</li>
+                    <li>The caller phone number cannot be normalized.</li>
+                </ul>
+
+                <h3>Daily reports through Resend</h3>
+                <p>
+                    The <code>send_daily_call_report</code> management command builds account-scoped call summaries and
+                    sends email through Resend for accounts with reporting enabled.
+                </p>
+            </section>
+
+            <section id="categories">
+                <h2>Categories And Bland Variables</h2>
+                <p>
+                    HostHub display categories come from Bland <code>pathway_tags</code>. The selected category controls
+                    dashboard filters, detail panel fields, and available resolution dispositions.
+                </p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Tag rule</th>
+                            <th>Common variables shown in HostHub</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>reservation</code></td>
+                            <td>Tag contains <code>reservation</code></td>
+                            <td><code>user_name</code>, <code>guest</code>, <code>date</code>, <code>time</code>, <code>request</code>, <code>user_message</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>carryout</code></td>
+                            <td>Tag contains <code>carryout</code></td>
+                            <td><code>order_summary</code>, <code>total_price</code>, <code>order_cart</code>, <code>kitchen_print</code>, <code>user_message</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>leave_message</code></td>
+                            <td>Tag contains <code>leave</code></td>
+                            <td><code>user_message</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>private_events</code></td>
+                            <td>Tag contains <code>private</code></td>
+                            <td><code>occasion</code>, <code>party_date</code>, <code>party_time</code>, <code>guests</code>, <code>party_message</code>, <code>user_message</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>other</code></td>
+                            <td>No known tag match</td>
+                            <td><code>summary</code>, transcript, metadata</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="callout">
+                    <strong>Change rule</strong>
+                    If a Bland variable name changes, update the dashboard template <code>data-*</code> attributes and
+                    the JavaScript detail rendering together.
+                </div>
+            </section>
+
+            <section id="hours">
+                <h2>Hours And Pathway State</h2>
+                <p>
+                    Location hours are used in two ways: during the conversation for guest-facing answers, and outside
+                    the conversation to control Bland's inbound open/closed pathway.
+                </p>
+                <h3>Guest-facing hours</h3>
+                <p>
+                    Bland should use <code>/test/api/hours/&lt;location_slug&gt;/</code> to fetch regular hours and
+                    date overrides before answering time-sensitive hours questions.
+                </p>
+                <h3>Inbound pathway state</h3>
+                <p>
+                    The staff area and schedule processor can sync <code>Location.expected_pathway_id</code> to Bland's
+                    inbound phone-number configuration. Open and closed states use separate pathway IDs on the location.
+                </p>
+                <pre><code>POST https://api.bland.ai/v1/inbound/&lt;phone_number&gt;
+
+{
+  "pathway_id": "expected_open_or_closed_pathway_id"
+}</code></pre>
+            </section>
+
+            <section id="adding-calls">
+                <h2>Adding New API Calls</h2>
+                <p>
+                    When adding a new HostHub or Bland integration, document it here at the same time as the code or
+                    pathway change.
+                </p>
+                <h3>For a new during-call Bland call</h3>
+                <ul>
+                    <li>Document the exact method and path.</li>
+                    <li>State why Bland calls it during the conversation.</li>
+                    <li>List required Bland pathway variables.</li>
+                    <li>Show the request payload and response shape.</li>
+                    <li>Explain fallback behavior if the endpoint fails.</li>
+                    <li>Confirm whether the endpoint is public, token-protected, or dashboard-authenticated.</li>
+                </ul>
+                <h3>For a new post-call side effect</h3>
+                <ul>
+                    <li>State what triggers it and what prevents duplicates.</li>
+                    <li>List external service, env vars, and payload fields without exposing secret values.</li>
+                    <li>Describe the call state changes after success or failure.</li>
+                </ul>
+            </section>
+
+            <section id="legacy">
+                <h2>Legacy Notes</h2>
+                <p>
+                    The old live-alert feature still exists in the codebase, but it is not active in the current
+                    dashboard. The live-alert poller is not started. The active live-call experience is the live calls
+                    panel plus transcript history/SSE.
+                </p>
+                <ul>
+                    <li><code>CallAlert</code></li>
+                    <li><code>/test/live/alerts/</code></li>
+                    <li><code>/test/live/alerts/&lt;alert_id&gt;/resolve/</code></li>
+                    <li>Hidden alert banner markup in the HostHub dashboard template.</li>
+                </ul>
+            </section>
+        </div>
+    </main>
+</body>
+</html>

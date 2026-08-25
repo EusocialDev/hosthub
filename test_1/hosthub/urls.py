@@ -6,6 +6,7 @@ app_name = 'hosthub'
 
 urlpatterns =[    
     path('', views.landing_view, name='landing_page'),
+    path("docs/", views.docs_view, name="docs"),
     path("dashboard/", views.hosthub_view, name='hosthub_dashboard'),
     path("calls/<int:call_id>/mark-handled/", views.mark_call_handled, name='mark_call_handled'),
     path('calls/<int:call_id>/confirm-reservation/', views.confirm_reservation, name='confirm_reservation'),
