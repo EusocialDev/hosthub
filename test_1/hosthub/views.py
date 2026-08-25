@@ -34,6 +34,9 @@ def landing_view(request):
 def docs_view(request):
     return render(request, "hosthub/docs.html")
 
+def during_call_apis_view(request):
+    return render(request, "hosthub/during_call_apis.html")
+
 
 # Order by newest first
 def accessible_calls_for_user(user):

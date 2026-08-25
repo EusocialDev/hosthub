@@ -391,7 +391,7 @@
             <div class="nav-links">
                 <a href="{% url 'hosthub:landing_page' %}">Home</a>
                 <a href="{% url 'testendpoint:account_login' %}">Login</a>
-                <a href="#during-call">During-Call APIs</a>
+                <a href="{% url 'hosthub:during_call_apis' %}">During-Call APIs</a>
             </div>
         </nav>
         <div class="hero">
@@ -430,7 +430,7 @@
                 <div class="grid">
                     <div class="mini-card">
                         <strong>During the call</strong>
-                        <p>Bland may call public HostHub endpoints for real-time context, such as restaurant hours.</p>
+                        <p>Bland may call public HostHub endpoints for real-time context, such as restaurant hours, sending emails, menu information, and much more.</p>
                     </div>
                     <div class="mini-card">
                         <strong>After the call</strong>
@@ -474,57 +474,10 @@
                     These are API calls Bland can make while the guest is still on the phone. They are different from
                     final webhooks because the AI may use the response immediately to decide what to say or do next.
                 </p>
-
-                <div class="endpoint">
-                    <div class="endpoint-title">
-                        <span class="method get">GET</span>
-                        <code>/test/api/hours/&lt;location_slug&gt;/</code>
-                        <span class="tag public">public</span>
-                        <span class="tag internal">used by Bland</span>
-                    </div>
-                    <p>
-                        Returns regular hours, special date overrides, and timezone for one active location. Bland can
-                        call this during a conversation when it needs current restaurant-hours context.
-                    </p>
-                    <h3>When Bland should call it</h3>
-                    <ul>
-                        <li>When a caller asks if the restaurant is open today.</li>
-                        <li>When a caller asks about hours for a specific day.</li>
-                        <li>When a pathway needs date overrides before answering holiday or closure questions.</li>
-                        <li>When the AI needs location-specific hours instead of hardcoded pathway text.</li>
-                    </ul>
-                    <h3>Response shape</h3>
-                    <pre><code>{
-  "location": "160 Main",
-  "timezone": "America/Detroit",
-  "regular_hours": {
-    "monday": {"closed": false, "open": "11:00", "close": "21:00"},
-    "tuesday": {"closed": false, "open": "11:00", "close": "21:00"},
-    "sunday": {"closed": true}
-  },
-  "date_overrides": [
-    {
-      "name": "Christmas Day",
-      "start_date": "2026-12-25",
-      "end_date": "2026-12-25",
-      "closed": true
-    }
-  ]
-}</code></pre>
-                    <h3>Bland configuration notes</h3>
-                    <ul>
-                        <li>Use the location slug that belongs to the restaurant/location pathway.</li>
-                        <li>Do not hardcode secrets in this call. This endpoint is public by design.</li>
-                        <li>If Bland stores the location slug in a variable, keep that variable synchronized with the HostHub <code>Location.slug</code>.</li>
-                        <li>A wrong or inactive slug returns a not-found response and Bland should fall back gracefully.</li>
-                    </ul>
-                </div>
-
                 <div class="callout">
-                    <strong>Where to document additional Bland tool calls</strong>
-                    If a Bland pathway calls another HostHub endpoint during the conversation, add it to this section
-                    with the method, path, purpose, required pathway variables, request payload, response shape, and
-                    fallback behavior.
+                    <strong>Dedicated catalog</strong>
+                    The during-call API catalog has its own page so new Bland tool calls can be added without making
+                    the main docs hard to scan. See <a href="{% url 'hosthub:during_call_apis' %}">During-Call APIs</a>.
                 </div>
             </section>
 
