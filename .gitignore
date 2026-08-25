@@ -28,3 +28,6 @@ __pycache__/
 # Static build output
 staticfiles/
 media/
+
+# Codex Memory
+PROJECT_MEMORY.md
