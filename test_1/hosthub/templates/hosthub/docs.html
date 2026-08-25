@@ -6,30 +6,36 @@
     <title>HostHub Docs</title>
     <style>
         :root {
-            --bg: #f6f7f9;
-            --surface: #ffffff;
-            --ink: #17202a;
-            --muted: #5d6978;
-            --line: #d9dee7;
-            --accent: #155eef;
-            --accent-soft: #eaf1ff;
-            --green-soft: #eaf7ef;
-            --green: #166534;
-            --orange-soft: #fff4e6;
-            --orange: #9a3412;
-            --code-bg: #101828;
+            --page: #ffffff;
+            --sidebar: #fbfbfa;
+            --ink: #202124;
+            --muted: #6b6f76;
+            --faint: #8a8f98;
+            --line: #e7e5e1;
+            --line-strong: #d8d5cf;
+            --accent: #2563eb;
+            --code-bg: #f6f6f4;
+            --code-ink: #24292f;
+            --soft-blue: #f4f7ff;
+            --soft-green: #f1f8f4;
+            --soft-orange: #fff7ed;
         }
 
         * {
             box-sizing: border-box;
         }
 
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
             margin: 0;
             color: var(--ink);
-            background: var(--bg);
+            background: var(--page);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            line-height: 1.55;
+            font-size: 15px;
+            line-height: 1.62;
         }
 
         a {
@@ -42,15 +48,14 @@
         }
 
         .docs-header {
-            background: #15191f;
-            color: #ffffff;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            background: var(--page);
+            border-bottom: 1px solid var(--line);
         }
 
         .docs-nav {
-            max-width: 1180px;
+            max-width: 1120px;
             margin: 0 auto;
-            padding: 16px 24px;
+            padding: 12px 28px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -58,147 +63,171 @@
         }
 
         .brand {
-            font-weight: 750;
+            color: var(--ink);
+            font-weight: 650;
             letter-spacing: 0;
-            font-size: 18px;
+            font-size: 15px;
         }
 
         .nav-links {
             display: flex;
-            gap: 10px;
+            gap: 4px;
             flex-wrap: wrap;
         }
 
         .nav-links a {
-            color: #ffffff;
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            border-radius: 6px;
-            padding: 7px 12px;
-            font-size: 14px;
-            background: rgba(255, 255, 255, 0.06);
+            color: var(--muted);
+            border-radius: 5px;
+            padding: 6px 9px;
+            font-size: 13px;
+        }
+
+        .nav-links a:hover {
+            color: var(--ink);
+            background: #f3f3f1;
+            text-decoration: none;
         }
 
         .hero {
-            max-width: 1180px;
+            max-width: 1120px;
             margin: 0 auto;
-            padding: 54px 24px 48px;
+            padding: 34px 28px 30px;
         }
 
         .eyebrow {
             display: inline-flex;
-            color: #b9c7d8;
-            font-size: 13px;
-            font-weight: 700;
+            color: var(--faint);
+            font-size: 12px;
+            font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.08em;
-            margin-bottom: 14px;
+            margin-bottom: 10px;
         }
 
         h1 {
             margin: 0;
-            max-width: 850px;
-            font-size: clamp(34px, 5vw, 58px);
-            line-height: 1.02;
+            max-width: 760px;
+            font-size: 34px;
+            line-height: 1.16;
+            font-weight: 700;
             letter-spacing: 0;
         }
 
         .hero p {
-            max-width: 800px;
-            color: #d7dee8;
-            font-size: 18px;
-            margin: 22px 0 0;
+            max-width: 760px;
+            color: var(--muted);
+            font-size: 16px;
+            margin: 12px 0 0;
         }
 
         .docs-layout {
-            max-width: 1180px;
+            max-width: 1120px;
             margin: 0 auto;
-            padding: 28px 24px 80px;
+            padding: 22px 28px 72px;
             display: grid;
-            grid-template-columns: 260px minmax(0, 1fr);
-            gap: 28px;
+            grid-template-columns: 220px minmax(0, 1fr);
+            gap: 34px;
         }
 
         .toc {
             position: sticky;
             top: 18px;
             align-self: start;
-            background: var(--surface);
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            padding: 16px;
+            background: var(--sidebar);
+            border-right: 1px solid var(--line);
+            padding: 4px 18px 10px 0;
         }
 
         .toc-title {
-            font-size: 13px;
-            font-weight: 800;
-            color: var(--muted);
+            font-size: 11px;
+            font-weight: 650;
+            color: var(--faint);
             text-transform: uppercase;
             letter-spacing: 0.08em;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .toc a {
             display: block;
-            padding: 7px 0;
+            padding: 5px 8px;
+            color: var(--muted);
+            font-size: 13px;
+            border-radius: 5px;
+            line-height: 1.35;
+        }
+
+        .toc a:hover {
             color: var(--ink);
-            font-size: 14px;
+            background: #f0efec;
+            text-decoration: none;
         }
 
         .content {
             min-width: 0;
+            max-width: 820px;
         }
 
         section {
-            background: var(--surface);
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            padding: 28px;
+            border-top: 1px solid var(--line);
+            padding: 30px 0 10px;
             margin-bottom: 18px;
         }
 
+        section:first-child {
+            border-top: none;
+            padding-top: 0;
+        }
+
         h2 {
-            margin: 0 0 12px;
-            font-size: 28px;
+            margin: 0 0 10px;
+            font-size: 25px;
+            line-height: 1.25;
+            font-weight: 700;
             letter-spacing: 0;
         }
 
         h3 {
-            margin: 26px 0 8px;
-            font-size: 19px;
+            margin: 24px 0 7px;
+            font-size: 16px;
+            line-height: 1.35;
+            font-weight: 650;
             letter-spacing: 0;
         }
 
         p {
-            margin: 10px 0;
+            margin: 8px 0;
             color: var(--muted);
         }
 
         ul, ol {
             color: var(--muted);
-            padding-left: 22px;
+            padding-left: 20px;
+            margin: 8px 0 14px;
         }
 
         li {
-            margin: 7px 0;
+            margin: 5px 0;
         }
 
         code {
-            background: #eef2f7;
-            color: #111827;
+            background: var(--code-bg);
+            color: var(--code-ink);
             border-radius: 4px;
             padding: 2px 5px;
             font-family: "SFMono-Regular", Consolas, monospace;
-            font-size: 0.92em;
+            font-size: 0.9em;
         }
 
         pre {
             overflow-x: auto;
-            background: var(--code-bg);
-            color: #f8fafc;
-            border-radius: 8px;
-            padding: 16px;
-            font-size: 14px;
+            background: #f7f7f5;
+            color: var(--code-ink);
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            padding: 14px;
+            font-size: 13px;
             line-height: 1.5;
+            margin: 12px 0 16px;
         }
 
         pre code {
@@ -208,119 +237,124 @@
         }
 
         .callout {
-            border: 1px solid #bfd0ff;
-            background: var(--accent-soft);
-            color: #102a56;
-            border-radius: 8px;
-            padding: 14px 16px;
-            margin: 16px 0;
+            border-left: 3px solid var(--line-strong);
+            background: #fafafa;
+            color: var(--muted);
+            padding: 10px 14px;
+            margin: 14px 0;
         }
 
         .callout strong {
             display: block;
-            margin-bottom: 4px;
+            color: var(--ink);
+            margin-bottom: 3px;
         }
 
         .grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 12px;
-            margin-top: 16px;
+            gap: 8px 22px;
+            margin-top: 12px;
         }
 
         .mini-card {
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            padding: 14px;
-            background: #fbfcfe;
+            border-left: 2px solid var(--line);
+            padding: 3px 0 3px 12px;
         }
 
         .mini-card strong {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 2px;
         }
 
         .tag {
             display: inline-flex;
             align-items: center;
-            border-radius: 999px;
-            padding: 4px 9px;
-            font-size: 12px;
-            font-weight: 800;
-            margin-right: 6px;
-            margin-bottom: 6px;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 11px;
+            font-weight: 650;
+            margin-right: 4px;
+            margin-bottom: 4px;
         }
 
         .tag.public {
-            color: var(--green);
-            background: var(--green-soft);
+            color: #166534;
+            background: var(--soft-green);
         }
 
         .tag.internal {
-            color: var(--orange);
-            background: var(--orange-soft);
+            color: #9a3412;
+            background: var(--soft-orange);
         }
 
         .endpoint {
             border: 1px solid var(--line);
-            border-radius: 8px;
-            padding: 16px;
+            border-radius: 6px;
+            padding: 14px 16px;
             margin: 14px 0;
-            background: #fbfcfe;
+            background: #fff;
         }
 
         .endpoint-title {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             flex-wrap: wrap;
             margin-bottom: 8px;
         }
 
         .method {
             display: inline-flex;
-            font-size: 12px;
-            font-weight: 900;
-            color: #ffffff;
-            background: #1f2937;
+            font-size: 11px;
+            font-weight: 750;
+            color: var(--ink);
+            background: #eeeeeb;
             border-radius: 4px;
-            padding: 3px 7px;
+            padding: 2px 6px;
         }
 
         .method.get {
-            background: #166534;
+            color: #166534;
+            background: var(--soft-green);
         }
 
         .method.post {
-            background: #155eef;
+            color: #1d4ed8;
+            background: var(--soft-blue);
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 16px 0;
-            font-size: 14px;
+            margin: 14px 0;
+            font-size: 13px;
         }
 
         th, td {
             border: 1px solid var(--line);
-            padding: 10px 12px;
+            padding: 9px 10px;
             text-align: left;
             vertical-align: top;
         }
 
         th {
-            background: #f1f4f8;
-            color: #344054;
+            background: #fafafa;
+            color: var(--muted);
+            font-weight: 650;
         }
 
         @media (max-width: 900px) {
             .docs-layout {
                 grid-template-columns: 1fr;
+                padding-top: 14px;
             }
 
             .toc {
                 position: static;
+                border-right: none;
+                border-bottom: 1px solid var(--line);
+                padding: 0 0 14px;
             }
 
             .grid {
@@ -332,10 +366,20 @@
             .docs-nav {
                 align-items: flex-start;
                 flex-direction: column;
+                padding: 12px 18px;
             }
 
-            section {
-                padding: 20px;
+            .hero {
+                padding: 28px 18px 22px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+
+            .docs-layout {
+                padding-left: 18px;
+                padding-right: 18px;
             }
         }
     </style>
@@ -351,11 +395,11 @@
             </div>
         </nav>
         <div class="hero">
-            <div class="eyebrow">Open integration documentation</div>
-            <h1>How HostHub, Bland, and restaurant operations connect.</h1>
+            <div class="eyebrow">Integration documentation</div>
+            <h1>HostHub API and workflow docs</h1>
             <p>
-                This page explains the API calls and workflows around HostHub so new contributors can understand
-                what happens during a Bland conversation, after a call ends, and inside the restaurant dashboard.
+                A practical reference for the API calls and workflows that happen during a Bland conversation,
+                after a call ends, and inside the HostHub dashboard.
             </p>
         </div>
     </header>
