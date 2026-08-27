@@ -17,6 +17,7 @@
             --soft-blue: #f4f7ff;
             --soft-green: #f1f8f4;
             --soft-orange: #fff7ed;
+            --soft-purple: #e6d5f5;
         }
 
         * {
@@ -269,6 +270,16 @@
             background: var(--soft-orange);
         }
 
+        .tag.agent-open {
+            color: #A78BFA;
+            background: var(--soft-purple);
+        }
+
+        .tag.agent-close {
+            color: #1E3A5F;
+            background: var(--soft-blue);
+        }
+
         .field-list {
             display: grid;
             grid-template-columns: 160px minmax(0, 1fr);
@@ -350,8 +361,8 @@
         <aside class="toc" aria-label="Page navigation">
             <div class="toc-title">During-call APIs</div>
             <a href="#overview">Overview</a>
-            <a href="#catalog">Catalog</a>
-            <a href="#hours">Location hours</a>
+            <a href="#hours-of-operation">Hours of Operation</a>
+            <a href='#carryout'>Carryout</a>
             <a href="#add-new">Add a new call</a>
             <a href="#html-template">HTML template</a>
         </aside>
@@ -371,11 +382,8 @@
                 </div>
             </section>
 
-            <section id="catalog">
-                <h2>Catalog</h2>
-                <p>
-                    Add new calls below this section. Keep one card per Bland tool/API call.
-                </p>
+            <section id="hours-of-operation">
+                <h2>Hours of Operation</h2>
 
                 <article class="api-card" id="hours">
                     <div class="api-title">
@@ -383,7 +391,7 @@
                         <span class="api-name">Location hours</span>
                         <code>/test/api/hours/&lt;location_slug&gt;/</code>
                         <span class="tag public">public</span>
-                        <span class="tag internal">used by Bland</span>
+                        <span class="tag internal">HostHub</span>
                     </div>
                     <p>
                         Returns regular hours, future/current date overrides, and timezone for one active location.
@@ -391,6 +399,12 @@
                     </p>
 
                     <dl class="field-list">
+                        <dt> Agents </dt>
+                        <dd><span class="tag agent-open">Julia (Open)</span> <span class="tag agent-close">Julia (Closed)</span> </dd>
+
+                        <dt> Node Name </dt>
+                        <dd>Q&A Node; Reservation </dd>
+
                         <dt>When Bland calls it</dt>
                         <dd>When a caller asks about hours, holiday hours, closures, or whether the restaurant is open.</dd>
 
@@ -405,128 +419,298 @@
                     </dl>
 
                     <h3>Response shape</h3>
-                    <pre><code>{
-  "location": "160 Main",
-  "timezone": "America/Detroit",
-  "regular_hours": {
-    "monday": {"closed": false, "open": "11:00", "close": "21:00"},
-    "tuesday": {"closed": false, "open": "11:00", "close": "21:00"},
-    "sunday": {"closed": true}
-  },
-  "date_overrides": [
-    {
-      "name": "Christmas Day",
-      "start_date": "2026-12-25",
-      "end_date": "2026-12-25",
-      "closed": true
-    }
-  ]
+<pre><code>{
+    "location": "160 Main",
+    "timezone": "America/Detroit",
+    "regular_hours": {
+        "monday": {"closed": false, "open": "11:00", "close": "21:00"},
+        "tuesday": {"closed": false, "open": "11:00", "close": "21:00"},
+        "sunday": {"closed": true}
+    },
+    "date_overrides": [
+        {
+        "name": "Christmas Day",
+        "start_date": "2026-12-25",
+        "end_date": "2026-12-25",
+        "closed": true
+        }
+    ]
 }</code></pre>
                 </article>
             </section>
 
-            <section id="add-new">
-                <h2>Add A New During-Call API</h2>
-                <p>
-                    To document a new Bland tool call, duplicate the template card below and replace the placeholder
-                    text. Keep the entry concrete enough that a developer can update the Django endpoint or Bland
-                    pathway without needing context from memory.
-                </p>
-                <ol>
-                    <li>Add one card per API call.</li>
-                    <li>Use the exact method and path Bland calls.</li>
-                    <li>List the pathway variables Bland must send or know before calling.</li>
-                    <li>Show request and response examples when useful.</li>
-                    <li>Document fallback behavior. During-call failures affect what the guest hears.</li>
-                    <li>Do not paste real secrets, webhook tokens, API keys, or private customer data.</li>
-                </ol>
+            <section id='carryout'>
+                <h2>Carryout</h2>
 
-                <article class="api-card template">
+
+                <article class="api-card" id="search-menu-item">
                     <div class="api-title">
-                        <span class="method post">METHOD</span>
-                        <span class="api-name">New API call name</span>
-                        <code>/replace/with/path/</code>
-                        <span class="tag public">public/token/auth</span>
-                        <span class="tag internal">used by Bland</span>
+                        <span class="method get">GET</span>
+                        <span class="api-name">Search Menu Item</span>
+                        <code>https://160maincarryout.com/api/agent/menu/search?q=&#123;&#123;q&#125;&#125;</code>
+                        <span class="tag internal">protected</span>
+                        <span class="tag internal">160maincarryout</span>
                     </div>
                     <p>
-                        Short description of what Bland uses this call for during the conversation.
+                        Returns information about a menu item and its needed modifiers.
+                        Bland can call this during the carryout order node when user is placing an order.
+                        It uses rapidfuzz to search trhough different possible menu items and returns the best matches on a scoring system.
                     </p>
 
                     <dl class="field-list">
+                        <dt> Agents </dt>
+                        <dd><span class="tag agent-open">Julia (Open)</span></dd>
+
+                        <dt> Node Name </dt>
+                        <dd>Carryout</dd>
+
                         <dt>When Bland calls it</dt>
-                        <dd>Describe the exact conversation moment or condition.</dd>
+                        <dd>When a caller is ordering an item.</dd>
 
                         <dt>Required pathway data</dt>
-                        <dd>List Bland variables, request fields, or location/account context.</dd>
+                        <dd><code>q</code> item user is trying to order, it can be a list of comma separated items</dd>
 
                         <dt>Authentication</dt>
-                        <dd>Public, token-protected, dashboard-authenticated, or other.</dd>
+                        <dd>Protected endpoint. Bearer Toeken <code>$VOICE_ORDER_API_TOKEN</code></dd>
 
                         <dt>Failure behavior</dt>
-                        <dd>What Bland should say or do if the endpoint returns an error or timeout.</dd>
-
-                        <dt>Side effects</dt>
-                        <dd>State whether this sends an email, SMS, creates a record, updates a cart, etc.</dd>
+                        <dd>If the Bearer Toeken is wrong it returns Unauthorized.</dd>
                     </dl>
 
-                    <h3>Request example</h3>
-                    <pre><code>{
-  "replace": "with request payload if applicable"
+                    <h3>Response shape</h3>
+                        <pre><code>{
+    "match_status": "matched",
+    "item": {
+        "id": 15,
+        "name": "Marsala",
+        "category": "Saute",
+        "base_price": "24.00",
+        "description": "Marsala wine sauce with sautéed mushrooms. With your choice of chicken or veal (3) pieces.",
+        "aliases": [
+            "chicken marsala",
+            "veal marsala",
+            "marsala wine",
+            "mushroom marsala",
+            "marsala saute"
+        ],
+        "dietary_tags": [
+            "Gluten-Free"
+        ],
+        "required_modifiers": [
+            {
+                "id": 5,
+                "type": "single_choice",
+                "question": "Which protein for saute would you like?",
+                "options": [
+                {
+                    "id": 17,
+                    "name": "Chicken",
+                    "price_adjustment": "0.00"
+                },
+                {
+                    "id": 18,
+                    "name": "Veal",
+                    "price_adjustment": "4.00"
+                }
+                ]
+            }
+        ],
+        "optional_modifiers": [
+            {
+                "id": 2,
+                "type": "single_choice",
+                "options": [
+                {
+                    "id": 6,
+                    "name": "Fettuccine",
+                    "price_adjustment": "6.00"
+                },
+                {
+                    "id": 8,
+                    "name": "Linguine",
+                    "price_adjustment": "6.00"
+                },
+                {
+                    "id": 9,
+                    "name": "Angel Hair",
+                    "price_adjustment": "6.00"
+                },
+                {
+                    "id": 10,
+                    "name": "Spaghetti",
+                    "price_adjustment": "6.00"
+                },
+                {
+                    "id": 58,
+                    "name": "Gluten Free Pasta",
+                    "price_adjustment": "0.00"
+                }
+                ]
+            }
+        ]
+    }
 }</code></pre>
 
-                    <h3>Response example</h3>
-                    <pre><code>{
-  "replace": "with response payload"
-}</code></pre>
                 </article>
+
+                <article class="api-card" id="menu_items_search">
+                    <div class="api-title">
+                        <span class="method get">GET</span>
+                        <span class="api-name">Menu Items Search</span>
+                        <code>https://160maincarryout.com/api/agent/menu/search?q=&#123;&#123;q&#125;&#125;</code>
+                        <span class="tag internal">protected</span>
+                        <span class="tag internal">160maincarryout</span>
+                    </div>
+                    <p>
+                        It searches trough the menu based on user question.
+                        Different than the other API endpoint that search the item user is talking about to resolve modifiers
+                        this endpoint looks for querries like gluten-free pasta and many other things that are not necessarily 
+                        menu items but can be used to filter the menu and return a list of items that match the query.
+                    </p>
+
+                    <dl class="field-list">
+                        <dt> Agents </dt>
+                        <dd><span class="tag agent-open">Julia (Open)</span></dd>
+
+                        <dt> Node Name </dt>
+                        <dd>Carryout</dd>
+
+                        <dt>When Bland calls it</dt>
+                        <dd>When a caller is asking questions about the menu during the carryout node.</dd>
+
+                        <dt>Required pathway data</dt>
+                        <dd><code>menu_search_query</code> query for search based on keywords from user question.</dd>
+
+                        <dt>Authentication</dt>
+                        <dd>Protected endpoint. Bearer Toeken <code>$VOICE_ORDER_API_TOKEN</code></dd>
+
+                        <dt>Failure behavior</dt>
+                        <dd>If the Bearer Toeken is wrong it returns Unauthorized.</dd>
+                    </dl>
+
+                    <h3>Response shape</h3>
+<pre><code>{
+    "query": "seafood pasta",
+    "items": [
+        {
+        "id": 50,
+        "name": "Linguine All'Aragosta",
+        "category": "Pasta",
+        "base_price": "40.00",
+        "description": "6oz lobster tail, fresh tomato sauce",
+        "dietary_tags": []
+        },
+        {
+        "id": 51,
+        "name": "Linguine Alle Vongole",
+        "category": "Pasta",
+        "base_price": "28.00",
+        "description": "White win clam sauce",
+        "dietary_tags": []
+        },
+        {
+        "id": 34,
+        "name": "Risotto All'aragosta",
+        "category": "Pasta",
+        "base_price": "44.00",
+        "description": "6oz lobster tail, white wine butter.",
+        "dietary_tags": [
+            "Gluten-Free",
+            "Vegetarian"
+        ]
+        }
+    ]
+}</code></pre>
+
+                </article>
+
+                <article class="api-card" id="price_calculator">
+                    <div class="api-title">
+                        <span class="method post">POST</span>
+                        <span class="api-name">Menu Items Search</span>
+                        <code>https://160maincarryout.com/api/agent/order-summary/total</code>
+                        <span class="tag internal">protected</span>
+                        <span class="tag internal">160maincarryout</span>
+                    </div>
+                    <p>
+                        It returns total price based on carryout website database. It takes a simple
+                        json body with a single key <code>order_summary</code> that is a sring created by Bland for the full order,
+                        this string is semicolen separated eg: "1x Marsala; -Chicken; 2X Filet; - Medium;" 
+                    </p>
+
+                    <dl class="field-list">
+                        <dt> Agents </dt>
+                        <dd><span class="tag agent-open">Julia (Open)</span></dd>
+
+                        <dt> Node Name </dt>
+                        <dd>Price Caulculator (Webhook)</dd>
+
+                        <dt>When Bland calls it</dt>
+                        <dd>After user shared the full order</dd>
+
+                        <dt>Required pathway data</dt>
+                        <dd><code>order_summary</code> Variable with user's full order quantities, items and modifiers.</dd>
+
+                        <dt>Authentication</dt>
+                        <dd>Protected endpoint. Bearer Toeken <code>$VOICE_ORDER_API_TOKEN</code></dd>
+
+                        <dt>Failure behavior</dt>
+                        <dd>If the Bearer Toeken is wrong it returns Unauthorized.<br>
+                        If an item is not recognized, instead of having the whole call fail; the item appears on the warnings list on the body response.</dd>
+                    </dl>
+
+                    <h3>Response shape</h3>
+<pre><code>{
+    "total_price": 134, 
+    "warnings": []
+}</code></pre>
+
+                </article>
+
+                    <article class="api-card" id="send_order">
+                        <span class="method post">POST</span>
+                        <span class="api-name">Menu Items Search</span>
+                        <code>https://hook.eu2.make.com/99ivo0o8ussulqe2m6rudrwqwt1n1ioy</code>
+                        <span class="tag internal">protected</span>
+                        <span class="tag internal">make.com</span>
+                    </div>
+                    <p>
+                        It is the API endpoint that finalizes a carryout order.
+                        Sends order to the kitchen, to Host Stand Email,
+                        and SMS confimration to user with the order summary and a stripe payment link.
+                    </p>
+
+                    <dl class="field-list">
+                        <dt> Agents </dt>
+                        <dd><span class="tag agent-open">Julia (Open)</span></dd>
+
+                        <dt> Node Name </dt>
+                        <dd>Send Order to Host Stand</dd>
+
+                        <dt>When Bland calls it</dt>
+                        <dd>After user confrimed both phone number and name.</dd>
+
+                        <dt>Required pathway data</dt>
+                        <dd><code>order_summary</code> Variable with user's full order quantities, items and modifiers.<br>
+                        <code>name</code> Variable with user's name.<br>
+                        <code>phone_number</code> Variable with user's phone number.<br>
+                        <code>total_price</code> Variable with user's total price.
+        
+                        </dd>
+                        
+
+
+                        <dt>Authentication</dt>
+                        <dd>Protected endpoint. Header <code>x-make-apikey</code></dd>
+
+                        <dt>Failure behavior</dt>
+                        <dd>If the header protcetion token is is wrong it returns Unauthorized from Make.com.<br></dd>
+                    </dl>
+
+                </article>
+
             </section>
 
-            <section id="html-template">
-                <h2>HTML Template To Copy</h2>
-                <p>
-                    Copy this block into the catalog section when you add a new call.
-                </p>
-                <pre><code>&lt;article class="api-card" id="new-api-id"&gt;
-    &lt;div class="api-title"&gt;
-        &lt;span class="method post"&gt;POST&lt;/span&gt;
-        &lt;span class="api-name"&gt;New API call name&lt;/span&gt;
-        &lt;code&gt;/replace/with/path/&lt;/code&gt;
-        &lt;span class="tag public"&gt;public/token/auth&lt;/span&gt;
-        &lt;span class="tag internal"&gt;used by Bland&lt;/span&gt;
-    &lt;/div&gt;
-    &lt;p&gt;
-        Short description of what Bland uses this call for during the conversation.
-    &lt;/p&gt;
-
-    &lt;dl class="field-list"&gt;
-        &lt;dt&gt;When Bland calls it&lt;/dt&gt;
-        &lt;dd&gt;Describe the exact conversation moment or condition.&lt;/dd&gt;
-
-        &lt;dt&gt;Required pathway data&lt;/dt&gt;
-        &lt;dd&gt;List Bland variables, request fields, or location/account context.&lt;/dd&gt;
-
-        &lt;dt&gt;Authentication&lt;/dt&gt;
-        &lt;dd&gt;Public, token-protected, dashboard-authenticated, or other.&lt;/dd&gt;
-
-        &lt;dt&gt;Failure behavior&lt;/dt&gt;
-        &lt;dd&gt;What Bland should say or do if the endpoint returns an error or timeout.&lt;/dd&gt;
-
-        &lt;dt&gt;Side effects&lt;/dt&gt;
-        &lt;dd&gt;State whether this sends an email, SMS, creates a record, updates a cart, etc.&lt;/dd&gt;
-    &lt;/dl&gt;
-
-    &lt;h3&gt;Request example&lt;/h3&gt;
-    &lt;pre&gt;&lt;code&gt;{
-  "replace": "with request payload if applicable"
-}&lt;/code&gt;&lt;/pre&gt;
-
-    &lt;h3&gt;Response example&lt;/h3&gt;
-    &lt;pre&gt;&lt;code&gt;{
-  "replace": "with response payload"
-}&lt;/code&gt;&lt;/pre&gt;
-&lt;/article&gt;</code></pre>
-            </section>
         </div>
     </main>
 </body>
