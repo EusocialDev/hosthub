@@ -363,8 +363,10 @@
             <a href="#overview">Overview</a>
             <a href="#hours-of-operation">Hours of Operation</a>
             <a href='#carryout'>Carryout</a>
-            <a href="#add-new">Add a new call</a>
-            <a href="#html-template">HTML template</a>
+            <a href="#reservation">Reservation</a>
+            <a href="#private-events">Private Events</a>
+            <a href="#leave-message">Leave Message</a>
+
         </aside>
 
         <div class="content">
@@ -443,7 +445,7 @@
                 <h2>Carryout</h2>
 
 
-                <article class="api-card" id="search-menu-item">
+                <article class="api-card">
                     <div class="api-title">
                         <span class="method get">GET</span>
                         <span class="api-name">Search Menu Item</span>
@@ -452,9 +454,9 @@
                         <span class="tag internal">160maincarryout</span>
                     </div>
                     <p>
-                        Returns information about a menu item and its needed modifiers.
-                        Bland can call this during the carryout order node when user is placing an order.
-                        It uses rapidfuzz to search trhough different possible menu items and returns the best matches on a scoring system.
+                        Returns information about a menu item and its required modifiers.
+                        Bland can call this during the carryout order node when the user is placing an order.
+                        It uses RapidFuzz to search through different possible menu items and returns the best matches based on a scoring system.
                     </p>
 
                     <dl class="field-list">
@@ -468,13 +470,13 @@
                         <dd>When a caller is ordering an item.</dd>
 
                         <dt>Required pathway data</dt>
-                        <dd><code>q</code> item user is trying to order, it can be a list of comma separated items</dd>
+                        <dd><code>q</code> item the user is trying to order. It can also be a comma-separated list of items.</dd>
 
                         <dt>Authentication</dt>
-                        <dd>Protected endpoint. Bearer Toeken <code>$VOICE_ORDER_API_TOKEN</code></dd>
+                        <dd>Protected endpoint. Bearer Token <code>$VOICE_ORDER_API_TOKEN</code></dd>
 
                         <dt>Failure behavior</dt>
-                        <dd>If the Bearer Toeken is wrong it returns Unauthorized.</dd>
+                        <dd>If the Bearer Token is wrong, it returns Unauthorized.</dd>
                     </dl>
 
                     <h3>Response shape</h3>
@@ -553,7 +555,7 @@
 
                 </article>
 
-                <article class="api-card" id="menu_items_search">
+                <article class="api-card">
                     <div class="api-title">
                         <span class="method get">GET</span>
                         <span class="api-name">Menu Items Search</span>
@@ -562,9 +564,9 @@
                         <span class="tag internal">160maincarryout</span>
                     </div>
                     <p>
-                        It searches trough the menu based on user question.
-                        Different than the other API endpoint that search the item user is talking about to resolve modifiers
-                        this endpoint looks for querries like gluten-free pasta and many other things that are not necessarily 
+                        It searches through the menu based on the user's question.
+                        Unlike the other API endpoint that searches for the item the user is talking about to resolve modifiers,
+                        this endpoint looks for queries like gluten-free pasta and many other things that are not necessarily
                         menu items but can be used to filter the menu and return a list of items that match the query.
                     </p>
 
@@ -579,13 +581,13 @@
                         <dd>When a caller is asking questions about the menu during the carryout node.</dd>
 
                         <dt>Required pathway data</dt>
-                        <dd><code>menu_search_query</code> query for search based on keywords from user question.</dd>
+                        <dd><code>menu_search_query</code> query based on keywords from the user's question.</dd>
 
                         <dt>Authentication</dt>
-                        <dd>Protected endpoint. Bearer Toeken <code>$VOICE_ORDER_API_TOKEN</code></dd>
+                        <dd>Protected endpoint. Bearer Token <code>$VOICE_ORDER_API_TOKEN</code></dd>
 
                         <dt>Failure behavior</dt>
-                        <dd>If the Bearer Toeken is wrong it returns Unauthorized.</dd>
+                        <dd>If the Bearer Token is wrong, it returns Unauthorized.</dd>
                     </dl>
 
                     <h3>Response shape</h3>
@@ -605,7 +607,7 @@
         "name": "Linguine Alle Vongole",
         "category": "Pasta",
         "base_price": "28.00",
-        "description": "White win clam sauce",
+        "description": "White wine clam sauce",
         "dietary_tags": []
         },
         {
@@ -624,18 +626,18 @@
 
                 </article>
 
-                <article class="api-card" id="price_calculator">
+                <article class="api-card">
                     <div class="api-title">
                         <span class="method post">POST</span>
-                        <span class="api-name">Menu Items Search</span>
+                        <span class="api-name">Total Price Calculator</span>
                         <code>https://160maincarryout.com/api/agent/order-summary/total</code>
                         <span class="tag internal">protected</span>
                         <span class="tag internal">160maincarryout</span>
                     </div>
                     <p>
-                        It returns total price based on carryout website database. It takes a simple
-                        json body with a single key <code>order_summary</code> that is a sring created by Bland for the full order,
-                        this string is semicolen separated eg: "1x Marsala; -Chicken; 2X Filet; - Medium;" 
+                        It returns the total price based on the carryout website database. It takes a simple
+                        JSON body with a single key, <code>order_summary</code>, which is a string created by Bland for the full order.
+                        This string is semicolon-separated, for example: "1x Marsala; -Chicken; 2x Filet; - Medium;"
                     </p>
 
                     <dl class="field-list">
@@ -643,20 +645,20 @@
                         <dd><span class="tag agent-open">Julia (Open)</span></dd>
 
                         <dt> Node Name </dt>
-                        <dd>Price Caulculator (Webhook)</dd>
+                        <dd>Price Calculator (Webhook)</dd>
 
                         <dt>When Bland calls it</dt>
-                        <dd>After user shared the full order</dd>
+                        <dd>After the user shares the full order.</dd>
 
                         <dt>Required pathway data</dt>
-                        <dd><code>order_summary</code> Variable with user's full order quantities, items and modifiers.</dd>
+                        <dd><code>order_summary</code> variable with the user's full order quantities, items, and modifiers.</dd>
 
                         <dt>Authentication</dt>
-                        <dd>Protected endpoint. Bearer Toeken <code>$VOICE_ORDER_API_TOKEN</code></dd>
+                        <dd>Protected endpoint. Bearer Token <code>$VOICE_ORDER_API_TOKEN</code></dd>
 
                         <dt>Failure behavior</dt>
-                        <dd>If the Bearer Toeken is wrong it returns Unauthorized.<br>
-                        If an item is not recognized, instead of having the whole call fail; the item appears on the warnings list on the body response.</dd>
+                        <dd>If the Bearer Token is wrong, it returns Unauthorized.<br>
+                        If an item is not recognized, instead of having the whole call fail, the item appears in the warnings list in the response body.</dd>
                     </dl>
 
                     <h3>Response shape</h3>
@@ -667,17 +669,18 @@
 
                 </article>
 
-                    <article class="api-card" id="send_order">
+                    <article class="api-card">
+                    <div class="api-title">
                         <span class="method post">POST</span>
-                        <span class="api-name">Menu Items Search</span>
+                        <span class="api-name">160Main Carryout</span>
                         <code>https://hook.eu2.make.com/99ivo0o8ussulqe2m6rudrwqwt1n1ioy</code>
                         <span class="tag internal">protected</span>
                         <span class="tag internal">make.com</span>
                     </div>
                     <p>
                         It is the API endpoint that finalizes a carryout order.
-                        Sends order to the kitchen, to Host Stand Email,
-                        and SMS confimration to user with the order summary and a stripe payment link.
+                        It sends the order to the kitchen and host stand email,
+                        and sends an SMS confirmation to the user with the order summary and a Stripe payment link.
                     </p>
 
                     <dl class="field-list">
@@ -688,13 +691,13 @@
                         <dd>Send Order to Host Stand</dd>
 
                         <dt>When Bland calls it</dt>
-                        <dd>After user confrimed both phone number and name.</dd>
+                        <dd>After the user confirms both phone number and name.</dd>
 
                         <dt>Required pathway data</dt>
-                        <dd><code>order_summary</code> Variable with user's full order quantities, items and modifiers.<br>
-                        <code>name</code> Variable with user's name.<br>
-                        <code>phone_number</code> Variable with user's phone number.<br>
-                        <code>total_price</code> Variable with user's total price.
+                        <dd><code>order_summary</code> variable with the user's full order quantities, items, and modifiers.<br>
+                        <code>name</code> variable with the user's name.<br>
+                        <code>phone_number</code> variable with the user's phone number.<br>
+                        <code>total_price</code> variable with the user's total price.
         
                         </dd>
                         
@@ -704,12 +707,341 @@
                         <dd>Protected endpoint. Header <code>x-make-apikey</code></dd>
 
                         <dt>Failure behavior</dt>
-                        <dd>If the header protcetion token is is wrong it returns Unauthorized from Make.com.<br></dd>
+                        <dd>If the header protection token is wrong, it returns Unauthorized from Make.com.<br></dd>
+                    </dl>
+
+                    </article>
+
+            </section>
+
+                <section id="reservation">
+                <h2>Reservation</h2>
+
+                <article class="api-card">
+                    <div class="api-title">
+                        <span class="method post">POST</span>
+                        <span class="api-name">RESY Check</span>
+                        <code>https://resy-api-wrapper-production.up.railway.app/api/resy/availability/</code>
+                        <span class="tag internal">protected</span>
+                        <span class="tag internal">RESY Wrapper</span>
+                    </div>
+                    <p>
+                        Returns a list with RESY availability based on date and party size.
+                    </p>
+
+                    <dl class="field-list">
+                        <dt> Agents </dt>
+                        <dd><span class="tag agent-open">Julia (Open)</span> <span class="tag agent-close">Julia (Closed)</span> </dd>
+
+                        <dt> Node Name </dt>
+                        <dd>RESY Check Availability</dd>
+
+                        <dt>When Bland calls it</dt>
+                        <dd>After the agent gathers all the necessary information for a reservation.</dd>
+
+                        <dt>Required pathway data</dt>
+                        <dd><code>venue_id</code> venue ID on RESY.<br>
+                        <code>date</code> date for the reservation.<br>
+                        <code>party_size</code> party size for the reservation.<br>
+                        <code>requested_time</code> requested time for the reservation.<br>
+                        <code>tolerance_minutes</code> window tolerance in minutes that determines the API-generated response for the agent.
+                        For example, if the user requested an 8:00pm reservation and there is availability inside that declared window, <code>has_availability_45min_window</code> will come back as true.
+                        
+                        </dd>
+
+                        <dt>Authentication</dt>
+                        <dd>Token <code>Bearer $APP_ACCESS_PASSWORD</code></dd>
+
+                        <dt>Failure behavior</dt>
+                        <dd>It fails gracefully during the call. If the API returns an error, the agent does not mention the availability check.</dd>
+                    </dl>
+
+                    <h3>Response shape</h3>
+<pre><code>{
+  "success": true,
+  "data": {
+    "available": true,
+    "has_availability_45min_window": false,
+    "available_times": [
+      "16:00:00",
+      "16:15:00",
+      "16:30:00",
+      "16:45:00",
+      "17:00:00",
+      "17:15:00",
+      "17:45:00",
+      "18:00:00",
+      "18:15:00",
+      "18:45:00",
+      "19:00:00",
+      "19:15:00",
+      "19:30:00",
+      "19:45:00",
+      "20:00:00",
+      "20:15:00",
+      "20:30:00",
+      "20:45:00",
+      "21:00:00",
+      "21:15:00",
+      "21:30:00",
+      "21:45:00",
+      "22:00:00"
+    ]
+  }
+}</code></pre>
+                </article>
+
+                    <article class="api-card">
+                    <div class="api-title">
+                        <span class="method post">POST</span>
+                        <span class="api-name">160Main Reservation</span>
+                        <code>https://resy-api-wrapper-production.up.railway.app/api/resy/availability/</code>
+                        <span class="tag public">public</span>
+                        <span class="tag internal">Make.com</span>
+                    </div>
+                    <p>
+                        Last step in the reservation flow. It sends reservation details to the host stand and manager.
+                        It also sends the user the reservation link from RESY so they can finalize their reservation.
+                    </p>
+
+                    <dl class="field-list">
+                        <dt> Agents </dt>
+                        <dd><span class="tag agent-open">Julia (Open)</span> <span class="tag agent-close">Julia (Closed)</span> </dd>
+
+                        <dt> Node Name </dt>
+                        <dd>Reservation share with host/manager</dd>
+
+                        <dt>When Bland calls it</dt>
+                        <dd>After the agent gathers all the necessary information for a reservation or after the RESY availability check.</dd>
+
+                        <dt>Required pathway data</dt>
+                        <dd><code>user_name</code> user's name for the reservation.<br>
+                        <code>date</code> date for the reservation.<br>
+                        <code>time</code> time for the reservation.<br>
+                        <code>guests</code> party size for the reservation.<br>
+                        <code>short_from</code> user's phone number for the reservation.<br>
+                        <code>request</code> any special request from the user.
+                        </dd>
+
+                        <dt>Authentication</dt>
+                        <dd>Token <code>Bearer $APP_ACCESS_PASSWORD</code></dd>
+
+                        <dt>Failure behavior</dt>
+                        <dd>If any required fields are missing, it returns an error from Make.com.</dd>
                     </dl>
 
                 </article>
 
+                <article class="api-card">
+                    <div class="api-title">
+                        <span class="method post">POST</span>
+                        <span class="api-name">160Main Update Reservation</span>
+                        <code>https://hook.eu2.make.com/keg8dd8vefc2x8djlrzap5t7boawdhxo</code>
+                        <span class="tag public">public</span>
+                        <span class="tag internal">Make.com</span>
+                    </div>
+                    <p>
+                        It is the API endpoint that updates a reservation.
+                        It sends updated reservation details, like a party-size change or date change, to the host stand.
+                    </p>
+
+                    <dl class="field-list">
+                        <dt> Agents </dt>
+                        <dd><span class="tag agent-open">Julia (Open)</span> <span class="tag agent-close">Julia (Closed)</span> </dd>
+
+                        <dt> Node Name </dt>
+                        <dd>Update Reservation Webhook Node</dd>
+
+                        <dt>When Bland calls it</dt>
+                        <dd>After the agent gathers all the necessary information for a reservation update.</dd>
+
+                        <dt>Required pathway data</dt>
+                        <dd><code>name</code> user's name.<br>
+                        <code>phone_number</code> user's phone number.<br>
+                        <code>user_message</code> a summarized message from the user about the reason for the contact.
+                        </dd>
+
+                        <dt>Authentication</dt>
+                        <dd>Public endpoint. Do not include secrets in the request.</dd>
+
+                        <dt>Failure behavior</dt>
+                        <dd>If any required fields are missing, it returns an error from Make.com.</dd>
+                    </dl>
+
+                </article>
+
+                <article class="api-card">
+                    <div class="api-title">
+                        <span class="method post">POST</span>
+                        <span class="api-name">160Main Cancel Reservation</span>
+                        <code>https://hook.eu2.make.com/ta2aehd5ktefu9qrwkmmp7lrol6fbgcm</code>
+                        <span class="tag public">public</span>
+                        <span class="tag internal">Make.com</span>
+                    </div>
+                    <p>
+                        It is the API endpoint that cancels a reservation.
+                        It sends cancellation details to the host stand.
+                    </p>
+
+                    <dl class="field-list">
+                        <dt> Agents </dt>
+                        <dd><span class="tag agent-open">Julia (Open)</span> <span class="tag agent-close">Julia (Closed)</span> </dd>
+
+                        <dt> Node Name </dt>
+                        <dd>Reservation share with host/manager</dd>
+
+                        <dt>When Bland calls it</dt>
+                        <dd>After the agent gathers all the necessary information for a reservation cancellation.</dd>
+
+                        <dt>Required pathway data</dt>
+                        <dd><code>name</code> user's name.<br>
+                        <code>phone_number</code> user's phone number.<br>
+                        <code>user_message</code> a summarized message from the user about the reason for the contact.
+                        </dd>
+
+                        <dt>Authentication</dt>
+                        <dd>Public endpoint. Do not include secrets in the request.</dd>
+
+                        <dt>Failure behavior</dt>
+                        <dd>If any required fields are missing, it returns an error from Make.com.</dd>
+                    </dl>
+                </article>
             </section>
+
+            <section id="private-events">
+                <h2>Private Events</h2>
+
+                <article class="api-card">
+                    <div class="api-title">
+                        <span class="method post">POST</span>
+                        <span class="api-name">160Main Private Events</span>
+                        <code>https://hook.eu2.make.com/wqbh8qqxodfmm14avbsnjeu72w37ya2h</code>
+                        <span class="tag public">public</span>
+                        <span class="tag internal">Make.com</span>
+                    </div>
+                    <p>
+                        It sends all private event information to the manager email and generates the opportunity in GoHighLevel.
+                    </p>
+
+                    <dl class="field-list">
+                        <dt> Agents </dt>
+                        <dd><span class="tag agent-open">Julia (Open)</span> <span class="tag agent-close">Julia (Closed)</span> </dd>
+
+                        <dt> Node Name </dt>
+                        <dd>Share Private Party details with the manager</dd>
+
+                        <dt>When Bland calls it</dt>
+                        <dd>After gathering all the necessary initial details for a private event.</dd>
+
+                        <dt>Required pathway data</dt>
+                        <dd><code>name</code> user's name.<br>
+                        <code>phone_number</code> user's phone number.<br>
+                        <code>date</code> party date.<br>
+                        <code>guests</code> number of guests.<br>
+                        <code>occasion</code> private event occasion.<br>
+                        <code>time</code> party time.
+                        </dd>
+
+                        <dt>Authentication</dt>
+                        <dd>Public endpoint. Do not include secrets in the request.</dd>
+
+                        <dt>Failure behavior</dt>
+                        <dd>If any required fields are missing, it returns an error from Make.com.</dd>
+                    </dl>
+
+
+                </article>
+
+                <article class="api-card">
+                    <div class="api-title">
+                        <span class="method post">POST</span>
+                        <span class="api-name">Private Party Manager Email Communication</span>
+                        <code>https://hook.eu2.make.com/26hga9w1r5sqlfxgmuggv3b3xy2m0vff</code>
+                        <span class="tag public">public</span>
+                        <span class="tag internal">Make.com</span>
+                    </div>
+                    <p>
+                        It sends the manager an email with the reason a user contacted
+                        about an existing private event.
+                    </p>
+
+                    <dl class="field-list">
+                        <dt> Agents </dt>
+                        <dd><span class="tag agent-open">Julia (Open)</span> <span class="tag agent-close">Julia (Closed)</span> </dd>
+
+                        <dt> Node Name </dt>
+                        <dd>Send manager message about private party</dd>
+
+                        <dt>When Bland calls it</dt>
+                        <dd>After understanding the reason for the contact and gathering the user's phone number and name.</dd>
+
+                        <dt>Required pathway data</dt>
+                        <dd><code>name</code> user's name.<br>
+                        <code>phone_number</code> user's phone number.<br>
+                        <code>user_message</code> a summarized message from the user about the reason for the contact.
+           
+                        </dd>
+
+                        <dt>Authentication</dt>
+                        <dd>Public endpoint. Do not include secrets in the request.</dd>
+
+                        <dt>Failure behavior</dt>
+                        <dd>If any required fields are missing, it returns an error from Make.com.</dd>
+                    </dl>
+
+
+                </article>
+            </section>
+
+                <section id="leave-message">
+                <h2>Leave a Message</h2>
+
+                <article class="api-card">
+                    <div class="api-title">
+                        <span class="method post">POST</span>
+                        <span class="api-name">160Main Leave a Message</span>
+                        <code>https://hook.eu2.make.com/ybpsab98c63yvgkecd4f35vieuh9qw8u</code>
+                        <span class="tag public">public</span>
+                        <span class="tag internal">Make.com</span>
+                    </div>
+                    <p>
+                        For any requests that the AI agent is not capable of helping the user with,
+                        like real-time availability or other information it does not have,
+                        it prompts the user to say "Leave Message." It then sends the user to a global node where
+                        it understands the reason the user is contacting the restaurant,
+                        gets their contact information, and shares it with the host stand.
+                    </p>
+
+                    <dl class="field-list">
+                        <dt> Agents </dt>
+                        <dd><span class="tag agent-open">Julia (Open)</span> <span class="tag agent-close">Julia (Closed)</span> </dd>
+
+                        <dt> Node Name </dt>
+                        <dd>Send email to host</dd>
+
+                        <dt>When Bland calls it</dt>
+                        <dd>After gathering the full message the user is trying to share and gathering contact information.</dd>
+
+                        <dt>Required pathway data</dt>
+                        <dd><code>name</code> user's name.<br>
+                        <code>phone_number</code> user's phone number.<br>
+                        <code>user_message</code> a summarized message from the user about the reason for the contact.
+           
+                        </dd>
+
+                        <dt>Authentication</dt>
+                        <dd>Public endpoint. Do not include secrets in the request.</dd>
+
+                        <dt>Failure behavior</dt>
+                        <dd>If any required fields are missing, it returns an error from Make.com.</dd>
+                    </dl>
+
+
+                </article>
+
+
+            </section>
+
 
         </div>
     </main>
