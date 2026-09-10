@@ -4,271 +4,178 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HostHub</title>
+    <meta name="description" content="HostHub keeps restaurant calls organized, actionable, and moving toward revenue.">
+    <title>HostHub by Eusocial</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'testendpoint/css/landing.css' %}">
 </head>
-<body>
-    <header class="hero">
-        <div class="hero-nav">
-        <a href="{% url 'testendpoint:account_login' %}" class="login-button">
-            Login
-        </a>
-        </div>
-        <div class="hero-overlay"></div>
-        <div class="container hero-content">
-            <div class="eyebrow">Powered by Eusocial</div>
-            <h1>HostHub helps restaurants capture revenue that would otherwise be lost.</h1>
-            <p class="hero-text">
-                HostHub is a restaurant operations platform built to work alongside Voice AI agents,
-                helping restaurants manage reservations, carryout orders, guest inquiries, voicemail,
-                and follow-up tasks in one organized place.
-            </p>
-
-            <div class="hero-cards">
-                <div class="hero-card">
-                    <span class="hero-card-number">24/7</span>
-                    <span class="hero-card-label">AI-assisted phone coverage</span>
-                </div>
-                <div class="hero-card">
-                    <span class="hero-card-number">Fewer</span>
-                    <span class="hero-card-label">missed reservations and orders</span>
-                </div>
-                <div class="hero-card">
-                    <span class="hero-card-number">More</span>
-                    <span class="hero-card-label">visibility for hosts and managers</span>
-                </div>
+<body class="landing-body">
+    <header class="site-header">
+        <div class="nav-inner">
+            <a class="brand" href="#top" aria-label="eu HostHub home">
+                <span class="brand-mark">eu</span>
+                <span class="brand-name">HostHub</span>
+            </a>
+            <nav class="site-nav" aria-label="Primary navigation">
+                <a href="#product">Product</a>
+                <a href="#connections">Connections</a>
+                <a href="#how-it-works">How it works</a>
+            </nav>
+            <div class="header-actions">
+                <a class="login-link" href="{% url 'testendpoint:account_login' %}">Log in</a>
+                <a class="header-signup" href="#get-started">Sign up</a>
             </div>
         </div>
     </header>
 
-    <main>
-        <section class="section">
-            <div class="container">
-                <div class="section-heading">
-                    <span class="section-tag">What is HostHub?</span>
-                    <h2>A central hub for restaurant communication and action.</h2>
-                    <p>
-                        Restaurants lose revenue every day from missed calls, unanswered questions,
-                        delayed callbacks, forgotten voicemails, and untracked guest requests.
-                        HostHub was built to solve that operational gap.
-                    </p>
+    <main id="top">
+        <section class="hero" id="product">
+            <div class="hero-copy">
+                <div class="eyebrow"><span></span> BY EUSOCIAL</div>
+                <h1>Your restaurant's phone, organized around the way you work.</h1>
+                <p class="hero-description">HostHub turns every AI-assisted call into a clear next step, so reservations, orders, and guest requests keep moving while your team stays present on the floor.</p>
+                <div class="hero-actions">
+                    <a class="button button-dark" href="{% url 'testendpoint:account_login' %}">Log in</a>
+                    <a class="text-link" href="#how-it-works">See how it works <span aria-hidden="true">→</span></a>
+                </div>
+            </div>
+
+            <div class="demo-window" data-demo aria-label="Autoplay HostHub product tour">
+                <div class="demo-chrome">
+                    <div class="chrome-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+                    <span class="chrome-label">hosthub / restaurant operations</span>
+                    <span class="scene-count" data-scene-count>01 / 05</span>
                 </div>
 
-                <div class="grid two-col">
-                    <div class="info-card">
-                        <h3>Built for real hospitality operations</h3>
-                        <p>
-                            HostHub is not just a dashboard. It is a workflow layer for restaurants that
-                            need better control over incoming guest communication, especially when the
-                            team is busy during service.
-                        </p>
-                    </div>
+                <div class="demo-stage" aria-live="polite">
+                    <article class="demo-scene is-active" data-scene="0">
+                        <div class="hosthub-screen live-flow-screen" data-live-flow>
+                            <header class="app-header"><button class="live-pill has-live" type="button" data-live-open>Live calls <b>1</b></button><strong>HostHub</strong><div class="app-actions"><span>Manager Area</span><span>Carryouts</span><span class="logout">Logout</span></div></header>
+                            <div class="app-content live-dashboard"><nav class="app-tabs"><span class="active-green">Reservations</span><span>Carryout</span><span>Leave a Message</span><span>Private Events</span><span>Handled</span></nav><div class="date-pills"><span class="active-pill">Today</span><span>Yesterday</span><span>Last 7 Days</span><span>All Time</span><span class="calendar">▣</span></div><div class="app-body"><div class="queue-panel"><div class="search-row"><span>Search by phone number</span><b>Search</b></div><div class="queue-card selected-green"><div class="queue-top"><strong>Riley Bennett</strong><small>Live now</small></div><b>Reservation</b><em>IN PROGRESS</em><p>AI host is speaking with the caller...</p></div><div class="queue-card"><div class="queue-top"><strong>Avery Morgan</strong><small>Today · 10:42 AM</small></div><b>Reservation</b><p>Request captured and waiting for review.</p></div></div><div class="detail-panel"><h3>Reservation</h3><strong>Riley Bennett</strong><p class="detail-phone">Live call · +1 (313) 555-0147</p><div class="live-detail-placeholder"><span class="live-wave"></span><b>Call in progress</b><small>Open Live calls to follow the conversation.</small></div><h4>Call Info</h4><p class="info-lines"><b>Type:</b> Reservation<br><b>Started:</b> Just now<br><b>Status:</b> In progress</p></div></div></div>
+                            <div class="live-overlay" data-live-overlay>
+                                <div class="live-modal">
+                                    <div class="live-modal-header"><strong>Live calls</strong><button type="button" aria-label="Close live calls" data-live-close>×</button></div>
+                                    <div class="live-modal-body">
+                                        <div class="live-call-list" data-live-list><div class="live-modal-top"><button type="button" class="live-back hidden">← Back</button><span>1 active call</span></div><button type="button" class="live-call-item" data-live-call><span class="live-call-avatar">RB</span><span><strong>Riley Bennett</strong><small>+1 (313) 555-0147 · 00:18</small></span><b>LIVE</b></button></div>
+                                        <div class="live-call-detail" data-live-detail><div class="live-transcript-head"><button type="button" data-live-back>← Back</button><span>b8d2e4a1-91d7-4f0f-8ec7-2c9a7d6e5410</span></div><div class="fake-chat"><div class="chat-bubble agent-chat">Thanks for calling Juniper House. How can I help today?</div><div class="chat-bubble caller-chat">Could I reserve a table for four this Friday?</div><div class="chat-bubble agent-chat">Absolutely. I’m checking the evening availability now.</div><div class="chat-bubble caller-chat">7:30 would be perfect.</div></div><div class="live-status"><span></span> Updating live · 00:24</div></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
 
-                    <div class="info-card">
-                        <h3>Works with Voice AI agents</h3>
-                        <p>
-                            HostHub integrates with Voice AI agents that can answer calls, take
-                            reservation requests, handle carryout orders, answer common questions,
-                            capture voicemail, and route conversations into clear actionable items for staff.
-                        </p>
-                    </div>
+                    <article class="demo-scene" data-scene="1">
+                        <div class="hosthub-screen">
+                            <header class="app-header"><span class="live-pill">Live calls <b>0</b></span><strong>HostHub</strong><div class="app-actions"><span>Manager Area</span><span>Carryouts</span><span class="logout">Logout</span></div></header>
+                            <div class="app-content">
+                                <nav class="app-tabs"><span class="active-green">Reservations</span><span>Carryout</span><span>Leave a Message</span><span>Private Events</span><span>Handled</span></nav>
+                                <div class="date-pills"><span class="active-pill">Today</span><span>Yesterday</span><span>Last 7 Days</span><span>All Time</span><span class="calendar">▣</span></div>
+                                <div class="app-body">
+                                    <div class="queue-panel"><div class="search-row"><span>Search by phone number</span><b>Search</b></div><div class="queue-card selected-green"><div class="queue-top"><strong>Avery Morgan</strong><small>Today · 10:42 AM</small></div><b>Reservation</b><em>NEEDS ACTION</em><p>Reservation request for 4 guests on Friday evening...</p></div><div class="queue-card"><div class="queue-top"><strong>Guest</strong><small>Today · 10:18 AM</small></div><b>Other</b><p>Caller asked about the private dining room...</p></div></div>
+                                    <div class="detail-panel"><h3>Reservation</h3><strong>Avery Morgan</strong><p class="detail-phone">Fictional caller · Call #2048</p><label class="check-line"><i></i> Mark as handled</label><button class="sms-button">✈ Send SMS Confirmation</button><h4>Call Info</h4><p class="info-lines"><b>Type:</b> Reservation<br><b>Received:</b> Today, 10:42 AM<br><b>Duration:</b> 3m 15s</p><div class="request-details"><h4>Reservation Request Details</h4><p><b>Name:</b> Avery Morgan<br><b>Guests:</b> 4<br><b>Reservation date:</b> 10/18/2026<br><b>Reservation time:</b> 7:30 p.m.<br><b>Request:</b> Patio if available</p></div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="demo-scene" data-scene="2">
+                        <div class="hosthub-screen">
+                            <header class="app-header"><span class="live-pill">Live calls <b>0</b></span><strong>HostHub</strong><div class="app-actions"><span>Manager Area</span><span>Carryouts</span><span class="logout">Logout</span></div></header>
+                            <div class="app-content"><nav class="app-tabs"><span>Reservations</span><span class="active-orange">Carryout</span><span>Leave a Message</span><span>Private Events</span><span>Handled</span></nav><div class="date-pills"><span>Today</span><span>Yesterday</span><span class="active-pill">Last 7 Days</span><span>All Time</span><span class="calendar">▣</span></div><div class="app-body"><div class="queue-panel"><div class="search-row"><span>Search by phone number</span><b>Search</b></div><div class="queue-card selected-orange"><div class="queue-top"><strong>Casey Brooks</strong><small>Yesterday · 6:11 PM</small></div><b>Carryout</b><em>NEEDS ACTION</em><p>Order request captured with items and pickup details...</p></div><div class="queue-card"><div class="queue-top"><strong>Guest</strong><small>Sep 05 · 10:30 PM</small></div><b>Carryout</b><em>NEEDS ACTION</em><p>Caller inquired about placing a carryout order.</p></div></div><div class="detail-panel"><h3>Carryout</h3><strong>Casey Brooks</strong><p class="detail-phone">Fictional caller · Call #2051</p><label class="check-line"><i></i> Mark as handled</label><h4>Call Info</h4><p class="info-lines"><b>Type:</b> Carryout<br><b>Received:</b> Yesterday, 6:11 PM<br><b>Duration:</b> 2m 08s</p><div class="request-details orange-details"><h4>Carryout Details</h4><p><b>Order summary:</b><br>1× Seasonal entrée<br>1× Side salad<br>1× Dessert<br><b>Total price:</b> $72</p></div></div></div></div>
+                        </div>
+                    </article>
+
+                    <article class="demo-scene" data-scene="3">
+                        <div class="hosthub-screen manager-screen">
+                            <header class="app-header"><span class="back-button">←</span><strong>Manager Area</strong><div class="app-actions"><span>Carryouts</span><span class="logout">Logout</span></div></header>
+                            <div class="manager-content"><section class="manager-card"><h3>Early Open and Closing</h3><p>Close or open the restaurant early by pressing the buttons below.</p><div class="manager-rule"><span>Juniper House currently set to:</span><b>CLOSED</b></div><div class="manager-buttons"><button class="open-button">Open restaurant</button><button>Close restaurant</button></div></section><section class="manager-card hours-card"><h3>Holiday &amp; Special Hours</h3><p>Set days the restaurant is closed or opens with different hours.</p><div class="special-rule"><span class="rule-calendar">OCT<strong>18</strong></span><div><b>Private event</b><small>Closed all day · Applies to Juniper House</small></div><span class="green-check">✓</span></div><div class="manager-note">✓ The AI host will follow this rule automatically.</div></section></div>
+                        </div>
+                    </article>
+
+                    <article class="demo-scene" data-scene="4">
+                        <div class="hosthub-screen">
+                            <header class="app-header"><span class="live-pill">Live calls <b>0</b></span><strong>HostHub</strong><div class="app-actions"><span>Manager Area</span><span>Carryouts</span><span class="logout">Logout</span></div></header>
+                            <div class="app-content"><nav class="app-tabs"><span>Reservations</span><span>Carryout</span><span>Leave a Message</span><span>Private Events</span><span class="active-green">Handled</span></nav><div class="date-pills"><span class="active-pill">Today</span><span>Yesterday</span><span>Last 7 Days</span><span>All Time</span><span class="calendar">▣</span></div><div class="app-body"><div class="queue-panel"><div class="search-row"><span>Search by phone number</span><b>Search</b></div><div class="queue-card selected-green handled-card"><div class="queue-top"><strong>Avery Morgan</strong><small>Today · 10:46 AM</small></div><b>Reservation</b><em>HANDLED</em><p>Confirmation sent and request marked as handled.</p></div><div class="queue-card handled-card"><div class="queue-top"><strong>Casey Brooks</strong><small>Today · 10:44 AM</small></div><b>Carryout</b><em>HANDLED</em><p>Order details reviewed by the team.</p></div></div><div class="detail-panel handled-detail"><h3>Handled</h3><strong>Avery Morgan</strong><p class="detail-phone">Reservation · Call #2048</p><div class="handled-banner"><span>✓</span><div><b>Confirmation sent</b><small>This call is complete and visible in handled activity.</small></div></div><h4>Call Info</h4><p class="info-lines"><b>Action:</b> SMS confirmation sent<br><b>Handled:</b> Today, 10:46 AM<br><b>Status:</b> Complete</p><div class="transcript-box"><b>Call Transcript</b><span>+</span></div></div></div></div>
+                        </div>
+                    </article>
                 </div>
+
+                <div class="demo-footer"><div class="scene-progress" role="tablist" aria-label="Product tour scenes"><button class="progress-dot is-active" type="button" role="tab" aria-label="Show live call flow" aria-selected="true" data-scene-button="0"></button><button class="progress-dot" type="button" role="tab" aria-label="Show reservation dashboard" aria-selected="false" data-scene-button="1"></button><button class="progress-dot" type="button" role="tab" aria-label="Show carryout dashboard" aria-selected="false" data-scene-button="2"></button><button class="progress-dot" type="button" role="tab" aria-label="Show manager area" aria-selected="false" data-scene-button="3"></button><button class="progress-dot" type="button" role="tab" aria-label="Show handled calls" aria-selected="false" data-scene-button="4"></button></div><span data-scene-caption>Watch a live call move from alert to conversation.</span></div>
             </div>
         </section>
 
-        <section class="section section-dark">
-            <div class="container">
-                <div class="section-heading">
-                    <span class="section-tag">Why it matters</span>
-                    <h2>Restaurants do not just lose calls. They lose revenue.</h2>
-                    <p>
-                        A missed phone call can mean a lost table, a lost order, a lost private event,
-                        or a guest who never comes back. HostHub helps restaurants reduce that loss
-                        by making sure inbound demand is captured, categorized, and visible.
-                    </p>
-                </div>
+        <section class="intro-section"><div class="section-kicker">One calm place for a busy phone</div><h2>Calls come in. Your team knows what to do next.</h2><p>HostHub connects the conversation to the operation: the right category, the right rule, and the right follow-up.</p></section>
 
-                <div class="grid three-col">
-                    <div class="metric-card">
-                        <h3>Reservations</h3>
-                        <p>
-                            Capture reservation calls even when staff cannot answer in the moment,
-                            helping restaurants avoid empty tables caused by missed opportunities.
-                        </p>
-                    </div>
+        <section class="carryout-section" id="connections"><div class="carryout-copy"><div class="section-kicker"><span class="eyebrow-dot"></span> CARRYOUT BY EUSOCIAL</div><h2>Let HostHub handle the phone. Let Carryout handle the order.</h2><p>Carryout builds a branded ordering webpage around the tools your restaurant already uses, streamlining the path from menu to payment to kitchen. Together, HostHub and Carryout keep the conversation and the order moving in one connected workflow.</p><a class="text-link" id="how-it-works" href="#get-started">See how they work together <span aria-hidden="true">→</span></a></div><div class="carryout-flow" aria-label="HostHub and Carryout workflow"><div class="flow-step"><span class="flow-icon">◌</span><div><small>HostHub</small><b>Incoming call becomes a clear request</b></div></div><div class="flow-connector"><i></i><span>handoff</span><i></i></div><div class="flow-step"><span class="flow-icon">✦</span><div><small>Carryout</small><b>Branded ordering page fits your tools</b></div></div><div class="flow-connector"><i></i><span>streamlined</span><i></i></div><div class="flow-step"><span class="flow-icon">✓</span><div><small>Your operation</small><b>Payment, kitchen, and team stay in sync</b></div></div></div></section>
+        <section class="feature-section" ><div class="feature-row"><div class="feature-number">01</div><div><h3>Route by call type</h3><p>Keep reservations, carryout orders, messages, and private events in clear queues that match the way your restaurant works.</p></div><span class="feature-arrow">↗</span></div><div class="feature-row"><div class="feature-number">02</div><div><h3>Teach the phone your hours</h3><p>Set regular schedules and special closures so your AI host gives guests accurate answers without another handoff.</p></div><span class="feature-arrow">↗</span></div><div class="feature-row"><div class="feature-number">03</div><div><h3>Act while the context is fresh</h3><p>Review the request, send a confirmation, and mark the call handled before a good opportunity becomes a missed one.</p></div><span class="feature-arrow">↗</span></div></section>
 
-                    <div class="metric-card">
-                        <h3>Carryout</h3>
-                        <p>
-                            Keep takeout demand from slipping away by handling carryout calls and
-                            organizing order details in a more structured workflow.
-                        </p>
-                    </div>
-
-                    <div class="metric-card">
-                        <h3>Guest experience</h3>
-                        <p>
-                            Provide faster, more consistent answers to guest questions while reducing
-                            pressure on the in-house team during peak hours.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="section">
-            <div class="container">
-                <div class="section-heading">
-                    <span class="section-tag">Core capabilities</span>
-                    <h2>What HostHub helps restaurants manage</h2>
-                </div>
-
-                <div class="feature-list">
-                    <div class="feature-item">
-                        <h3>Reservation workflows</h3>
-                        <p>
-                            Organize reservation-related calls, requests, updates, and follow-up actions
-                            so hosts and managers know exactly what needs attention.
-                        </p>
-                    </div>
-
-                    <div class="feature-item">
-                        <h3>Carryout order support</h3>
-                        <p>
-                            Support carryout ordering workflows connected to Voice AI interactions,
-                            helping restaurants keep more off-premise revenue inside the business.
-                        </p>
-                    </div>
-
-                    <div class="feature-item">
-                        <h3>Voicemail and missed-call recovery</h3>
-                        <p>
-                            Turn missed communication into actionable tasks instead of forgotten messages
-                            buried in a phone system.
-                        </p>
-                    </div>
-
-                    <div class="feature-item">
-                        <h3>Private events and large-party inquiries</h3>
-                        <p>
-                            Capture high-value inquiries that often require follow-up and can represent
-                            meaningful revenue for the restaurant.
-                        </p>
-                    </div>
-
-                    <div class="feature-item">
-                        <h3>Call categorization and visibility</h3>
-                        <p>
-                            Sort interactions by type so the team can quickly understand what happened,
-                            what was handled, and what still needs action.
-                        </p>
-                    </div>
-
-                    <div class="feature-item">
-                        <h3>Transcripts and operational review</h3>
-                        <p>
-                            Give staff and operators the ability to review what the guest asked,
-                            what the AI handled, and where human follow-up may still be needed.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="section section-dark">
-            <div class="container">
-                <div class="section-heading">
-                    <span class="section-tag">Integrations</span>
-                    <h2>Designed to fit modern restaurant tech stacks</h2>
-                    <p>
-                        HostHub is built to sit between guest communication and restaurant operations.
-                        It can work alongside Voice AI tools and can integrate with many POS system
-                        environments depending on the restaurant’s setup and workflow needs.
-                    </p>
-                </div>
-
-                <div class="integration-box">
-                    <div class="integration-pill">Voice AI Agents</div>
-                    <div class="integration-pill">Reservations</div>
-                    <div class="integration-pill">Carryout Workflows</div>
-                    <div class="integration-pill">Guest Messaging</div>
-                    <div class="integration-pill">Operational Reporting</div>
-                    <div class="integration-pill">Many POS Systems</div>
-                </div>
-            </div>
-        </section>
-
-        <section class="section">
-            <div class="container">
-                <div class="section-heading">
-                    <span class="section-tag">Who it is for</span>
-                    <h2>Made for restaurants that want fewer missed opportunities.</h2>
-                    <p>
-                        HostHub is especially valuable for busy restaurants where the phone keeps ringing,
-                        the front-of-house team is stretched, and important guest requests can easily
-                        get lost in the middle of service.
-                    </p>
-                </div>
-
-                <div class="grid two-col">
-                    <div class="info-card">
-                        <h3>For operators</h3>
-                        <p>
-                            Gain better visibility into how calls are being handled, where revenue may
-                            be leaking, and how the team is responding to inbound demand.
-                        </p>
-                    </div>
-
-                    <div class="info-card">
-                        <h3>For hosts and managers</h3>
-                        <p>
-                            Reduce chaos by giving staff a cleaner view of guest interactions,
-                            pending follow-ups, and AI-assisted call outcomes.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="section final-section">
-            <div class="container">
-                <div class="final-card">
-                    <span class="section-tag">HostHub</span>
-                    <h2>A smarter way to manage restaurant calls, requests, and revenue.</h2>
-                    <p>
-                        Powered by Eusocial, HostHub helps restaurants bring Voice AI and operational
-                        clarity together in one place, so fewer opportunities are missed and more guest
-                        demand turns into real business.
-                    </p>
-                </div>
-            </div>
-        </section>
+        <section class="final-cta" id="get-started"><div class="section-kicker">HOSTHUB BY EUSOCIAL</div><h2>Ready to keep your restaurant moving?</h2><p>Log in to continue to the Eusocial platform.</p><a class="button button-dark" href="{% url 'testendpoint:account_login' %}">Log in</a></section>
     </main>
+
+    <footer class="site-footer"><span>© 2026 Eusocial</span><span>Restaurant call operations</span></footer>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const items = document.querySelectorAll(
-                ".hero-card, .info-card, .metric-card, .feature-item, .integration-pill, .final-card"
-            );
-
-            const observer = new IntersectionObserver(
-                (entries) => {
-                    entries.forEach((entry) => {
-                        if (entry.isIntersecting) {
-                            entry.target.classList.add("visible");
-                            observer.unobserve(entry.target);
-                        }
-                    });
-                },
-                {
-                    threshold: 0.12
-                }
-            );
-
-            items.forEach((item) => {
-                item.classList.add("reveal");
-                observer.observe(item);
-            });
+            const demo = document.querySelector("[data-demo]");
+            if (!demo) return;
+            const scenes = Array.from(demo.querySelectorAll("[data-scene]"));
+            const buttons = Array.from(demo.querySelectorAll("[data-scene-button]"));
+            const caption = demo.querySelector("[data-scene-caption]");
+            const counter = demo.querySelector("[data-scene-count]");
+            const liveFlow = demo.querySelector("[data-live-flow]");
+            const liveOverlay = liveFlow?.querySelector("[data-live-overlay]");
+            const liveModal = liveFlow?.querySelector(".live-modal");
+            const autoplayOrder = [0, 1, 2, 3, 4];
+            const captions = ["Watch a live call move from alert to conversation.", "See every call in its place.", "Move from order to action.", "Set hours once and keep answers accurate.", "Close the loop while the context is fresh."];
+            const durations = [7800, 4800, 4800, 4800, 4800];
+            let current = 0;
+            let timer;
+            let liveTimers = [];
+            const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            function clearLiveTimers() { liveTimers.forEach((liveTimer) => window.clearTimeout(liveTimer)); liveTimers = []; }
+            function setLiveStep(step) {
+                if (!liveOverlay || !liveModal) return;
+                liveOverlay.classList.toggle("is-open", step > 0);
+                liveModal.classList.toggle("show-detail", step > 1);
+            }
+            function startLiveFlow() {
+                clearLiveTimers();
+                setLiveStep(0);
+                if (reduceMotion) return;
+                liveTimers.push(window.setTimeout(() => setLiveStep(1), 1300));
+                liveTimers.push(window.setTimeout(() => setLiveStep(2), 3500));
+            }
+            function showScene(index) {
+                current = index;
+                scenes.forEach((scene, sceneIndex) => scene.classList.toggle("is-active", sceneIndex === index));
+                buttons.forEach((button, buttonIndex) => { const active = buttonIndex === index; button.classList.toggle("is-active", active); button.setAttribute("aria-selected", active ? "true" : "false"); });
+                counter.textContent = String(index + 1).padStart(2, "0") + " / " + String(scenes.length).padStart(2, "0");
+                caption.textContent = captions[index];
+                if (index === 0) startLiveFlow(); else { clearLiveTimers(); setLiveStep(0); }
+            }
+            function restartTimer() {
+                if (reduceMotion) return;
+                window.clearTimeout(timer);
+                timer = window.setTimeout(() => {
+                    const position = autoplayOrder.indexOf(current);
+                    const nextPosition = position === -1 ? 0 : (position + 1) % autoplayOrder.length;
+                    showScene(autoplayOrder[nextPosition]);
+                    restartTimer();
+                }, durations[current]);
+            }
+            buttons.forEach((button) => button.addEventListener("click", () => { showScene(Number(button.dataset.sceneButton)); restartTimer(); }));
+            liveFlow?.querySelector("[data-live-open]")?.addEventListener("click", () => setLiveStep(1));
+            liveFlow?.querySelector("[data-live-close]")?.addEventListener("click", () => setLiveStep(0));
+            liveFlow?.querySelector("[data-live-call]")?.addEventListener("click", () => setLiveStep(2));
+            liveFlow?.querySelector("[data-live-back]")?.addEventListener("click", () => setLiveStep(1));
+            demo.addEventListener("mouseenter", () => window.clearInterval(timer));
+            demo.addEventListener("mouseleave", restartTimer);
+            demo.addEventListener("focusin", () => window.clearInterval(timer));
+            demo.addEventListener("focusout", (event) => { if (!demo.contains(event.relatedTarget)) restartTimer(); });
+            showScene(0);
+            restartTimer();
         });
     </script>
 </body>
