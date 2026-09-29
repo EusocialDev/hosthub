@@ -282,9 +282,14 @@ function selectCall(element) {
   const callInfoList = document.getElementById("callInfoList");
   const requestDetailsSection = document.getElementById("requestDetailsSection");
   const requestDetailsList = document.getElementById("requestDetailsList");
+  const priceWarningsSection = document.getElementById("priceWarningsSection");
+
+  const priceWarningsList = document.getElementById("priceWarningsList");
 
   callInfoList.innerHTML = "";
   requestDetailsList.innerHTML = "";
+  priceWarningsList.innerHTML = "";
+  priceWarningsSection.style.display = "none";
 
   const callInfo = [
     { label: "Type", value: call.category || "N/A" },
@@ -354,10 +359,13 @@ function selectCall(element) {
     if (call.leaveMessage) requestDetails.push({ label: "User Message", value: call.leaveMessage });
 
     if (call.priceWarning?.length) {
-      requestDetails.push({
-        label: "Items that were not charged",
-        value: call.priceWarning
+      call.priceWarning.forEach((warning) => {
+        const li = document.createElement("li");
+        li.textContent = warning;
+        priceWarningsList.appendChild(li);
       });
+    
+      priceWarningsSection.style.display = "block";
     }
   }
 
