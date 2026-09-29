@@ -232,7 +232,9 @@ function selectCall(element) {
     handledAt: element.dataset.handledAt || "",
     disposition: element.dataset.disposition || "",
     dispositionDisplay: element.dataset.dispositionDisplay || "",
-    priceWarning: element.dataset.priceWarning || "",
+    priceWarning: element.dataset.priceWarning
+    ? JSON.parse(element.dataset.priceWarning)
+    : [],
   };
 
   const smsButtonContainer = document.getElementById("smsButtonContainer");
@@ -351,7 +353,12 @@ function selectCall(element) {
 
     if (call.leaveMessage) requestDetails.push({ label: "User Message", value: call.leaveMessage });
 
-    if(call.priceWarning) requestDetails.push({label: "Items that were not charged", value: call.priceWarning})
+    if (call.priceWarning?.length) {
+      requestDetails.push({
+        label: "Items that were not charged",
+        value: call.priceWarning
+      });
+    }
   }
 
 
