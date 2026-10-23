@@ -396,7 +396,7 @@
                         <span class="tag internal">HostHub</span>
                     </div>
                     <p>
-                        Returns regular hours, future/current date overrides, and timezone for one active location.
+                        Returns the current open/closed state, regular hours, future/current date overrides, and timezone for one active location.
                         Bland can call this during a conversation when it needs current restaurant-hours context.
                     </p>
 
@@ -424,6 +424,7 @@
 <pre><code>{
     "location": "160 Main",
     "timezone": "America/Detroit",
+    "is_open_now": true,
     "regular_hours": {
         "monday": {"closed": false, "open": "11:00", "close": "21:00"},
         "tuesday": {"closed": false, "open": "11:00", "close": "21:00"},

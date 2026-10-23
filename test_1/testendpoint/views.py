@@ -839,6 +839,12 @@ def location_hours(request, location_slug):
     location = get_object_or_404(Location, slug=location_slug, is_active=True)
     today = date_type.today()
 
+    # Reuse the same timezone-aware schedule logic used by the staff scheduler,
+    # including date overrides, overnight hours, and active manual overrides.
+    from staff.services.location_hours import is_location_effectively_open
+
+    is_open_now = is_location_effectively_open(location)
+
     regular_hours = {}
     for bh in location.business_hours.all().order_by("day_of_week"):
         day_name = DAY_NAMES[bh.day_of_week]
@@ -867,6 +873,7 @@ def location_hours(request, location_slug):
     return JsonResponse({
         "location": location.name,
         "timezone": str(location.timezone),
+        "is_open_now": is_open_now,
         "regular_hours": regular_hours,
         "date_overrides": date_overrides,
     })
