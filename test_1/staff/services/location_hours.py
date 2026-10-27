@@ -17,11 +17,13 @@ def clear_expired_manual_override(location, now=None):
     ):
         location.manual_override_status = None
         location.manual_override_until = None
+        location.manual_override_reason = None
         location.manual_override_set_at = None
         location.manual_override_set_by = None
         location.save(update_fields=[
             "manual_override_status",
             "manual_override_until",
+            "manual_override_reason",
             "manual_override_set_at",
             "manual_override_set_by",
         ])

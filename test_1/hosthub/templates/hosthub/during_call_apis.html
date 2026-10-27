@@ -396,13 +396,14 @@
                         <span class="tag internal">HostHub</span>
                     </div>
                     <p>
-                        Returns the current open/closed state, regular hours, future/current date overrides, and timezone for one active location.
-                        Bland can call this during a conversation when it needs current restaurant-hours context.
+                        Returns the current open/closed state, active manual overrides, regular hours, future/current date
+                        overrides, and timezone for one active location. Bland can call this during a conversation when it
+                        needs current restaurant-hours context.
                     </p>
 
                     <dl class="field-list">
                         <dt> Agents </dt>
-                        <dd><span class="tag agent-open">Julia (Open)</span> <span class="tag agent-close">Julia (Closed)</span> </dd>
+                        <dd>One agent can use <code>is_open_now</code> for both open and closed behavior.</dd>
 
                         <dt> Node Name </dt>
                         <dd>Q&A Node; Reservation </dd>
@@ -425,6 +426,10 @@
     "location": "160 Main",
     "timezone": "America/Detroit",
     "is_open_now": true,
+    "override_active": true,
+    "override_status": "open",
+    "override_reason": "Manual early opening",
+    "override_until": "2026-10-27T21:00:00-04:00",
     "regular_hours": {
         "monday": {"closed": false, "open": "11:00", "close": "21:00"},
         "tuesday": {"closed": false, "open": "11:00", "close": "21:00"},

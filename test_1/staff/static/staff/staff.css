@@ -639,6 +639,30 @@ a {
     margin-top: 0.5rem;
 }
 
+.store-status-reason {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.staff-label-optional {
+    font-weight: 400;
+    color: var(--staff-muted);
+}
+
+.store-override-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    color: var(--staff-muted);
+    font-size: 0.88rem;
+}
+
+.store-override-details span + span::before {
+    content: "·";
+    margin-right: 10px;
+}
+
 .store-status-text {
     font-size: 0.95rem;
     font-weight: 500;

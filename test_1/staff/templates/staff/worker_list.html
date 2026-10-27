@@ -51,12 +51,17 @@
             <div class="store-status-area">
                 <div class="store-status-row">
                     <span class="store-status-text">
-                        {{ location.name }} currently set to:
+                        <span id="selected-location-name">{{ location.name|default:"Selected restaurant" }}</span> currently set to:
                     </span>
 
-                    <span id='store-status-badge' class="store-status-badge {% if location.is_store_open %}open{% else %}closed{% endif %}">
-                        {% if location.is_store_open %}Open{% else %}Closed{% endif %}
+                    <span id='store-status-badge' class="store-status-badge {% if is_store_open %}open{% else %}closed{% endif %}">
+                        {% if is_store_open %}Open{% else %}Closed{% endif %}
                     </span>
+                </div>
+                <div id="store-override-details" class="store-override-details" {% if not store_status.override_active %}hidden{% endif %}>
+                    <span>Manual override active</span>
+                    <span id="store-override-until">{% if store_status.override_until_display %}until {{ store_status.override_until_display }}{% endif %}</span>
+                    <span id="store-override-reason">{% if store_status.override_reason %}{{ store_status.override_reason }}{% endif %}</span>
                 </div>
                 {% if accessible_locations|length == 1 %}
                     {% for location in accessible_locations %}
@@ -70,11 +75,24 @@
                         <select id="location-select" class="staff-select">
                             <option value="">Choose a location</option>
                             {% for location in accessible_locations %}
-                                <option value="{{ location.slug }}">{{ location.name }}</option>
+                                <option value="{{ location.slug }}" {% if location.id == location_id %}selected{% endif %}>{{ location.name }}</option>
                             {% endfor %}
                         </select>
                     </div>
                 {% endif %}
+
+                <div class="store-status-reason">
+                    <label for="manual-override-reason" class="staff-label">
+                        Manual override reason <span class="staff-label-optional">(optional)</span>
+                    </label>
+                    <input
+                        id="manual-override-reason"
+                        type="text"
+                        maxlength="255"
+                        class="staff-override-input"
+                        placeholder="Leave blank for a general reason"
+                    >
+                </div>
 
                 <div class="button-area">
                     <button id="open-btn" type="button" class="staff-header-btn staff-header-btn-secondary">

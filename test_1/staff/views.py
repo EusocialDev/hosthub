@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import Http404, JsonResponse
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 from django.utils import timezone as dj_timezone
 
 from .forms import WorkerForm
@@ -15,11 +15,49 @@ from testendpoint.views import get_api_headers
 
 from datetime import date as date_type
 
-from staff.services.location_hours import get_location_local_now, get_next_transition_datetime, refresh_location_schedule_state
+from staff.services.location_hours import (
+    get_active_manual_override,
+    get_location_local_now,
+    get_next_transition_datetime,
+    is_location_effectively_open,
+    refresh_location_schedule_state,
+)
 
 
 import requests
 import json
+
+
+def get_location_status_payload(location, now=None):
+    now = now or get_location_local_now(location)
+    is_open = is_location_effectively_open(location, now)
+    override_status = get_active_manual_override(location, now)
+    override_until = None
+
+    if override_status and location.manual_override_until:
+        override_until = dj_timezone.localtime(
+            location.manual_override_until
+        ).isoformat()
+
+    override_until_display = None
+    if override_status and location.manual_override_until:
+        override_until_display = dj_timezone.localtime(
+            location.manual_override_until
+        ).strftime("%b %d, %I:%M %p")
+
+    return {
+        "location": location.slug,
+        "location_name": location.name,
+        "is_open_now": is_open,
+        "status": "open" if is_open else "closed",
+        "override_active": bool(override_status),
+        "override_status": override_status,
+        "override_reason": (
+            location.manual_override_reason if override_status else None
+        ),
+        "override_until": override_until,
+        "override_until_display": override_until_display,
+    }
 
 @login_required
 def worker_list_view(request):
@@ -36,7 +74,8 @@ def worker_list_view(request):
         is_active=True
     ).first()
 
-    is_store_open = location.is_store_open if location else False
+    status_payload = get_location_status_payload(location) if location else None
+    is_store_open = status_payload["is_open_now"] if status_payload else False
     
     if manager_access.role == "owner":
         workers = (
@@ -70,8 +109,10 @@ def worker_list_view(request):
         "workers": workers,
         "manager_access": manager_access,
         "accessible_locations": accessible_locations,
+        "location_id": location_id,
         "location": location,
         "is_store_open": is_store_open,
+        "store_status": status_payload,
         "location_overrides": location_overrides,
         })
 
@@ -171,12 +212,24 @@ def set_store_status(request):
     
     status_value = payload.get("status")
     location_slug = payload.get("location_slug")
+    reason = payload.get("reason")
 
     if status_value not in ["open", "closed"]:
         return JsonResponse({"error": "Invalid status value."}, status=400)
     
     if not location_slug:
         return JsonResponse({"error": "Location slug is required."}, status=400)
+
+    if reason is not None and not isinstance(reason, str):
+        return JsonResponse({"error": "Reason must be text."}, status=400)
+
+    reason = (reason or "").strip()[:255]
+    if not reason:
+        reason = (
+            "Manual early opening"
+            if status_value == "open"
+            else "Manual early closing"
+        )
     
     accessible_locations = manager_access.locations.filter(
         account=manager_access.account,
@@ -191,75 +244,119 @@ def set_store_status(request):
     override_until = get_next_transition_datetime(location, now)
     if override_until is None:
         return JsonResponse({"error": "Unable to determine when the override should end."}, status=400)
-    
-    phone_number = PhoneNumber.objects.filter(
-        account=manager_access.account, 
-        location=location,
-        is_active=True,
-    ).first()
 
-    if not phone_number:
-        return JsonResponse({"error": "No active phone number found for this location."}, status=404)
+    phone_number = None
+    pathway_id = None
+    if location.scheduling_enabled:
+        phone_number = PhoneNumber.objects.filter(
+            account=manager_access.account,
+            location=location,
+            is_active=True,
+        ).first()
+
+        if not phone_number:
+            return JsonResponse(
+                {"error": "No active phone number found for this location."},
+                status=404,
+            )
+
+        pathway_id = (
+            location.bland_pathway_id_open
+            if status_value == "open"
+            else location.bland_pathway_id_closed
+        )
+        if not pathway_id:
+            return JsonResponse(
+                {"error": "Location does not have an expected pathway set."},
+                status=400,
+            )
 
     location.manual_override_status = status_value
     location.manual_override_until = override_until
+    location.manual_override_reason = reason
     location.manual_override_set_at = dj_timezone.now()
     location.manual_override_set_by = request.user
     location.save(update_fields=[
         "manual_override_status",
         "manual_override_until",
+        "manual_override_reason",
         "manual_override_set_at",
         "manual_override_set_by",
     ])
 
     refresh_location_schedule_state(location, now)
     location.refresh_from_db()
-    
-    if status_value == "open":
-        pathway_id = location.bland_pathway_id_open
+
+    # Locations using the hours endpoint with one Bland agent only need the
+    # database override. Preserve the existing Bland pathway behavior for
+    # locations that still have automatic scheduling enabled.
+    if location.scheduling_enabled:
+        headers = get_api_headers()
+        url = f"https://api.bland.ai/v1/inbound/{phone_number.number}"
+
+        try:
+            response = requests.post(
+                url,
+                headers=headers,
+                json={"pathway_id": pathway_id},
+                timeout=15,
+            )
+        except requests.RequestException as e:
+            return JsonResponse(
+                {"error": f"Error syncing pathway to Bland: {e}"},
+                status=502,
+            )
+
+        if not response.ok:
+            return JsonResponse(
+                {
+                    "error": "Bland API rejected the request.",
+                    "details": response.text,
+                },
+                status=502,
+            )
+
+        location.last_synced_status = status_value
         location.last_synced_pathway_id = pathway_id
+        location.last_pathway_synced_at = dj_timezone.now()
         location.save(update_fields=[
+            "last_synced_status",
             "last_synced_pathway_id",
+            "last_pathway_synced_at",
         ])
-    else:
-        pathway_id = location.bland_pathway_id_closed
-        location.last_synced_pathway_id = pathway_id
-        location.save(update_fields=[
-            "last_synced_pathway_id",
-        ])
-    if not pathway_id:
-        return JsonResponse({"error": "Location does not have an expected pathway set."}, status=400)
-    
+
+    status_payload = get_location_status_payload(location)
     display_override_until = dj_timezone.localtime(override_until).strftime("%H:%M")
-
-    headers = get_api_headers()
-    url = f'https://api.bland.ai/v1/inbound/{phone_number.number}'
-
-    try:
-        response = requests.post(url, headers=headers, json={
-            "pathway_id": pathway_id,
-        }, timeout=15,)
-
-    except requests.RequestException as e:
-        return JsonResponse(
-            {"error": "No active phone number found for this location."},
-            status=404
-        )
-    
-    if not response.ok:
-        return JsonResponse(
-            {
-                "error": "Bland API rejected the request.",
-                "details": response.text,
-            },
-            status=502
-        )
 
     return JsonResponse({
         "message": f"{location.name} was set to {status_value} until {display_override_until}.",
-        "location": location.slug,
-        "status": status_value,
+        **status_payload,
     })
+
+
+@login_required
+@require_GET
+def get_store_status(request, location_slug):
+    manager_access = get_manager_access(request.user)
+
+    if not manager_access:
+        return JsonResponse(
+            {"error": "You do not have permission to perform this action."},
+            status=403,
+        )
+
+    location = manager_access.locations.filter(
+        account=manager_access.account,
+        slug=location_slug,
+        is_active=True,
+    ).first()
+    if not location:
+        return JsonResponse(
+            {"error": "Location not found or you do not have access to it."},
+            status=404,
+        )
+
+    return JsonResponse(get_location_status_payload(location))
 
 
 def toggle_worker_active_status(request):

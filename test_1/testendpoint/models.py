@@ -383,6 +383,7 @@ class Location(models.Model):
         null=True,
     )
     manual_override_until = models.DateTimeField(blank=True, null=True)
+    manual_override_reason = models.CharField(max_length=255, blank=True, null=True)
     manual_override_set_at = models.DateTimeField(blank=True, null=True)
     manual_override_set_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

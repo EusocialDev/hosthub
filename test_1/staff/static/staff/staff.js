@@ -69,6 +69,62 @@ function updateStoreStatusBadge(status) {
     }
 }
 
+function updateSelectedLocationName(name) {
+    const nameElement = document.getElementById("selected-location-name");
+    if (nameElement && name) nameElement.textContent = name;
+}
+
+function updateStoreOverrideDetails(data) {
+    const details = document.getElementById("store-override-details");
+    const until = document.getElementById("store-override-until");
+    const reason = document.getElementById("store-override-reason");
+
+    if (!details) return;
+
+    const active = Boolean(data.override_active);
+    details.hidden = !active;
+
+    if (until) {
+        until.textContent = active && data.override_until_display
+            ? `until ${data.override_until_display}`
+            : "";
+    }
+
+    if (reason) {
+        reason.textContent = active && data.override_reason
+            ? data.override_reason
+            : "";
+    }
+}
+
+function loadStoreStatus(selectedLocation) {
+    if (!selectedLocation) return;
+
+    fetch(`api/store-status/${encodeURIComponent(selectedLocation)}/`, {
+        method: "GET",
+        headers: {
+            "X-CSRFToken": getCookie("csrftoken")
+        }
+    })
+    .then(response => {
+        return response.json().then(data => ({
+            ok: response.ok,
+            data: data
+        }));
+    })
+    .then(({ ok, data }) => {
+        if (!ok) throw new Error(data.error || "Failed to load store status.");
+
+        updateSelectedLocationName(data.location_name);
+        updateStoreStatusBadge(data.status);
+        updateStoreOverrideDetails(data);
+    })
+    .catch(error => {
+        console.error("Error loading store status:", error);
+        showStoreStatusMessage(error.message || "Error loading store status.", true);
+    });
+}
+
 function setStoreStatus(status, selectedLocation) {
     if (!selectedLocation) {
         showStoreStatusMessage("Please select a location first.", true);
@@ -80,6 +136,9 @@ function setStoreStatus(status, selectedLocation) {
     setButtonsDisabled(true);
     showStoreStatusMessage("Updating store status...");
 
+    const reasonInput = document.getElementById("manual-override-reason");
+    const reason = reasonInput ? reasonInput.value.trim() : "";
+
     fetch(url, {
         method: "POST",
         headers: {
@@ -89,6 +148,7 @@ function setStoreStatus(status, selectedLocation) {
         body: JSON.stringify({
             status: status,
             location_slug: selectedLocation,
+            reason: reason,
         })
     })
     .then(response => {
@@ -103,7 +163,10 @@ function setStoreStatus(status, selectedLocation) {
         }
 
         showStoreStatusMessage(data.message || "Store status updated successfully.");
-        updateStoreStatusBadge(status);
+        updateSelectedLocationName(data.location_name);
+        updateStoreStatusBadge(data.status || status);
+        updateStoreOverrideDetails(data);
+        if (reasonInput) reasonInput.value = "";
         console.log("Store Status Updated:", data);
     })
     .catch((error) => {
@@ -144,6 +207,7 @@ function updateWorkerRowUI(button, isActive) {
 document.addEventListener("DOMContentLoaded", function () {
     const openBtn = document.getElementById("open-btn");
     const closeBtn = document.getElementById("close-btn");
+    const locationSelect = document.getElementById("location-select");
 
     const buttons = document.querySelectorAll('.toggle-worker-btn');
 
@@ -194,4 +258,24 @@ document.addEventListener("DOMContentLoaded", function () {
             setStoreStatus("closed", selectedLocation);
         });
     }
+
+    if (locationSelect) {
+        locationSelect.addEventListener("change", function () {
+            const selectedLocation = this.value;
+            const reasonInput = document.getElementById("manual-override-reason");
+            if (reasonInput) reasonInput.value = "";
+
+            if (!selectedLocation) {
+                updateSelectedLocationName("Selected restaurant");
+                updateStoreStatusBadge("closed");
+                updateStoreOverrideDetails({ override_active: false });
+                return;
+            }
+
+            loadStoreStatus(selectedLocation);
+        });
+    }
+
+    const initialLocation = getSelectedLocationSlug();
+    if (initialLocation) loadStoreStatus(initialLocation);
 });

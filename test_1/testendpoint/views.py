@@ -837,13 +837,24 @@ DAY_NAMES = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday",
 @require_GET
 def location_hours(request, location_slug):
     location = get_object_or_404(Location, slug=location_slug, is_active=True)
-    today = date_type.today()
 
     # Reuse the same timezone-aware schedule logic used by the staff scheduler,
     # including date overrides, overnight hours, and active manual overrides.
-    from staff.services.location_hours import is_location_effectively_open
+    from staff.services.location_hours import (
+        get_active_manual_override,
+        get_location_local_now,
+        is_location_effectively_open,
+    )
 
-    is_open_now = is_location_effectively_open(location)
+    now = get_location_local_now(location)
+    today = now.date()
+    is_open_now = is_location_effectively_open(location, now)
+    override_status = get_active_manual_override(location, now)
+    override_until = None
+    if override_status and location.manual_override_until:
+        override_until = timezone.localtime(
+            location.manual_override_until
+        ).isoformat()
 
     regular_hours = {}
     for bh in location.business_hours.all().order_by("day_of_week"):
@@ -874,6 +885,12 @@ def location_hours(request, location_slug):
         "location": location.name,
         "timezone": str(location.timezone),
         "is_open_now": is_open_now,
+        "override_active": bool(override_status),
+        "override_status": override_status,
+        "override_reason": (
+            location.manual_override_reason if override_status else None
+        ),
+        "override_until": override_until,
         "regular_hours": regular_hours,
         "date_overrides": date_overrides,
     })
