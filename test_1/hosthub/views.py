@@ -123,7 +123,17 @@ def filter_by_date(qs, date_filter, today, custom_date=None):
 
     return qs
 
+def get_current_location_slug_for_logged_user(request):
+    access = getattr(request.user, 'hosthub_access', None)
 
+    if not access or not access.is_active:
+        return None
+    active_location_id = request.session.get("active_location_id")
+
+    return access.locations.filter(
+        id=active_location_id,
+        is_active=True
+    ).values_list('slug', flat=True).first()
 # ---- Main view, PURELY handles the orchestration, no logic. ----
 @never_cache
 @login_required
@@ -140,6 +150,7 @@ def hosthub_view(request):
     phone_search = request.GET.get("phone_search", '').strip()
     host_status = request.GET.get("host_status", "needs_action")        
     category = request.GET.get("category")
+    location_slug = get_current_location_slug_for_logged_user(request)
     # Get today's date in local timezone (will be used in filter_by_date, but filter_by_date uses localtime)
     today = timezone.localtime(timezone.now()).date()
 
@@ -195,6 +206,7 @@ def hosthub_view(request):
         "HOSTHUB_SSE_TOKEN": settings.HOSTHUB_SSE_TOKEN,
         "show_manager_button": show_manager_button,
         "phone_search": phone_search,
+        "location_slug": location_slug
     }
 
     return render(request, "hosthub/index.html", context)
