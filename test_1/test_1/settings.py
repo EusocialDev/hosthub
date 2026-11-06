@@ -72,6 +72,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'testendpoint',
+    'owner_agent',
     'hosthub',
     "staff.apps.StaffConfig",
 ]
