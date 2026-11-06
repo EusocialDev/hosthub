@@ -10,6 +10,7 @@ from django.db.models import QuerySet
 from django.utils import timezone as django_timezone
 
 from testendpoint.models import Account, Call
+from testendpoint.utils.phone import _normalize_phone_number
 
 from .assessment import assess_call
 
@@ -28,6 +29,7 @@ class DigestPreview:
     context_calls: int
     attention_items: list[dict[str, Any]]
     context_items: list[dict[str, Any]]
+    call_assessments: list[dict[str, Any]]
     message_body: str
 
     def as_dict(self) -> dict[str, Any]:
@@ -68,8 +70,9 @@ def _clean_summary(value: str | None) -> str:
     return re.sub(r"\s+", " ", (value or "").strip())
 
 
-def _display_summary(call: Call) -> str:
-    summary = _clean_summary(call.summary)
+def _display_summary(call: Call, analysis: Any | None = None) -> str:
+    analysis_summary = getattr(analysis, "normalized_summary", "") if analysis else ""
+    summary = _clean_summary(analysis_summary or call.summary)
     if not summary:
         return f"Call categorized as {call.get_display_category_display()} with no summary available."
 
@@ -79,26 +82,46 @@ def _display_summary(call: Call) -> str:
     return summary
 
 
-def _short_summary(call: Call, max_length: int = 240) -> str:
-    summary = _display_summary(call)
+def _short_summary(call: Call, analysis: Any | None = None, max_length: int = 240) -> str:
+    summary = _display_summary(call, analysis=analysis)
     if len(summary) <= max_length:
         return summary
     return summary[: max_length - 1].rstrip() + "…"
 
 
-def _item(call: Call, result: Any) -> dict[str, Any]:
-    return {
+def _format_phone_number(value: str | None) -> str | None:
+    normalized = _normalize_phone_number(value)
+    if not normalized:
+        return None
+
+    digits = normalized.lstrip("+")
+    if len(digits) == 11 and digits.startswith("1"):
+        return f"({digits[1:4]}) {digits[4:7]}-{digits[7:]}"
+    return normalized
+
+
+def _item(
+    call: Call,
+    result: Any,
+    *,
+    include_phone: bool = False,
+    analysis: Any | None = None,
+) -> dict[str, Any]:
+    item = {
         "call_id": call.id,
         "bland_call_id": call.bland_call_id,
         "user_name": call.user_name,
         "from_last_four": (call.from_number or "")[-4:] or None,
         "display_category": call.display_category,
-        "summary": _display_summary(call),
+        "summary": _short_summary(call, analysis=analysis),
         "status": result.status,
         "reason": result.reason,
         "explanation": result.explanation,
         "basis": result.basis,
     }
+    if include_phone:
+        item["phone_number"] = _format_phone_number(call.from_number)
+    return item
 
 
 def _count_phrase(count: int, singular: str, plural: str | None = None) -> str:
@@ -150,7 +173,17 @@ def _compose_message(
         )
         lines.append("")
         for index, item in enumerate(attention_items, start=1):
-            lines.append(f"{index}. {item['summary']}")
+            summary = item["summary"]
+            name = _clean_summary(item.get("user_name"))
+            phone_number = item.get("phone_number")
+            if phone_number:
+                if name and summary.lower().startswith(name.lower()):
+                    summary = f"{name} {phone_number}{summary[len(name):]}"
+                elif name:
+                    summary = f"{name} {phone_number} — {summary}"
+                else:
+                    summary = f"{phone_number} — {summary}"
+            lines.append(f"{index}. {summary}")
     else:
         lines.append(
             f"{unhandled_calls} were not marked handled, but none may need attention."
@@ -173,6 +206,7 @@ def build_digest_preview(
     timezone_name: str | None = None,
     evaluation_time: datetime | None = None,
     calls_qs: QuerySet | None = None,
+    analysis_by_call_id: dict[int, Any] | None = None,
 ) -> DigestPreview:
     """Build a digest preview without saving or sending anything."""
 
@@ -195,22 +229,33 @@ def build_digest_preview(
     calls = list(calls_qs.select_related("location").order_by("created_at", "id"))
     attention_items: list[dict[str, Any]] = []
     context_items: list[dict[str, Any]] = []
+    call_assessments: list[dict[str, Any]] = []
     handled_calls = 0
 
     for call in calls:
+        analysis = (analysis_by_call_id or {}).get(call.id)
         result = assess_call(
             call,
             evaluation_time=evaluation_time,
             evaluated_for_date=evaluation_time.astimezone(tz).date(),
             timezone_name=tz.key,
+            analysis=analysis,
         )
+
+        assessment_item = _item(
+            call,
+            result,
+            include_phone=result.status == "needs_attention",
+            analysis=analysis,
+        )
+        call_assessments.append(assessment_item)
 
         if result.status == "handled":
             handled_calls += 1
         elif result.status == "needs_attention":
-            attention_items.append(_item(call, result))
+            attention_items.append(assessment_item)
         else:
-            context_items.append(_item(call, result))
+            context_items.append(assessment_item)
 
     unhandled_calls = len(calls) - handled_calls
     message_body = _compose_message(
@@ -234,5 +279,6 @@ def build_digest_preview(
         context_calls=len(context_items),
         attention_items=attention_items,
         context_items=context_items,
+        call_assessments=call_assessments,
         message_body=message_body,
     )

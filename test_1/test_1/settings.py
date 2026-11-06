@@ -221,6 +221,13 @@ BLAND_WEBHOOK_TOKEN = os.environ.get("BLAND_WEBHOOK_TOKEN", "")
 
 BLAND_ORG_ID = os.environ.get("BLAND_ORG_ID", "")
 
+# Owner agent OpenAI analysis. Keep the key server-side only.
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+OPENAI_OWNER_AGENT_MODEL = os.environ.get("OPENAI_OWNER_AGENT_MODEL", "gpt-6-luna")
+OPENAI_OWNER_AGENT_TIMEOUT_SECONDS = int(
+    os.environ.get("OPENAI_OWNER_AGENT_TIMEOUT_SECONDS", "30")
+)
+
 
 # Endpoint secret to access Carryout Dashboard
 CARRYOUT_DASHBOARD_SLUG=os.environ.get("CARRYOUT_DASHBOARD_SLUG", "")

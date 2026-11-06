@@ -7,6 +7,7 @@ from django.test import SimpleTestCase
 from .models import OwnerAgentAssessment
 from .services.assessment import assess_call
 from .services.digest_preview import _compose_message
+from .services.openai_analysis import normalize_analysis_output
 
 
 class OwnerAgentAssessmentTests(SimpleTestCase):
@@ -22,6 +23,7 @@ class OwnerAgentAssessmentTests(SimpleTestCase):
             "variables": {},
             "summary": "",
             "notes": "",
+            "from_number": "+17347527463",
             "transcripts": [{"user": "user", "text": "I need help"}],
             "full_transcript": "user: I need help",
             "location": SimpleNamespace(timezone="America/Detroit"),
@@ -101,7 +103,11 @@ class OwnerAgentAssessmentTests(SimpleTestCase):
             handled_calls=7,
             unhandled_calls=3,
             attention_items=[
-                {"summary": "Maria requested a reservation for December 12 at 7 PM."}
+                {
+                    "user_name": "Maria",
+                    "phone_number": "(734) 752-7463",
+                    "summary": "Maria requested a reservation for December 12 at 7 PM.",
+                }
             ],
             context_items=[
                 {"reason": "silent_call"},
@@ -111,6 +117,37 @@ class OwnerAgentAssessmentTests(SimpleTestCase):
 
         self.assertIn("Yesterday you received 10 calls.", message)
         self.assertIn("3 were not marked handled, but only 1 may need attention:", message)
-        self.assertIn("1. Maria requested a reservation for December 12 at 7 PM.", message)
+        self.assertIn(
+            "1. Maria (734) 752-7463 requested a reservation for December 12 at 7 PM.",
+            message,
+        )
         self.assertIn("For context, the other 2 unhandled calls:", message)
         self.assertIn("2 unhandled calls contained no meaningful customer conversation.", message)
+
+    def test_openai_analysis_can_enrich_missing_future_reservation_fields(self):
+        call = self.make_call(variables={})
+        analysis = normalize_analysis_output(
+            {
+                "meaningful_conversation": True,
+                "intent": "reservation_request",
+                "reservation_date": "2026-12-12",
+                "reservation_time": "19:00",
+                "guest_count": 4,
+                "future_commitment": True,
+                "customer_request": "Requested a reservation.",
+                "normalized_summary": "Maria requested a reservation for four on December 12 at 7 PM.",
+                "confidence": 0.97,
+            },
+            input_snapshot={"call_id": "call-1"},
+            model_name="gpt-6-luna",
+        )
+
+        result = assess_call(
+            call,
+            evaluation_time=self.evaluation_time,
+            analysis=analysis,
+        )
+
+        self.assertEqual(result.status, OwnerAgentAssessment.Status.NEEDS_ATTENTION)
+        self.assertEqual(result.reason, OwnerAgentAssessment.Reason.FUTURE_RESERVATION)
+        self.assertEqual(result.basis["reservation_date"], "2026-12-12")

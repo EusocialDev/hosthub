@@ -14,7 +14,7 @@ from dateutil import parser as date_parser
 from dateutil.parser import ParserError
 from django.utils import timezone as django_timezone
 
-from ..models import OwnerAgentAnalysis, OwnerAgentAssessment
+from ..models import OwnerAgentAssessment
 
 
 DATE_KEYS = ("date", "date_requested", "party_date", "reservation_date")
@@ -242,12 +242,10 @@ def _analysis_value(analysis: Any, field: str) -> Any:
 
 
 def _get_analysis(call: Any, analysis: Any | None) -> Any | None:
-    if analysis is not None:
-        return analysis
-    try:
-        return call.owner_agent_analysis
-    except (AttributeError, OwnerAgentAnalysis.DoesNotExist):
-        return None
+    # Callers must explicitly provide an analysis result. This keeps the
+    # deterministic baseline stable and avoids hidden database lookups during
+    # previews or comparisons.
+    return analysis
 
 
 def _reservation_fields(call: Any, analysis: Any | None, tz: ZoneInfo) -> tuple[date | None, time | None, int | None]:
