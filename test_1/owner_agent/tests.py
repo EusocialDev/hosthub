@@ -318,6 +318,32 @@ class OwnerAgentAssessmentTests(SimpleTestCase):
         self.assertEqual(result.reason, OwnerAgentAssessment.Reason.FUTURE_RESERVATION)
         self.assertEqual(result.basis["reservation_date"], "2026-12-12")
 
+    def test_openai_shortens_unbounded_classification_text_for_database_fields(self):
+        result = normalize_analysis_output(
+            {
+                "meaningful_conversation": True,
+                "intent": "I" * 200,
+                "workflow": "W" * 200,
+                "reservation_date": "",
+                "reservation_time": "",
+                "guest_count": 0,
+                "future_commitment": False,
+                "booking_link_sent": False,
+                "kitchen_share_completed": False,
+                "details_shared_with_manager": False,
+                "manager_review_required": False,
+                "customer_waiting_confirmation": False,
+                "customer_request": "",
+                "normalized_summary": "",
+                "confidence": 0.5,
+            },
+            input_snapshot={},
+            model_name="gpt-6-luna",
+        )
+
+        self.assertEqual(len(result.intent), 80)
+        self.assertEqual(len(result.workflow), 80)
+
 
 class GHLOwnerSMSTests(SimpleTestCase):
     def test_owner_sms_payload_contains_digest_context_and_normalized_phone(self):

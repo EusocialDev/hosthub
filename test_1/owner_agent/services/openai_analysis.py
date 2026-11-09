@@ -268,6 +268,11 @@ def _parse_guest_count(value: Any) -> int | None:
     return number if number > 0 else None
 
 
+def _bounded_text(value: Any, *, default: str, max_length: int) -> str:
+    text = str(value or default).strip()
+    return text[:max_length]
+
+
 def normalize_analysis_output(
     raw_output: dict[str, Any],
     *,
@@ -278,8 +283,16 @@ def normalize_analysis_output(
     confidence = min(1.0, max(0.0, confidence))
     return LLMAnalysisResult(
         meaningful_conversation=bool(raw_output.get("meaningful_conversation")),
-        intent=str(raw_output.get("intent") or "unknown").strip().lower(),
-        workflow=str(raw_output.get("workflow") or "other").strip().lower(),
+        intent=_bounded_text(
+            raw_output.get("intent"),
+            default="unknown",
+            max_length=80,
+        ).lower(),
+        workflow=_bounded_text(
+            raw_output.get("workflow"),
+            default="other",
+            max_length=80,
+        ).lower(),
         reservation_date=_parse_date(raw_output.get("reservation_date")),
         reservation_time=_parse_time(raw_output.get("reservation_time")),
         guest_count=_parse_guest_count(raw_output.get("guest_count")),
