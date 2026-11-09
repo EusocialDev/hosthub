@@ -139,9 +139,21 @@ def _context_lines(context_items: list[dict[str, Any]]) -> list[str]:
             lines.append(
                 f"{_count_phrase(count, 'unhandled call')} contained no meaningful customer conversation."
             )
-        elif reason in {"past_reservation", "past_commitment"}:
+        elif reason == "past_reservation":
             lines.append(
-                f"{_count_phrase(count, 'unhandled call')} was about a commitment whose requested date had passed."
+                f"{_count_phrase(count, 'unhandled call')} was about a reservation for a past date."
+            )
+        elif reason == "past_commitment":
+            lines.append(
+                f"{_count_phrase(count, 'unhandled call')} was about a commitment for a past date."
+            )
+        elif reason == "booking_link_sent":
+            lines.append(
+                f"{_count_phrase(count, 'unhandled call')} was a future reservation where a booking link was sent."
+            )
+        elif reason == "carryout_shared_with_kitchen":
+            lines.append(
+                f"{_count_phrase(count, 'unhandled call')} was a carryout order shared with the kitchen."
             )
         else:
             lines.append(
@@ -159,6 +171,8 @@ def _compose_message(
     context_items: list[dict[str, Any]],
 ) -> str:
     lines = [
+        "Hello Dear Owner",
+        "",
         f"Yesterday you received {total_calls} calls.",
         f"{handled_calls} were marked handled in HostHub.",
     ]

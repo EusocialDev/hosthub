@@ -252,3 +252,13 @@ GHL_RESERVATION_CONFIRMATION_WEBHOOK_URL = env(
     "GHL_RESERVATION_CONFIRMATION_WEBHOOK_URL",
     default=""
 )
+
+# Owner-agent daily digest SMS through the shared GoHighLevel sender number.
+GHL_OWNER_AGENT_SMS_WEBHOOK_URL = env(
+    "GHL_OWNER_AGENT_SMS_WEBHOOK_URL",
+    default="",
+)
+GHL_OWNER_AGENT_SMS_TIMEOUT_SECONDS = env.int(
+    "GHL_OWNER_AGENT_SMS_TIMEOUT_SECONDS",
+    default=10,
+)

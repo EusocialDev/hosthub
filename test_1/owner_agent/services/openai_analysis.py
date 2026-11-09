@@ -20,7 +20,7 @@ from testendpoint.models import Call
 from ..models import OwnerAgentAnalysis
 
 
-PROMPT_VERSION = "owner-call-analysis-v1"
+PROMPT_VERSION = "owner-call-analysis-v2"
 RESPONSES_URL = "https://api.openai.com/v1/responses"
 SENSITIVE_VARIABLE_KEYS = {
     "call_token",
@@ -43,10 +43,16 @@ class OpenAIAnalysisError(RuntimeError):
 class LLMAnalysisResult:
     meaningful_conversation: bool
     intent: str
+    workflow: str
     reservation_date: date | None
     reservation_time: time | None
     guest_count: int | None
     future_commitment: bool
+    booking_link_sent: bool
+    kitchen_share_completed: bool
+    details_shared_with_manager: bool
+    manager_review_required: bool
+    customer_waiting_confirmation: bool
     customer_request: str
     normalized_summary: str
     confidence: float
@@ -67,10 +73,16 @@ ANALYSIS_SCHEMA = {
     "properties": {
         "meaningful_conversation": {"type": "boolean"},
         "intent": {"type": "string"},
+        "workflow": {"type": "string"},
         "reservation_date": {"type": "string"},
         "reservation_time": {"type": "string"},
         "guest_count": {"type": "integer"},
         "future_commitment": {"type": "boolean"},
+        "booking_link_sent": {"type": "boolean"},
+        "kitchen_share_completed": {"type": "boolean"},
+        "details_shared_with_manager": {"type": "boolean"},
+        "manager_review_required": {"type": "boolean"},
+        "customer_waiting_confirmation": {"type": "boolean"},
         "customer_request": {"type": "string"},
         "normalized_summary": {"type": "string"},
         "confidence": {"type": "number"},
@@ -78,10 +90,16 @@ ANALYSIS_SCHEMA = {
     "required": [
         "meaningful_conversation",
         "intent",
+        "workflow",
         "reservation_date",
         "reservation_time",
         "guest_count",
         "future_commitment",
+        "booking_link_sent",
+        "kitchen_share_completed",
+        "details_shared_with_manager",
+        "manager_review_required",
+        "customer_waiting_confirmation",
         "customer_request",
         "normalized_summary",
         "confidence",
@@ -100,14 +118,54 @@ by HostHub's own status field.
 Rules:
 - meaningful_conversation is false when the caller provided no meaningful
   request or only silence/empty speech.
+- workflow must be one of: reservation_new, reservation_change,
+  reservation_cancel, private_event_new, private_event_existing, carryout,
+  leave_message, general_question, silent, other.
+- Use reservation_new for a new table reservation request, reservation_change
+  for moving or editing an existing reservation, and reservation_cancel for a
+  cancellation request. Use private_event_new for a new party/event inquiry
+  and private_event_existing when the caller is discussing an event already
+  arranged.
 - reservation_date must be YYYY-MM-DD or an empty string.
 - reservation_time must be 24-hour HH:MM or an empty string.
 - guest_count must be a positive integer or 0 when unknown.
 - future_commitment is true only when the call contains a future reservation,
   future private-event request, explicit callback, or other future follow-up.
+- booking_link_sent is true only when the agent explicitly says a reservation
+  booking link was sent to the caller.
+- kitchen_share_completed is true only when the conversation reaches the point
+  where the agent explicitly says the carryout order was shared with the
+  kitchen/team or that the kitchen has started preparing it. Saying a link will
+  be sent is not enough.
+- details_shared_with_manager is true only when the agent explicitly says the
+  event/request details were shared or forwarded to the manager, host stand, or
+  team.
+- manager_review_required is true for reservations larger than 8 guests, new
+  private events requiring manager pricing/review, or any request explicitly
+  sent to a manager for confirmation.
+- For a new reservation of 8 or fewer guests, a booking link normally means the
+  caller was given the next step; preserve that fact in the summary. For a new
+  reservation larger than 8 guests, no booking link should be inferred and the
+  caller should be treated as waiting for manager confirmation when the
+  transcript says the request was sent for review.
+- customer_waiting_confirmation is true when the customer is waiting for a
+  reservation, change, cancellation, private-event, or manager confirmation.
+- For a carryout call, kitchen_share_completed is the decisive checkpoint:
+  true only when the transcript reaches an explicit kitchen/team handoff or
+  says the kitchen started preparing the order. An order link, payment link,
+  order total, or promise to share later is not enough.
 - Never claim a reservation was completed unless that fact is explicitly present
   in the supplied HostHub data.
-- normalized_summary must be concise, factual, and suitable for an owner digest.
+- normalized_summary must be one concise, factual owner-digest sentence, ideally
+  under 220 characters. Include the requested date/time, guest count when
+  known, and the next expected step when it is explicit. For an unhandled
+  reservation change/cancellation, say confirmation was not stated when that
+  is the supported fact. For a private event, say details were shared with the
+  manager only when that is explicit. Do not include a phone number; the
+  application adds it separately.
+- Do not say a manager will call or text unless the transcript explicitly says
+  that. Do not invent a completion, confirmation, payment, attendance, or
+  external-system result.
 - confidence must be between 0 and 1.
 """.strip()
 
@@ -147,6 +205,7 @@ def build_analysis_input(call: Call, evaluation_time: datetime) -> dict[str, Any
         "call_id": call.bland_call_id,
         "call_created_at": call.created_at.isoformat() if call.created_at else "",
         "evaluation_time": evaluation_time.isoformat(),
+        "caller_name": call.user_name or "",
         "display_category": call.display_category,
         "disposition": call.disposition or "",
         "existing_summary": call.summary or "",
@@ -220,10 +279,16 @@ def normalize_analysis_output(
     return LLMAnalysisResult(
         meaningful_conversation=bool(raw_output.get("meaningful_conversation")),
         intent=str(raw_output.get("intent") or "unknown").strip().lower(),
+        workflow=str(raw_output.get("workflow") or "other").strip().lower(),
         reservation_date=_parse_date(raw_output.get("reservation_date")),
         reservation_time=_parse_time(raw_output.get("reservation_time")),
         guest_count=_parse_guest_count(raw_output.get("guest_count")),
         future_commitment=bool(raw_output.get("future_commitment")),
+        booking_link_sent=bool(raw_output.get("booking_link_sent")),
+        kitchen_share_completed=bool(raw_output.get("kitchen_share_completed")),
+        details_shared_with_manager=bool(raw_output.get("details_shared_with_manager")),
+        manager_review_required=bool(raw_output.get("manager_review_required")),
+        customer_waiting_confirmation=bool(raw_output.get("customer_waiting_confirmation")),
         customer_request=str(raw_output.get("customer_request") or "").strip(),
         normalized_summary=str(raw_output.get("normalized_summary") or "").strip(),
         confidence=confidence,
@@ -301,10 +366,16 @@ def save_analysis(call: Call, result: LLMAnalysisResult) -> OwnerAgentAnalysis:
             "status": OwnerAgentAnalysis.Status.COMPLETE,
             "meaningful_conversation": result.meaningful_conversation,
             "intent": result.intent,
+            "workflow": result.workflow,
             "reservation_date": result.reservation_date,
             "reservation_time": result.reservation_time,
             "guest_count": result.guest_count,
             "future_commitment": result.future_commitment,
+            "booking_link_sent": result.booking_link_sent,
+            "kitchen_share_completed": result.kitchen_share_completed,
+            "details_shared_with_manager": result.details_shared_with_manager,
+            "manager_review_required": result.manager_review_required,
+            "customer_waiting_confirmation": result.customer_waiting_confirmation,
             "customer_request": result.customer_request,
             "normalized_summary": result.normalized_summary,
             "confidence": result.confidence,

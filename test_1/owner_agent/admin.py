@@ -29,6 +29,7 @@ class OwnerAgentAnalysisAdmin(admin.ModelAdmin):
         "call",
         "status",
         "intent",
+        "workflow",
         "meaningful_conversation",
         "reservation_date",
         "confidence",

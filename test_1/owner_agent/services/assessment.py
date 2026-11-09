@@ -35,6 +35,18 @@ CALLBACK_KEYS = (
     "follow_up",
 )
 
+CARRYOUT_HANDOFF_PATTERNS = (
+    r"shared .* with (?:the )?(?:kitchen|team)",
+    r"shared .* (?:to|with) (?:the )?(?:kitchen|team)",
+    r"(?:kitchen|team) (?:has )?(?:already )?started preparing",
+    r"(?:sent|passed) .* order .* (?:to|with) (?:the )?(?:kitchen|team)",
+)
+
+BOOKING_LINK_PATTERNS = (
+    r"(?:sent|send|text|texted|shared|provide|provided) .*\b(?:booking|reservation) link",
+    r"link .* (?:to|for) (?:complete|finalize|make) .* reservation",
+)
+
 FALSE_VALUES = {"", "0", "false", "no", "none", "null", "n/a"}
 
 
@@ -248,6 +260,37 @@ def _get_analysis(call: Any, analysis: Any | None) -> Any | None:
     return analysis
 
 
+def _searchable_call_text(call: Any) -> str:
+    parts = [
+        _clean_text(getattr(call, "summary", "")),
+        _clean_text(getattr(call, "notes", "")),
+        _clean_text(getattr(call, "full_transcript", "")),
+    ]
+    transcript_rows = getattr(call, "transcripts", None)
+    if isinstance(transcript_rows, list):
+        parts.extend(
+            _clean_text(row.get("text"))
+            for row in transcript_rows
+            if isinstance(row, dict)
+        )
+    return " ".join(part for part in parts if part).lower()
+
+
+def _explicit_carryout_handoff(call: Any) -> bool:
+    text = _searchable_call_text(call)
+    return any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in CARRYOUT_HANDOFF_PATTERNS)
+
+
+def _explicit_booking_link(call: Any) -> bool:
+    text = _searchable_call_text(call)
+    return any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in BOOKING_LINK_PATTERNS)
+
+
+def _effective_bool(analysis: Any, field: str, fallback: bool | None) -> bool | None:
+    value = _analysis_value(analysis, field)
+    return fallback if value is None else bool(value)
+
+
 def _reservation_fields(call: Any, analysis: Any | None, tz: ZoneInfo) -> tuple[date | None, time | None, int | None]:
     variables = _as_dict(getattr(call, "variables", None))
     analysis_date = _analysis_value(analysis, "reservation_date")
@@ -340,6 +383,64 @@ def assess_call(
             basis=basis,
         )
 
+    workflow = _analysis_value(analysis, "workflow") or ""
+    searchable_text = _searchable_call_text(call)
+    if not workflow:
+        if getattr(call, "display_category", None) == "reservation":
+            if re.search(r"\b(cancel|cancell?ation|change|modify|move|update)\b", searchable_text):
+                workflow = (
+                    "reservation_cancel"
+                    if re.search(r"\bcancel|cancell?ation\b", searchable_text)
+                    else "reservation_change"
+                )
+            else:
+                workflow = "reservation_new"
+        elif getattr(call, "display_category", None) in {"private_event", "private_events"}:
+            workflow = "private_event_new"
+        elif getattr(call, "display_category", None) == "carryout":
+            workflow = "carryout"
+
+    booking_link_sent = _effective_bool(analysis, "booking_link_sent", _explicit_booking_link(call))
+    kitchen_share_completed = _effective_bool(
+        analysis,
+        "kitchen_share_completed",
+        _explicit_carryout_handoff(call),
+    )
+    details_shared_with_manager = _analysis_value(analysis, "details_shared_with_manager")
+    manager_review_required = _analysis_value(analysis, "manager_review_required")
+    customer_waiting_confirmation = _analysis_value(analysis, "customer_waiting_confirmation")
+
+    basis.update(
+        {
+            "workflow": workflow,
+            "booking_link_sent": booking_link_sent,
+            "kitchen_share_completed": kitchen_share_completed,
+            "details_shared_with_manager": details_shared_with_manager,
+            "manager_review_required": manager_review_required,
+            "customer_waiting_confirmation": customer_waiting_confirmation,
+        }
+    )
+
+    # Carryout has a specific completion checkpoint in the conversation. If
+    # OpenAI confirms the kitchen handoff was reached, this is context-only;
+    # otherwise an unhandled carryout is potentially incomplete.
+    if getattr(call, "display_category", None) == "carryout":
+        if kitchen_share_completed is True:
+            return AssessmentResult(
+                status=OwnerAgentAssessment.Status.CONTEXT_ONLY,
+                reason=OwnerAgentAssessment.Reason.CARRYOUT_SHARED_WITH_KITCHEN,
+                explanation="The AI explicitly shared the carryout details with the kitchen.",
+                evaluated_for_date=report_date,
+                basis=basis,
+            )
+        return AssessmentResult(
+            status=OwnerAgentAssessment.Status.NEEDS_ATTENTION,
+            reason=OwnerAgentAssessment.Reason.INCOMPLETE_CARRYOUT,
+            explanation="The carryout conversation did not reach the kitchen handoff confirmation.",
+            evaluated_for_date=report_date,
+            basis=basis,
+        )
+
     reservation_date, reservation_time, guest_count = _reservation_fields(call, analysis, tz)
     commitment_state = _commitment_state(reservation_date, reservation_time, reference)
     callback_requested = bool(_analysis_value(analysis, "future_commitment")) or _has_callback_request(
@@ -356,6 +457,38 @@ def assess_call(
             "callback_requested": callback_requested,
         }
     )
+
+    # A change or cancellation for today still needs owner visibility even if
+    # the requested time is earlier than the digest's send time. The rule is
+    # date-based for these workflows: today or later means the caller may be
+    # waiting for confirmation.
+    if (
+        workflow in {"reservation_change", "reservation_cancel"}
+        and reservation_date is not None
+        and reservation_date >= reference.date()
+    ):
+        return AssessmentResult(
+            status=OwnerAgentAssessment.Status.NEEDS_ATTENTION,
+            reason=OwnerAgentAssessment.Reason.FUTURE_RESERVATION,
+            explanation="The caller requested a reservation change or cancellation for today or a future date and may be waiting for confirmation.",
+            evaluated_for_date=report_date,
+            basis=basis,
+        )
+
+    if (
+        commitment_state == "future"
+        and getattr(call, "display_category", None) == "reservation"
+        and workflow in {"reservation_new", ""}
+        and booking_link_sent is True
+        and (guest_count is None or guest_count <= 8)
+    ):
+        return AssessmentResult(
+            status=OwnerAgentAssessment.Status.CONTEXT_ONLY,
+            reason=OwnerAgentAssessment.Reason.BOOKING_LINK_SENT,
+            explanation="A booking link was sent for a future reservation; the owner can verify it in Resy.",
+            evaluated_for_date=report_date,
+            basis=basis,
+        )
 
     if commitment_state == "future":
         reason = (
@@ -390,6 +523,19 @@ def assess_call(
             status=OwnerAgentAssessment.Status.NEEDS_ATTENTION,
             reason=OwnerAgentAssessment.Reason.FUTURE_CALLBACK,
             explanation="The caller requested a callback or follow-up.",
+            evaluated_for_date=report_date,
+            basis=basis,
+        )
+
+    if commitment_state == "unknown" and (
+        manager_review_required is True
+        or details_shared_with_manager is True
+        or customer_waiting_confirmation is True
+    ):
+        return AssessmentResult(
+            status=OwnerAgentAssessment.Status.NEEDS_ATTENTION,
+            reason=OwnerAgentAssessment.Reason.FUTURE_COMMITMENT,
+            explanation="The unhandled call requires manager review or customer confirmation.",
             evaluated_for_date=report_date,
             basis=basis,
         )

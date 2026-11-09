@@ -64,10 +64,16 @@ class OwnerAgentAnalysis(models.Model):
     )
     meaningful_conversation = models.BooleanField(null=True, blank=True)
     intent = models.CharField(max_length=80, blank=True)
+    workflow = models.CharField(max_length=80, blank=True)
     reservation_date = models.DateField(null=True, blank=True)
     reservation_time = models.TimeField(null=True, blank=True)
     guest_count = models.PositiveIntegerField(null=True, blank=True)
     future_commitment = models.BooleanField(null=True, blank=True)
+    booking_link_sent = models.BooleanField(null=True, blank=True)
+    kitchen_share_completed = models.BooleanField(null=True, blank=True)
+    details_shared_with_manager = models.BooleanField(null=True, blank=True)
+    manager_review_required = models.BooleanField(null=True, blank=True)
+    customer_waiting_confirmation = models.BooleanField(null=True, blank=True)
     customer_request = models.TextField(blank=True)
     normalized_summary = models.TextField(blank=True)
     confidence = models.FloatField(null=True, blank=True)
@@ -111,6 +117,12 @@ class OwnerAgentAssessment(models.Model):
         PAST_COMMITMENT = "past_commitment", "Commitment date has passed"
         FUTURE_COMMITMENT = "future_commitment", "Future commitment is unhandled"
         FUTURE_CALLBACK = "future_callback", "Future callback or commitment"
+        BOOKING_LINK_SENT = "booking_link_sent", "Booking link was sent"
+        CARRYOUT_SHARED_WITH_KITCHEN = (
+            "carryout_shared_with_kitchen",
+            "Carryout details were shared with the kitchen",
+        )
+        INCOMPLETE_CARRYOUT = "incomplete_carryout", "Carryout was not completed"
         INSUFFICIENT_INFORMATION = "insufficient_information", "Insufficient information"
 
     call = models.OneToOneField(
