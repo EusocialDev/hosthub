@@ -14,6 +14,9 @@ from .services.ghl_owner_sms import (
     build_owner_sms_payload,
     send_owner_sms,
 )
+from .services.owner_inbox import _extract_fields, valid_inbound_token
+from .services.digest_context import context_call_matches, search_digest_calls
+from .services.owner_conversation import answer_owner_message, chunk_transcript
 from .services.openai_analysis import normalize_analysis_output
 
 
@@ -382,3 +385,115 @@ class GHLOwnerSMSTests(SimpleTestCase):
     def test_owner_sms_sender_requires_webhook_configuration(self):
         with self.assertRaises(GHLOwnerSMSDeliveryError):
             send_owner_sms({"phone": "+17347527463", "message": "Hello Dear Owner"})
+
+
+class OwnerInboxParsingTests(SimpleTestCase):
+    def test_owner_reply_fields_support_nested_highlevel_payload(self):
+        fields = _extract_fields(
+            {
+                "id": "inbound-123",
+                "contact": {"id": "contact-1", "phone": "+17347527463"},
+                "message": {"body": "What was Sarah's call about?"},
+                "receivedAt": "2026-11-09T15:05:00Z",
+            }
+        )
+
+        self.assertEqual(fields["message_id"], "inbound-123")
+        self.assertEqual(fields["contact_id"], "contact-1")
+        self.assertEqual(fields["phone"], "+17347527463")
+        self.assertEqual(fields["body"], "What was Sarah's call about?")
+
+    def test_inbound_token_requires_exact_match(self):
+        self.assertTrue(valid_inbound_token("secret", "secret"))
+        self.assertFalse(valid_inbound_token("secret", "different"))
+
+
+class DigestContextTests(SimpleTestCase):
+    def setUp(self):
+        self.context = {
+            "scope": "owner_daily_digest",
+            "digest_id": 8,
+            "calls": [
+                {
+                    "call_id": 3013,
+                    "bland_call_id": "bland-3013",
+                    "user_name": "Sarah Domina",
+                    "phone_number": "+14193674234",
+                    "display_category": "reservation",
+                    "summary": "Sarah requested a reservation for 11 guests.",
+                    "assessment_reason": "future_reservation",
+                },
+                {
+                    "call_id": 3014,
+                    "bland_call_id": "bland-3014",
+                    "user_name": "Autumn Waters",
+                    "phone_number": "+13134225630",
+                    "display_category": "private_events",
+                    "summary": "Autumn asked about private party minimums.",
+                    "assessment_reason": "future_commitment",
+                },
+            ],
+        }
+
+    def test_search_is_limited_to_active_digest_calls(self):
+        matches = search_digest_calls(self.context, "Sarah")
+
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches[0]["call_id"], 3013)
+
+    def test_call_match_includes_summary_and_call_id(self):
+        self.assertTrue(context_call_matches(self.context["calls"][0], "11 guests"))
+        self.assertTrue(context_call_matches(self.context["calls"][0], "3013"))
+        self.assertFalse(context_call_matches(self.context["calls"][0], "Autumn"))
+
+
+class OwnerConversationTests(SimpleTestCase):
+    def test_transcript_is_split_into_ordered_sms_sized_parts(self):
+        transcript = "assistant: hello\n" + ("user: details\n" * 120)
+
+        parts = chunk_transcript(transcript, chunk_size=100)
+
+        self.assertGreater(len(parts), 1)
+        self.assertTrue(all(len(part) <= 100 for part in parts))
+        self.assertEqual("\n".join(parts).replace("\n", ""), transcript.replace("\n", ""))
+
+    @override_settings(OPENAI_API_KEY="test-key")
+    @patch("owner_agent.services.owner_conversation._execute_tool")
+    @patch("owner_agent.services.owner_conversation._api_response")
+    @patch("owner_agent.services.owner_conversation.build_message_context")
+    def test_conversation_runs_read_only_tool_then_returns_sms_answer(
+        self,
+        build_context,
+        api_response,
+        execute_tool,
+    ):
+        build_context.return_value = {"digest_id": 8, "calls": []}
+        execute_tool.return_value = {
+            "call_id": 3013,
+            "transcript": "user: I need a reservation.",
+        }
+        api_response.side_effect = [
+            {
+                "output": [
+                    {
+                        "type": "function_call",
+                        "call_id": "call-1",
+                        "name": "get_call_transcript",
+                        "arguments": '{"call_id":3013}',
+                    }
+                ]
+            },
+            {"output_text": "Sarah asked for a reservation."},
+        ]
+        message = SimpleNamespace(body="Show me Sarah's transcript")
+
+        answer = answer_owner_message(message)
+
+        self.assertEqual(answer.text, "Sarah asked for a reservation.")
+        self.assertEqual(answer.tool_names, ("get_call_transcript",))
+        execute_tool.assert_called_once_with(
+            message,
+            "get_call_transcript",
+            {"call_id": 3013},
+        )
+        self.assertEqual(api_response.call_count, 2)
