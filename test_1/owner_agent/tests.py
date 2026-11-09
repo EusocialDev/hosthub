@@ -407,6 +407,26 @@ class OwnerInboxParsingTests(SimpleTestCase):
         self.assertTrue(valid_inbound_token("secret", "secret"))
         self.assertFalse(valid_inbound_token("secret", "different"))
 
+    def test_owner_reply_can_derive_a_stable_id_without_ghl_message_id(self):
+        first = _extract_fields(
+            {
+                "contact_id": "contact-1",
+                "phone": "+17347527463",
+                "message": "What was Sarah's call about?",
+            }
+        )
+        second = _extract_fields(
+            {
+                "contact_id": "contact-1",
+                "phone": "+17347527463",
+                "message": "What was Sarah's call about?",
+            }
+        )
+
+        from .services.owner_inbox import _stable_message_id
+
+        self.assertEqual(_stable_message_id(first), _stable_message_id(second))
+
 
 class DigestContextTests(SimpleTestCase):
     def setUp(self):

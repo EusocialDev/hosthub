@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from datetime import datetime, timezone as datetime_timezone
+import hashlib
 import hmac
 from typing import Any
 
@@ -119,6 +120,20 @@ def _received_at(value: str) -> datetime:
     return django_timezone.now()
 
 
+def _stable_message_id(fields: dict[str, str]) -> str:
+    if fields["message_id"]:
+        return fields["message_id"]
+    fingerprint = "\x1f".join(
+        (
+            fields["contact_id"],
+            _normalize_phone_number(fields["phone"]) or fields["phone"],
+            fields["body"],
+            fields["received_at"],
+        )
+    )
+    return f"inbound-{hashlib.sha256(fingerprint.encode('utf-8')).hexdigest()}"
+
+
 def ingest_owner_reply(payload: dict[str, Any]) -> OwnerInboundResult:
     if not isinstance(payload, dict):
         raise OwnerAgentInboundMessageError("Webhook payload must be a JSON object.")
@@ -133,12 +148,12 @@ def ingest_owner_reply(payload: dict[str, Any]) -> OwnerInboundResult:
     if owner_settings is None:
         raise OwnerAgentInboundMessageError("Owner reply could not be matched to an enabled account.")
 
-    if fields["message_id"]:
-        existing = OwnerAgentMessage.objects.filter(
-            ghl_message_id=fields["message_id"],
-        ).first()
-        if existing is not None:
-            return OwnerInboundResult(message=existing, duplicate=True)
+    fields["message_id"] = _stable_message_id(fields)
+    existing = OwnerAgentMessage.objects.filter(
+        ghl_message_id=fields["message_id"],
+    ).first()
+    if existing is not None:
+        return OwnerInboundResult(message=existing, duplicate=True)
 
     digest = OwnerAgentDigest.objects.filter(
         account=owner_settings.account,
