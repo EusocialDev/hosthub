@@ -30,6 +30,7 @@ class DigestPreview:
     attention_items: list[dict[str, Any]]
     context_items: list[dict[str, Any]]
     call_assessments: list[dict[str, Any]]
+    location_breakdown: list[dict[str, Any]]
     message_body: str
 
     def as_dict(self) -> dict[str, Any]:
@@ -113,6 +114,10 @@ def _item(
         "user_name": call.user_name,
         "from_last_four": (call.from_number or "")[-4:] or None,
         "display_category": call.display_category,
+        "location_name": (
+            getattr(getattr(call, "location", None), "name", None)
+            or "Unassigned location"
+        ),
         "summary": _short_summary(call, analysis=analysis),
         "status": result.status,
         "reason": result.reason,
@@ -162,6 +167,50 @@ def _context_lines(context_items: list[dict[str, Any]]) -> list[str]:
     return lines
 
 
+def _attention_line(item: dict[str, Any]) -> str:
+    summary = item["summary"]
+    name = _clean_summary(item.get("user_name"))
+    phone_number = item.get("phone_number")
+    if phone_number:
+        if name and summary.lower().startswith(name.lower()):
+            summary = f"{name} {phone_number}{summary[len(name):]}"
+        elif name:
+            summary = f"{name} {phone_number} — {summary}"
+        else:
+            summary = f"{phone_number} — {summary}"
+    return summary
+
+
+def _append_location_section(lines: list[str], location: dict[str, Any]) -> None:
+    lines.append(f"{location['location_name']}:")
+    lines.append(f"{location['total_calls']} calls.")
+    lines.append(f"{location['handled_calls']} were marked handled in HostHub.")
+
+    if not location["unhandled_calls"]:
+        lines.append("There were no unhandled calls.")
+        return
+
+    attention_items = location["attention_items"]
+    if attention_items:
+        lines.append(
+            f"{location['unhandled_calls']} were not marked handled, but only "
+            f"{len(attention_items)} may need attention:"
+        )
+        for index, item in enumerate(attention_items, start=1):
+            lines.append(f"{index}. {_attention_line(item)}")
+    else:
+        lines.append(
+            f"{location['unhandled_calls']} were not marked handled, but none may need attention."
+        )
+
+    context_items = location["context_items"]
+    if context_items:
+        lines.append(
+            f"For context, the other {_count_phrase(len(context_items), 'unhandled call')}:"
+        )
+        lines.extend(f"- {line}" for line in _context_lines(context_items))
+
+
 def _compose_message(
     *,
     total_calls: int,
@@ -169,7 +218,21 @@ def _compose_message(
     unhandled_calls: int,
     attention_items: list[dict[str, Any]],
     context_items: list[dict[str, Any]],
+    location_breakdown: list[dict[str, Any]] | None = None,
 ) -> str:
+    if location_breakdown and len(location_breakdown) > 1:
+        lines = [
+            "Hello Dear Owner",
+            "",
+            f"Yesterday you received {total_calls} calls across {len(location_breakdown)} locations.",
+            "",
+        ]
+        for index, location in enumerate(location_breakdown):
+            if index:
+                lines.append("")
+            _append_location_section(lines, location)
+        return "\n".join(lines)
+
     lines = [
         "Hello Dear Owner",
         "",
@@ -187,17 +250,7 @@ def _compose_message(
         )
         lines.append("")
         for index, item in enumerate(attention_items, start=1):
-            summary = item["summary"]
-            name = _clean_summary(item.get("user_name"))
-            phone_number = item.get("phone_number")
-            if phone_number:
-                if name and summary.lower().startswith(name.lower()):
-                    summary = f"{name} {phone_number}{summary[len(name):]}"
-                elif name:
-                    summary = f"{name} {phone_number} — {summary}"
-                else:
-                    summary = f"{phone_number} — {summary}"
-            lines.append(f"{index}. {summary}")
+            lines.append(f"{index}. {_attention_line(item)}")
     else:
         lines.append(
             f"{unhandled_calls} were not marked handled, but none may need attention."
@@ -206,7 +259,7 @@ def _compose_message(
     if context_items:
         lines.append("")
         lines.append(
-            f"For context, the other {len(context_items)} unhandled calls:"
+            f"For context, the other {_count_phrase(len(context_items), 'unhandled call')}:"
         )
         lines.extend(f"- {line}" for line in _context_lines(context_items))
 
@@ -244,6 +297,7 @@ def build_digest_preview(
     attention_items: list[dict[str, Any]] = []
     context_items: list[dict[str, Any]] = []
     call_assessments: list[dict[str, Any]] = []
+    locations: dict[str, dict[str, Any]] = {}
     handled_calls = 0
 
     for call in calls:
@@ -264,12 +318,35 @@ def build_digest_preview(
         )
         call_assessments.append(assessment_item)
 
+        location_name = assessment_item["location_name"]
+        location = locations.setdefault(
+            location_name,
+            {
+                "location_name": location_name,
+                "total_calls": 0,
+                "handled_calls": 0,
+                "unhandled_calls": 0,
+                "attention_calls": 0,
+                "context_calls": 0,
+                "attention_items": [],
+                "context_items": [],
+            },
+        )
+        location["total_calls"] += 1
+
         if result.status == "handled":
             handled_calls += 1
+            location["handled_calls"] += 1
         elif result.status == "needs_attention":
             attention_items.append(assessment_item)
+            location["unhandled_calls"] += 1
+            location["attention_calls"] += 1
+            location["attention_items"].append(assessment_item)
         else:
             context_items.append(assessment_item)
+            location["unhandled_calls"] += 1
+            location["context_calls"] += 1
+            location["context_items"].append(assessment_item)
 
     unhandled_calls = len(calls) - handled_calls
     message_body = _compose_message(
@@ -278,6 +355,7 @@ def build_digest_preview(
         unhandled_calls=unhandled_calls,
         attention_items=attention_items,
         context_items=context_items,
+        location_breakdown=list(locations.values()),
     )
 
     return DigestPreview(
@@ -294,5 +372,6 @@ def build_digest_preview(
         attention_items=attention_items,
         context_items=context_items,
         call_assessments=call_assessments,
+        location_breakdown=list(locations.values()),
         message_body=message_body,
     )

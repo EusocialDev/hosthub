@@ -293,6 +293,54 @@ class OwnerAgentAssessmentTests(SimpleTestCase):
         self.assertIn("For context, the other 2 unhandled calls:", message)
         self.assertIn("2 unhandled calls contained no meaningful customer conversation.", message)
 
+    def test_digest_message_separates_multiple_locations(self):
+        message = _compose_message(
+            total_calls=13,
+            handled_calls=10,
+            unhandled_calls=3,
+            attention_items=[],
+            context_items=[],
+            location_breakdown=[
+                {
+                    "location_name": "160 Main",
+                    "total_calls": 8,
+                    "handled_calls": 5,
+                    "unhandled_calls": 3,
+                    "attention_calls": 2,
+                    "context_calls": 1,
+                    "attention_items": [
+                        {
+                            "user_name": "Sarah",
+                            "phone_number": "(419) 367-4234",
+                            "summary": "Sarah requested a reservation.",
+                        },
+                        {
+                            "user_name": "Autumn",
+                            "phone_number": "(313) 422-5630",
+                            "summary": "Autumn asked about a private event.",
+                        },
+                    ],
+                    "context_items": [{"reason": "silent_call"}],
+                },
+                {
+                    "location_name": "Sapori",
+                    "total_calls": 5,
+                    "handled_calls": 5,
+                    "unhandled_calls": 0,
+                    "attention_calls": 0,
+                    "context_calls": 0,
+                    "attention_items": [],
+                    "context_items": [],
+                },
+            ],
+        )
+
+        self.assertIn("Yesterday you received 13 calls across 2 locations.", message)
+        self.assertIn("160 Main:\n8 calls.", message)
+        self.assertIn("5 were marked handled in HostHub.", message)
+        self.assertIn("Sapori:\n5 calls.", message)
+        self.assertIn("There were no unhandled calls.", message)
+
     def test_openai_analysis_can_enrich_missing_future_reservation_fields(self):
         call = self.make_call(variables={})
         analysis = normalize_analysis_output(

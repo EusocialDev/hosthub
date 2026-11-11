@@ -20,7 +20,7 @@ from testendpoint.models import Call
 from ..models import OwnerAgentAnalysis
 
 
-PROMPT_VERSION = "owner-call-analysis-v2"
+PROMPT_VERSION = "owner-call-analysis-v3"
 RESPONSES_URL = "https://api.openai.com/v1/responses"
 SENSITIVE_VARIABLE_KEYS = {
     "call_token",
@@ -166,6 +166,12 @@ Rules:
 - Do not say a manager will call or text unless the transcript explicitly says
   that. Do not invent a completion, confirmation, payment, attendance, or
   external-system result.
+- Do not attribute a statement to the manager just because the AI agent said
+  that the manager would call or text. Unless the manager is an actual speaker
+  in the supplied conversation, phrase it as "the agent said the manager would
+  call or text" or "the caller was told the manager would call or text." Treat
+  that as an expected follow-up, not as proof that the manager reviewed or
+  confirmed anything.
 - confidence must be between 0 and 1.
 """.strip()
 
