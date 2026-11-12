@@ -17,6 +17,7 @@ from .services.ghl_owner_sms import (
 from .services.owner_inbox import _extract_fields, valid_inbound_token
 from .services.digest_context import context_call_matches, search_digest_calls
 from .services.owner_conversation import answer_owner_message, chunk_transcript
+from .services.digest_rewrite import rewrite_digest_message
 from .services.openai_analysis import normalize_analysis_output
 
 
@@ -565,3 +566,73 @@ class OwnerConversationTests(SimpleTestCase):
             {"call_id": 3013},
         )
         self.assertEqual(api_response.call_count, 2)
+
+
+class DigestRewriteTests(SimpleTestCase):
+    @override_settings(OPENAI_API_KEY="test-key")
+    @patch("owner_agent.services.digest_rewrite.requests.post")
+    @patch("owner_agent.services.digest_rewrite._call_evidence")
+    def test_final_editor_receives_transcript_and_preserves_attention_phone(
+        self,
+        call_evidence,
+        post,
+    ):
+        preview = SimpleNamespace(
+            message_body="Hello Dear Owner\n\nDraft message",
+            total_calls=1,
+            handled_calls=0,
+            unhandled_calls=1,
+            attention_calls=1,
+            context_calls=0,
+            location_breakdown=[
+                {
+                    "location_name": "160 Main",
+                    "total_calls": 1,
+                    "handled_calls": 0,
+                    "unhandled_calls": 1,
+                    "attention_calls": 1,
+                    "context_calls": 0,
+                    "attention_items": [],
+                    "context_items": [],
+                }
+            ],
+            attention_items=[
+                {
+                    "call_id": 3013,
+                    "phone_number": "(248) 238-0443",
+                }
+            ],
+            call_assessments=[],
+        )
+        call_evidence.return_value = {
+            "draft_message": preview.message_body,
+            "total_calls": 1,
+            "handled_calls": 0,
+            "unhandled_calls": 1,
+            "attention_calls": 1,
+            "context_calls": 0,
+            "locations": [
+                {
+                    "location_name": "160 Main",
+                    "attention_items": [
+                        {
+                            "call_id": 3013,
+                            "transcript": "user: Private party.",
+                        }
+                    ],
+                    "context_items": [],
+                }
+            ],
+        }
+        post.return_value.status_code = 200
+        post.return_value.text = ""
+        post.return_value.json.return_value = {
+            "output_text": '{"message":"Hello Dear Owner\\n\\n160 Main\\n\\nAn unnamed caller (248) 238-0443 asked about a private party."}'
+        }
+
+        result = rewrite_digest_message(preview)
+
+        self.assertIn("160 Main", result)
+        self.assertIn("(248) 238-0443", result)
+        request_payload = post.call_args.kwargs["json"]
+        self.assertIn("Private party.", request_payload["input"][1]["content"])

@@ -1,4 +1,5 @@
 import json
+from dataclasses import replace
 from datetime import date
 
 from django.core.management.base import BaseCommand, CommandError
@@ -7,6 +8,7 @@ from testendpoint.models import Account, Call
 
 from owner_agent.services.digest_preview import build_digest_preview
 from owner_agent.services.openai_analysis import OpenAIAnalysisError, analyze_call
+from owner_agent.services.digest_rewrite import DigestRewriteError, rewrite_digest_message
 
 
 class Command(BaseCommand):
@@ -102,6 +104,13 @@ class Command(BaseCommand):
                 evaluation_time=preview.evaluation_time,
                 analysis_by_call_id=analysis_by_call_id,
             )
+            try:
+                enhanced_preview = replace(
+                    enhanced_preview,
+                    message_body=rewrite_digest_message(enhanced_preview),
+                )
+            except DigestRewriteError:
+                pass
 
             baseline_by_id = {
                 item["call_id"]: item for item in preview.call_assessments

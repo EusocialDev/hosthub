@@ -1,6 +1,6 @@
 """Build, persist, and deliver one owner-agent daily digest."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime, time, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -26,6 +26,7 @@ from .ghl_owner_sms import (
     send_owner_sms,
 )
 from .openai_analysis import OpenAIAnalysisError, analyze_call, save_analysis
+from .digest_rewrite import DigestRewriteError, rewrite_digest_message
 
 
 class OwnerAgentDigestDeliveryError(RuntimeError):
@@ -193,6 +194,13 @@ def build_delivery_preview(
         evaluation_time=scheduled_time,
         analysis_by_call_id=analysis_by_call_id,
     )
+    try:
+        rewritten_message = rewrite_digest_message(enhanced)
+    except DigestRewriteError:
+        # The classification and deterministic message remain the safe
+        # fallback if the editor is unavailable or fails validation.
+        rewritten_message = enhanced.message_body
+    enhanced = replace(enhanced, message_body=rewritten_message)
     return enhanced, analysis_by_call_id
 
 
