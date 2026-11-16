@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from dateutil import parser as dateparser
 from .models import BusinessHour, Call, DateOverride, PhoneNumber, Account, UserAccess, Location
-from datetime import date as date_type, datetime as datetime_type, time as time_type
+from datetime import datetime as datetime_type, time as time_type
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from testendpoint.services.bland_ingest import ingest_bland_webhook_event
 from django.views.decorators.cache import never_cache
@@ -901,42 +901,75 @@ def location_hours(request, location_slug):
 def location_hours_status(request, location_slug):
     """Return the scheduled open/closed state for a local date and time.
 
-    Example: ``/test/api/hours/160-main/status/?date=2026-11-26&time=10:00``
+    The date may be ISO, US numeric, or natural language (for example,
+    ``2026-11-26``, ``11/26/2026``, ``11/26``, or ``November 26th``).
+    The time may be 24-hour or AM/PM (for example, ``22:00`` or ``10 PM``).
     """
     location = get_object_or_404(Location, slug=location_slug, is_active=True)
     requested_date_text = request.GET.get("date")
     requested_time_text = request.GET.get("time")
 
-    if not requested_date_text or not requested_time_text:
-        return JsonResponse(
-            {
-                "error": "Both date and time are required.",
-                "example": "?date=2026-11-26&time=10:00",
-            },
-            status=400,
-        )
-
-    try:
-        requested_date = date_type.fromisoformat(requested_date_text)
-        requested_time = time_type.fromisoformat(requested_time_text)
-    except ValueError:
-        return JsonResponse(
-            {
-                "error": "Invalid date or time. Use date=YYYY-MM-DD and time=HH:MM.",
-            },
-            status=400,
-        )
-
-    if requested_time.tzinfo is not None:
-        return JsonResponse(
-            {"error": "time must be a local time without a timezone offset."},
-            status=400,
-        )
-
     try:
         location_tz = ZoneInfo(str(location.timezone))
     except ZoneInfoNotFoundError:
         location_tz = ZoneInfo("UTC")
+
+    if not requested_date_text or not requested_time_text:
+        return JsonResponse(
+            {
+                "error": "Both date and time are required.",
+                "examples": [
+                    "?date=2026-11-26&time=10:00",
+                    "?date=November%2026th&time=10%20PM",
+                ],
+            },
+            status=400,
+        )
+
+    local_today = datetime_type.now(location_tz).date()
+    default_datetime = datetime_type.combine(local_today, time_type.min)
+
+    try:
+        parsed_date = dateparser.parse(
+            requested_date_text.strip(),
+            default=default_datetime,
+            fuzzy=True,
+        )
+        if not parsed_date:
+            raise ValueError("date could not be parsed")
+        requested_date = parsed_date.date()
+    except (TypeError, ValueError, OverflowError):
+        return JsonResponse(
+            {
+                "error": (
+                    "Invalid date. Use YYYY-MM-DD, MM/DD/YYYY, MM/DD, "
+                    "or a date such as November 26th."
+                ),
+            },
+            status=400,
+        )
+
+    try:
+        parsed_time = dateparser.parse(
+            requested_time_text.strip(),
+            default=default_datetime,
+            fuzzy=True,
+        )
+        if not parsed_time:
+            raise ValueError("time could not be parsed")
+        if parsed_time.tzinfo is not None:
+            raise ValueError("time must be local to the location")
+        requested_time = parsed_time.time()
+    except (TypeError, ValueError, OverflowError):
+        return JsonResponse(
+            {
+                "error": (
+                    "Invalid time. Use military time such as 22:00 or "
+                    "AM/PM time such as 10:00 PM."
+                ),
+            },
+            status=400,
+        )
 
     from staff.services.location_hours import get_location_open_status
 

@@ -104,11 +104,32 @@ class LocationHoursStatusTests(TestCase):
         missing = self.client.get("/test/api/hours/hours-main/status/")
         invalid = self.client.get(
             "/test/api/hours/hours-main/status/",
-            {"date": "11/19/2026", "time": "10am"},
+            {"date": "not-a-date", "time": "not-a-time"},
         )
 
         self.assertEqual(missing.status_code, 400)
         self.assertEqual(invalid.status_code, 400)
+
+    def test_status_accepts_natural_language_and_am_pm_inputs(self):
+        BusinessHour.objects.create(
+            location=self.location,
+            day_of_week=3,
+            open_time=time(9, 0),
+            close_time=time(17, 0),
+        )
+
+        natural_response = self.client.get(
+            "/test/api/hours/hours-main/status/",
+            {"date": "November 19th, 2026", "time": "10 AM"},
+        )
+        numeric_response = self.client.get(
+            "/test/api/hours/hours-main/status/",
+            {"date": "11/19/2026", "time": "10:00"},
+        )
+
+        self.assertTrue(natural_response.json()["is_open"])
+        self.assertEqual(natural_response.json()["date"], "2026-11-19")
+        self.assertTrue(numeric_response.json()["is_open"])
 
     def test_status_handles_the_after_midnight_part_of_overnight_hours(self):
         BusinessHour.objects.create(
