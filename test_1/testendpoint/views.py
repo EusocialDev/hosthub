@@ -974,20 +974,14 @@ def location_hours_status(request, location_slug):
     from staff.services.location_hours import get_location_open_status
 
     result = get_location_open_status(location, requested_date, requested_time)
-    requested_local_datetime = datetime_type.combine(
-        requested_date,
-        requested_time,
-        tzinfo=location_tz,
-    )
 
     return JsonResponse(
         {
             "location": location.name,
             "location_slug": location.slug,
             "timezone": str(location.timezone),
-            "date": requested_date.isoformat(),
-            "time": requested_time.strftime("%H:%M"),
-            "local_datetime": requested_local_datetime.isoformat(),
+            "reservation_date": requested_date.strftime("%m/%d/%Y"),
+            "reservation_time": requested_time.strftime("%I:%M %p").lstrip("0"),
             **result,
         }
     )

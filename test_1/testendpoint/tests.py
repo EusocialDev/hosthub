@@ -128,7 +128,8 @@ class LocationHoursStatusTests(TestCase):
         )
 
         self.assertTrue(natural_response.json()["is_open"])
-        self.assertEqual(natural_response.json()["date"], "2026-11-19")
+        self.assertEqual(natural_response.json()["reservation_date"], "11/19/2026")
+        self.assertEqual(natural_response.json()["reservation_time"], "10:00 AM")
         self.assertTrue(numeric_response.json()["is_open"])
 
     def test_status_handles_the_after_midnight_part_of_overnight_hours(self):
