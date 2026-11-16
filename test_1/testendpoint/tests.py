@@ -1,9 +1,9 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from datetime import datetime
+from datetime import date, datetime, time
 
-from .models import Account, Call, Location
+from .models import Account, BusinessHour, Call, DateOverride, Location
 from .services.reports import build_daily_call_report
 
 
@@ -39,3 +39,90 @@ class DailyCallReportTests(TestCase):
         self.assertEqual(section["detailed_calls"][0]["handled_by_label"], "Alice")
         self.assertEqual(section["by_handler"][0]["label"], "Alice")
         self.assertEqual(section["handled_calls_by_person"][0]["label"], "Alice")
+
+
+class LocationHoursStatusTests(TestCase):
+    def setUp(self):
+        self.account = Account.objects.create(
+            name="Hours Test Account",
+            slug="hours-test-account",
+        )
+        self.location = Location.objects.create(
+            account=self.account,
+            name="Main Location",
+            slug="hours-main",
+            timezone="America/Detroit",
+        )
+
+    def test_status_uses_regular_hours(self):
+        BusinessHour.objects.create(
+            location=self.location,
+            day_of_week=3,
+            open_time=time(9, 0),
+            close_time=time(17, 0),
+        )
+
+        response = self.client.get(
+            "/test/api/hours/hours-main/status/",
+            {"date": "2026-11-19", "time": "10:00"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["is_open"])
+        self.assertEqual(response.json()["reason_code"], "regular_hours")
+        self.assertEqual(response.json()["hours"], {"open": "09:00", "close": "17:00"})
+
+    def test_status_uses_special_date_override(self):
+        BusinessHour.objects.create(
+            location=self.location,
+            day_of_week=3,
+            open_time=time(9, 0),
+            close_time=time(17, 0),
+        )
+        DateOverride.objects.create(
+            location=self.location,
+            name="Thanksgiving early opening",
+            start_date=date(2026, 11, 19),
+            end_date=date(2026, 11, 19),
+            is_closed=False,
+            open_time=time(10, 0),
+            close_time=time(22, 0),
+        )
+
+        response = self.client.get(
+            "/test/api/hours/hours-main/status/",
+            {"date": "2026-11-19", "time": "09:30"},
+        )
+
+        payload = response.json()
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(payload["is_open"])
+        self.assertEqual(payload["reason_code"], "date_override")
+        self.assertEqual(payload["reason"], "Outside special hours: Thanksgiving early opening")
+
+    def test_status_rejects_missing_or_invalid_inputs(self):
+        missing = self.client.get("/test/api/hours/hours-main/status/")
+        invalid = self.client.get(
+            "/test/api/hours/hours-main/status/",
+            {"date": "11/19/2026", "time": "10am"},
+        )
+
+        self.assertEqual(missing.status_code, 400)
+        self.assertEqual(invalid.status_code, 400)
+
+    def test_status_handles_the_after_midnight_part_of_overnight_hours(self):
+        BusinessHour.objects.create(
+            location=self.location,
+            day_of_week=2,
+            open_time=time(22, 0),
+            close_time=time(2, 0),
+        )
+
+        response = self.client.get(
+            "/test/api/hours/hours-main/status/",
+            {"date": "2026-11-19", "time": "01:00"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["is_open"])
+        self.assertEqual(response.json()["reason_code"], "regular_hours")

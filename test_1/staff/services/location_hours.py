@@ -1,5 +1,5 @@
 from testendpoint.models import BusinessHour, DateOverride, Location
-from datetime import datetime, timedelta
+from datetime import date as date_type, datetime, time as time_type, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from django.utils import timezone as dj_timezone
 
@@ -58,6 +58,138 @@ def get_active_date_override(location, date) -> DateOverride | None:
         start_date__lte=date,
         end_date__gte=date,
     ).first()
+
+
+def _time_is_within_hours(open_time, close_time, requested_time) -> bool:
+    """Return whether a local time falls inside an hours interval.
+
+    A close time earlier than the open time represents an overnight interval,
+    for example 22:00-02:00. When evaluating the schedule row for the
+    requested date, only the evening portion belongs to that date; the
+    after-midnight portion is evaluated from the previous day's schedule.
+    Equal times are treated as closed because the schedule does not describe
+    a usable interval.
+    """
+    if not open_time or not close_time or open_time == close_time:
+        return False
+    if open_time < close_time:
+        return open_time <= requested_time < close_time
+    return requested_time >= open_time
+
+
+def _hours_payload(open_time, close_time):
+    if not open_time or not close_time:
+        return None
+    return {
+        "open": open_time.strftime("%H:%M"),
+        "close": close_time.strftime("%H:%M"),
+    }
+
+
+def get_location_open_status(location, requested_date: date_type, requested_time: time_type) -> dict:
+    """Resolve whether a location is open at a local date and time.
+
+    The result is intentionally descriptive so callers such as the voice
+    agent can explain *why* the location is open or closed. Date overrides
+    take precedence over weekly hours, matching the existing scheduler.
+    """
+    override = get_active_date_override(location, requested_date)
+    if override:
+        hours = _hours_payload(override.open_time, override.close_time)
+        if override.is_closed or not hours:
+            return {
+                "is_open": False,
+                "reason_code": "date_override_closed",
+                "reason": f"Closed: {override.name}",
+                "source": "date_override",
+                "override_name": override.name,
+                "hours": None,
+            }
+        is_open = _time_is_within_hours(
+            override.open_time, override.close_time, requested_time
+        )
+        return {
+            "is_open": is_open,
+            "reason_code": "date_override",
+            "reason": (
+                f"Special hours: {override.name}"
+                if is_open
+                else f"Outside special hours: {override.name}"
+            ),
+            "source": "date_override",
+            "override_name": override.name,
+            "hours": hours,
+        }
+
+    business_hour = get_business_hour_for_day(location, requested_date.weekday())
+    if business_hour and not business_hour.is_closed:
+        hours = _hours_payload(business_hour.open_time, business_hour.close_time)
+        if hours and _time_is_within_hours(
+            business_hour.open_time, business_hour.close_time, requested_time
+        ):
+            return {
+                "is_open": True,
+                "reason_code": "regular_hours",
+                "reason": "Regular business hours",
+                "source": "business_hours",
+                "override_name": None,
+                "hours": hours,
+            }
+
+    # A previous day's overnight schedule may still be active after midnight.
+    previous_date = requested_date - timedelta(days=1)
+    previous_override = get_active_date_override(location, previous_date)
+    previous_schedule = previous_override or get_business_hour_for_day(
+        location, previous_date.weekday()
+    )
+    if previous_schedule:
+        previous_is_closed = getattr(previous_schedule, "is_closed", False)
+        previous_open = getattr(previous_schedule, "open_time", None)
+        previous_close = getattr(previous_schedule, "close_time", None)
+        previous_hours = _hours_payload(previous_open, previous_close)
+        if (
+            not previous_is_closed
+            and previous_hours
+            and previous_open > previous_close
+            and requested_time < previous_close
+        ):
+            if previous_override:
+                reason_code = "date_override"
+                reason = f"Special hours: {previous_override.name}"
+                source = "date_override"
+                override_name = previous_override.name
+            else:
+                reason_code = "regular_hours"
+                reason = "Regular business hours from the previous day"
+                source = "business_hours"
+                override_name = None
+            return {
+                "is_open": True,
+                "reason_code": reason_code,
+                "reason": reason,
+                "source": source,
+                "override_name": override_name,
+                "hours": previous_hours,
+            }
+
+    if business_hour and not business_hour.is_closed and business_hour.open_time and business_hour.close_time:
+        closed_reason = "Outside regular business hours"
+    elif business_hour and business_hour.is_closed:
+        closed_reason = "Closed in the regular schedule"
+    else:
+        closed_reason = "No regular hours are configured"
+
+    return {
+        "is_open": False,
+        "reason_code": "regular_hours_closed",
+        "reason": closed_reason,
+        "source": "business_hours",
+        "override_name": None,
+        "hours": _hours_payload(
+            business_hour.open_time,
+            business_hour.close_time,
+        ) if business_hour and not business_hour.is_closed else None,
+    }
 
 def is_location_effectively_open(location, now=None) -> bool:
     now = now or get_location_local_now(location)

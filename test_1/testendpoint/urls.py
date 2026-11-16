@@ -40,6 +40,9 @@ urlpatterns = [
 
     # Public hours endpoint for AI agent
     path("api/hours/<slug:location_slug>/", views.location_hours, name="location_hours"),
+    path(
+        "api/hours/<slug:location_slug>/status/",
+        views.location_hours_status,
+        name="location_hours_status",
+    ),
 ]
-
- 

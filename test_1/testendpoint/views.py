@@ -11,7 +11,8 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from dateutil import parser as dateparser
 from .models import BusinessHour, Call, DateOverride, PhoneNumber, Account, UserAccess, Location
-from datetime import date as date_type
+from datetime import date as date_type, datetime as datetime_type, time as time_type
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from testendpoint.services.bland_ingest import ingest_bland_webhook_event
 from django.views.decorators.cache import never_cache
 from django.http import Http404
@@ -894,3 +895,66 @@ def location_hours(request, location_slug):
         "regular_hours": regular_hours,
         "date_overrides": date_overrides,
     })
+
+
+@require_GET
+def location_hours_status(request, location_slug):
+    """Return the scheduled open/closed state for a local date and time.
+
+    Example: ``/test/api/hours/160-main/status/?date=2026-11-26&time=10:00``
+    """
+    location = get_object_or_404(Location, slug=location_slug, is_active=True)
+    requested_date_text = request.GET.get("date")
+    requested_time_text = request.GET.get("time")
+
+    if not requested_date_text or not requested_time_text:
+        return JsonResponse(
+            {
+                "error": "Both date and time are required.",
+                "example": "?date=2026-11-26&time=10:00",
+            },
+            status=400,
+        )
+
+    try:
+        requested_date = date_type.fromisoformat(requested_date_text)
+        requested_time = time_type.fromisoformat(requested_time_text)
+    except ValueError:
+        return JsonResponse(
+            {
+                "error": "Invalid date or time. Use date=YYYY-MM-DD and time=HH:MM.",
+            },
+            status=400,
+        )
+
+    if requested_time.tzinfo is not None:
+        return JsonResponse(
+            {"error": "time must be a local time without a timezone offset."},
+            status=400,
+        )
+
+    try:
+        location_tz = ZoneInfo(str(location.timezone))
+    except ZoneInfoNotFoundError:
+        location_tz = ZoneInfo("UTC")
+
+    from staff.services.location_hours import get_location_open_status
+
+    result = get_location_open_status(location, requested_date, requested_time)
+    requested_local_datetime = datetime_type.combine(
+        requested_date,
+        requested_time,
+        tzinfo=location_tz,
+    )
+
+    return JsonResponse(
+        {
+            "location": location.name,
+            "location_slug": location.slug,
+            "timezone": str(location.timezone),
+            "date": requested_date.isoformat(),
+            "time": requested_time.strftime("%H:%M"),
+            "local_datetime": requested_local_datetime.isoformat(),
+            **result,
+        }
+    )
