@@ -26,6 +26,11 @@ urlpatterns = [
     path("api/calls/live-data/", views.live_calls_data_view, name='live_calls_data'),
 
     path('webhooks/bland/calls/<str:token>/', views.bland_calls_webhook, name='bland_calls_webhook'),
+    path(
+        'webhooks/retell/calls/<str:token>/',
+        views.retell_calls_webhook,
+        name='retell_calls_webhook',
+    ),
 
     # live UI polling endpoints 
     path("live/alerts/", views_live.live_alerts_poll, name='live_alerts_pool'),

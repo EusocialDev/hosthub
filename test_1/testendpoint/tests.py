@@ -1,9 +1,13 @@
+import json
+
 from django.test import TestCase
+from django.test import override_settings
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
+from zoneinfo import ZoneInfo
 
-from .models import Account, BusinessHour, Call, DateOverride, Location
+from .models import Account, BusinessHour, Call, DateOverride, Location, PhoneNumber
 from .services.reports import build_daily_call_report
 
 
@@ -132,6 +136,28 @@ class LocationHoursStatusTests(TestCase):
         self.assertEqual(natural_response.json()["reservation_time"], "10:00 AM")
         self.assertTrue(numeric_response.json()["is_open"])
 
+    def test_status_accepts_relative_dates_in_location_timezone(self):
+        local_today = datetime.now(ZoneInfo("America/Detroit")).date()
+        tomorrow = local_today + timedelta(days=1)
+        BusinessHour.objects.create(
+            location=self.location,
+            day_of_week=tomorrow.weekday(),
+            open_time=time(19, 0),
+            close_time=time(22, 0),
+        )
+
+        response = self.client.get(
+            "/test/api/hours/hours-main/status/",
+            {"date": "tomorrow", "time": "9:30 PM"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json()["reservation_date"],
+            tomorrow.strftime("%m/%d/%Y"),
+        )
+        self.assertTrue(response.json()["is_open"])
+
     def test_status_handles_the_after_midnight_part_of_overnight_hours(self):
         BusinessHour.objects.create(
             location=self.location,
@@ -148,3 +174,74 @@ class LocationHoursStatusTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json()["is_open"])
         self.assertEqual(response.json()["reason_code"], "regular_hours")
+
+
+class RetellWebhookTests(TestCase):
+    def setUp(self):
+        self.account = Account.objects.create(
+            name="Retell Test Account",
+            slug="retell-test-account",
+        )
+        self.location = Location.objects.create(
+            account=self.account,
+            name="Retell Main",
+            slug="retell-main",
+        )
+        PhoneNumber.objects.create(
+            account=self.account,
+            location=self.location,
+            number="+19478135161",
+        )
+
+    @override_settings(
+        RETELL_WEBHOOK_TOKEN="retell-test-token",
+        RETELL_API_KEY="",
+    )
+    def test_retell_post_call_is_saved_through_existing_bland_upsert(self):
+        payload = {
+            "name": "hosthub_post_call",
+            "call": {
+                "call_id": "retell-call-1",
+                "from_number": "+17347527463",
+                "to_number": "+19478135161",
+                "start_timestamp": 1790988771000,
+                "end_timestamp": 1790988801000,
+                "call_status": "ended",
+                "transcript": (
+                    "agent: How can I help? user: I need a reservation for four."
+                ),
+                "transcript_object": [
+                    {"role": "agent", "content": "How can I help?"},
+                    {"role": "user", "content": "I need a reservation for four."},
+                ],
+                "call_analysis": {
+                    "call_summary": "The caller requested a reservation for four.",
+                    "custom_analysis_data": {
+                        "hosthub_category": "reservation",
+                        "caller_name": "Sarah",
+                        "reservation_date": "November 18th",
+                        "reservation_time": "7 PM",
+                        "party_size": 4,
+                    },
+                },
+                "retell_llm_dynamic_variables": {},
+            },
+            "args": {},
+        }
+
+        response = self.client.post(
+            "/test/webhooks/retell/calls/retell-test-token/",
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        call = Call.objects.get(bland_call_id="retell_retell-call-1")
+        self.assertEqual(call.location_id, self.location.id)
+        self.assertEqual(call.display_category, "reservation")
+        self.assertEqual(call.user_name, "Sarah")
+        self.assertEqual(call.summary, "The caller requested a reservation for four.")
+        self.assertIn("reservation for four", call.full_transcript)
+        self.assertEqual(call.variables["party_size"], 4)
+        self.assertEqual(call.host_status, "needs_action")
+        self.assertIsNone(call.handled_at)

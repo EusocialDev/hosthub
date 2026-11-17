@@ -11,9 +11,14 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from dateutil import parser as dateparser
 from .models import BusinessHour, Call, DateOverride, PhoneNumber, Account, UserAccess, Location
-from datetime import datetime as datetime_type, time as time_type
+from datetime import datetime as datetime_type, time as time_type, timedelta
+import re
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from testendpoint.services.bland_ingest import ingest_bland_webhook_event
+from testendpoint.services.retell_adapter import (
+    normalize_retell_to_bland,
+    verify_retell_signature,
+)
 from django.views.decorators.cache import never_cache
 from django.http import Http404
 from testendpoint.utils.phone import _normalize_phone_number
@@ -107,6 +112,70 @@ def bland_calls_webhook(request, token:str):
         return JsonResponse({"ok": False, "error": str(e)}, status=500)
     
     return JsonResponse({"ok":True}, status=200)
+
+
+@csrf_exempt
+def retell_calls_webhook(request, token: str):
+    """Accept Retell post-call data and route it through the Bland upsert path."""
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    expected_token = getattr(settings, "RETELL_WEBHOOK_TOKEN", "")
+    if not expected_token or token != expected_token:
+        return JsonResponse({"ok": False}, status=403)
+
+    content_type = (request.headers.get("Content-Type") or "").lower()
+    if "application/json" not in content_type:
+        return JsonResponse(
+            {"ok": False, "error": "Expected application/json"},
+            status=415,
+        )
+
+    raw_body = request.body
+    retell_api_key = getattr(settings, "RETELL_API_KEY", "")
+    if retell_api_key and not verify_retell_signature(
+        raw_body,
+        request.headers.get("X-Retell-Signature"),
+        retell_api_key,
+    ):
+        return JsonResponse(
+            {"ok": False, "error": "Invalid Retell signature"},
+            status=401,
+        )
+
+    try:
+        payload = json.loads(raw_body.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        return JsonResponse(
+            {"ok": False, "error": f"Invalid JSON: {exc}"},
+            status=400,
+        )
+
+    event = payload.get("event") if isinstance(payload, dict) else None
+    if event and event not in {"call_analyzed", "call_ended"}:
+        return JsonResponse({"ok": True, "ignored_event": event}, status=200)
+
+    try:
+        bland_shape = normalize_retell_to_bland(payload)
+        call_obj = upsert_call_from_bland_json(bland_shape)
+        if call_obj:
+            try:
+                maybe_send_recovery_sms(call_obj)
+            except Exception as exc:
+                print(f"Recovery SMS failed for Retell call {call_obj.bland_call_id}: {exc}")
+    except ValueError as exc:
+        return JsonResponse({"ok": False, "error": str(exc)}, status=400)
+    except Exception as exc:
+        return JsonResponse({"ok": False, "error": str(exc)}, status=500)
+
+    return JsonResponse(
+        {
+            "ok": True,
+            "call_id": bland_shape["call_id"],
+            "provider": "retell",
+        },
+        status=200,
+    )
 
 
 
@@ -834,6 +903,42 @@ def get_current_bland_pathway_for_location(location) -> str:
     return current_pathway_id, None
 
 DAY_NAMES = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+DAY_NAME_TO_INDEX = {name: index for index, name in enumerate(DAY_NAMES)}
+
+
+def _parse_relative_local_date(value: str, local_today):
+    """Resolve common relative date phrases using the location's local date."""
+    normalized = re.sub(r"\s+", " ", value.strip().lower())
+    normalized = normalized.replace(",", "")
+
+    if normalized in {"today", "tonight"}:
+        return local_today
+    if normalized == "tomorrow":
+        return local_today + timedelta(days=1)
+    if normalized in {"day after tomorrow", "the day after tomorrow"}:
+        return local_today + timedelta(days=2)
+
+    weekday_match = re.fullmatch(
+        r"(?:(this|next)\s+)?(monday|tuesday|wednesday|thursday|friday|saturday|sunday)",
+        normalized,
+    )
+    if not weekday_match:
+        return None
+
+    modifier, weekday_name = weekday_match.groups()
+    target_weekday = DAY_NAME_TO_INDEX[weekday_name]
+    difference = target_weekday - local_today.weekday()
+
+    if modifier == "this":
+        # "this Thursday" means Thursday in the current calendar week.
+        return local_today + timedelta(days=difference)
+
+    # A bare weekday and "next weekday" resolve to the next occurrence. If
+    # today is that weekday, bare "Friday" means today and "next Friday"
+    # means the following week.
+    if difference < 0 or (difference == 0 and modifier == "next"):
+        difference += 7
+    return local_today + timedelta(days=difference)
 
 @require_GET
 def location_hours(request, location_slug):
@@ -901,8 +1006,9 @@ def location_hours(request, location_slug):
 def location_hours_status(request, location_slug):
     """Return the scheduled open/closed state for a local date and time.
 
-    The date may be ISO, US numeric, or natural language (for example,
-    ``2026-11-26``, ``11/26/2026``, ``11/26``, or ``November 26th``).
+    The date may be relative, ISO, US numeric, or natural language (for
+    example, ``tonight``, ``tomorrow``, ``this Thursday``, ``2026-11-26``,
+    ``11/26/2026``, ``11/26``, or ``November 26th``).
     The time may be 24-hour or AM/PM (for example, ``22:00`` or ``10 PM``).
     """
     location = get_object_or_404(Location, slug=location_slug, is_active=True)
@@ -930,14 +1036,19 @@ def location_hours_status(request, location_slug):
     default_datetime = datetime_type.combine(local_today, time_type.min)
 
     try:
-        parsed_date = dateparser.parse(
-            requested_date_text.strip(),
-            default=default_datetime,
-            fuzzy=True,
+        requested_date = _parse_relative_local_date(
+            requested_date_text,
+            local_today,
         )
-        if not parsed_date:
-            raise ValueError("date could not be parsed")
-        requested_date = parsed_date.date()
+        if requested_date is None:
+            parsed_date = dateparser.parse(
+                requested_date_text.strip(),
+                default=default_datetime,
+                fuzzy=True,
+            )
+            if not parsed_date:
+                raise ValueError("date could not be parsed")
+            requested_date = parsed_date.date()
     except (TypeError, ValueError, OverflowError):
         return JsonResponse(
             {

@@ -219,6 +219,11 @@ elif ENVIRONMENT == "staging":
 DASHBOARD_PIN = os.environ.get("DASHBOARD_PIN", "7983")
 BLAND_WEBHOOK_TOKEN = os.environ.get("BLAND_WEBHOOK_TOKEN", "")
 
+# Retell post-call webhook. The API key is the Retell key marked for webhook
+# verification; the token provides an additional URL-level guard.
+RETELL_API_KEY = os.environ.get("RETELL_API_KEY", "")
+RETELL_WEBHOOK_TOKEN = os.environ.get("RETELL_WEBHOOK_TOKEN", "")
+
 BLAND_ORG_ID = os.environ.get("BLAND_ORG_ID", "")
 
 # Owner agent OpenAI analysis. Keep the key server-side only.
