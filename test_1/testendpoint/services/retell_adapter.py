@@ -139,7 +139,11 @@ def _transcript_turns(call: dict) -> list:
             continue
 
         role = str(turn.get("role") or turn.get("speaker") or "").lower()
-        user = "agent" if role in {"agent", "assistant"} else "user"
+        # The existing Bland cleanup path treats `assistant` as the source
+        # agent role and intentionally drops intermediate rows labeled
+        # `agent`. Keep that contract so Retell agent turns are preserved in
+        # the final dashboard transcript.
+        user = "assistant" if role in {"agent", "assistant"} else "user"
         created_at = _timestamp_to_iso(
             turn.get("start_timestamp") or turn.get("timestamp")
         )

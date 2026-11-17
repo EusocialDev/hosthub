@@ -277,6 +277,10 @@ class RetellWebhookTests(TestCase):
         self.assertEqual(call.user_name, "Sarah Collected")
         self.assertEqual(call.summary, "The caller requested a reservation for four.")
         self.assertIn("reservation for four", call.full_transcript)
+        self.assertEqual(
+            [turn["user"] for turn in call.transcripts],
+            ["agent", "user"],
+        )
         self.assertEqual(call.variables["party_size"], 4)
         self.assertEqual(call.variables["date"], "November 19th")
         self.assertEqual(call.variables["guest"], "4")
