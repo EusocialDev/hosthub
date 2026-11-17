@@ -10,7 +10,16 @@ from django.db.models import Q
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from dateutil import parser as dateparser
-from .models import BusinessHour, Call, DateOverride, PhoneNumber, Account, UserAccess, Location
+from .models import (
+    BusinessHour,
+    Call,
+    DateOverride,
+    PhoneNumber,
+    Account,
+    UserAccess,
+    Location,
+    RetellPhoneConfiguration,
+)
 from datetime import datetime as datetime_type, time as time_type, timedelta
 import re
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -173,6 +182,137 @@ def retell_calls_webhook(request, token: str):
             "ok": True,
             "call_id": bland_shape["call_id"],
             "provider": "retell",
+        },
+        status=200,
+    )
+
+
+@csrf_exempt
+def retell_inbound_webhook(request):
+    """Return per-phone configuration for Retell inbound calls and SMS."""
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    content_type = (request.headers.get("Content-Type") or "").lower()
+    if "application/json" not in content_type:
+        return JsonResponse(
+            {"ok": False, "error": "Expected application/json"},
+            status=415,
+        )
+
+    raw_body = request.body
+    retell_api_key = getattr(settings, "RETELL_API_KEY", "")
+    if retell_api_key and not verify_retell_signature(
+        raw_body,
+        request.headers.get("X-Retell-Signature"),
+        retell_api_key,
+    ):
+        return JsonResponse(
+            {"ok": False, "error": "Invalid Retell signature"},
+            status=401,
+        )
+
+    try:
+        payload = json.loads(raw_body.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        return JsonResponse(
+            {"ok": False, "error": f"Invalid JSON: {exc}"},
+            status=400,
+        )
+
+    if not isinstance(payload, dict):
+        return JsonResponse(
+            {"ok": False, "error": "Payload must be a JSON object"},
+            status=400,
+        )
+
+    event = payload.get("event")
+    if event == "call_inbound":
+        inbound_key = "call_inbound"
+    elif event == "chat_inbound":
+        inbound_key = "chat_inbound"
+    else:
+        return JsonResponse(
+            {"ok": False, "error": "Expected call_inbound or chat_inbound event"},
+            status=400,
+        )
+
+    inbound = payload.get(inbound_key) or {}
+    if not isinstance(inbound, dict):
+        return JsonResponse(
+            {"ok": False, "error": f"{inbound_key} must be an object"},
+            status=400,
+        )
+
+    raw_to_number = inbound.get("to_number") or payload.get("to_number")
+    normalized_to_number = _normalize_phone_number(raw_to_number)
+    if not normalized_to_number:
+        return JsonResponse(
+            {"ok": False, "error": "Missing to_number"},
+            status=400,
+        )
+
+    phone_number = (
+        PhoneNumber.objects
+        .select_related("account", "location")
+        .filter(number=normalized_to_number, is_active=True)
+        .first()
+    )
+    if not phone_number or not phone_number.location.is_active:
+        # A successful reject response prevents Retell from retrying a number
+        # that HostHub cannot safely associate with a location.
+        return JsonResponse(
+            {
+                inbound_key: {"reject": True},
+                "ok": False,
+                "error": "No active HostHub location matches to_number",
+            },
+            status=200,
+        )
+
+    config = (
+        RetellPhoneConfiguration.objects
+        .filter(phone_number=phone_number)
+        .first()
+    )
+    location = phone_number.location
+
+    def configured_value(field_name):
+        if not config:
+            return ""
+        value = getattr(config, field_name, "")
+        return "" if value is None else str(value)
+
+    location_description = configured_value("location_description")
+    private_events_description = configured_value("private_events_description")
+    dynamic_variables = {
+        "location_slug": str(location.slug or ""),
+        "location_name": str(location.name or ""),
+        # Keep the requested Retell variable names, including their existing
+        # spelling, so the agent prompt can reference them directly.
+        "location_discription": location_description,
+        "location_address": configured_value("location_address"),
+        "corking_fee": configured_value("corking_fee"),
+        "private_events_discription": private_events_description,
+        "resy_venue_id": configured_value("resy_venue_id"),
+        "resy_location_slug": configured_value("resy_location_slug"),
+        "host_email": configured_value("host_email"),
+        "manager_email": configured_value("manager_email"),
+        "printer_api": configured_value("printer_api"),
+    }
+    metadata = {
+        "hosthub_account_id": str(phone_number.account_id),
+        "hosthub_location_id": str(location.id),
+        "hosthub_location_slug": str(location.slug or ""),
+        "hosthub_phone_number_id": str(phone_number.id),
+    }
+
+    return JsonResponse(
+        {
+            inbound_key: {
+                "dynamic_variables": dynamic_variables,
+                "metadata": metadata,
+            }
         },
         status=200,
     )

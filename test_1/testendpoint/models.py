@@ -479,6 +479,30 @@ class PhoneNumber(models.Model):
 
     def __str__(self):
         return f"{self.number} -> {self.location.name} ({self.account.name})"
+
+
+class RetellPhoneConfiguration(models.Model):
+    """Per-phone configuration returned by Retell's inbound webhook."""
+
+    phone_number = models.OneToOneField(
+        PhoneNumber,
+        on_delete=models.CASCADE,
+        related_name="retell_configuration",
+    )
+    location_description = models.TextField(blank=True)
+    location_address = models.TextField(blank=True)
+    corking_fee = models.CharField(max_length=100, blank=True)
+    private_events_description = models.TextField(blank=True)
+    resy_venue_id = models.CharField(max_length=255, blank=True)
+    resy_location_slug = models.CharField(max_length=255, blank=True)
+    host_email = models.EmailField(blank=True)
+    manager_email = models.EmailField(blank=True)
+    printer_api = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Retell config: {self.phone_number.number}"
     
 class BusinessHour(models.Model):
     location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name='business_hours')

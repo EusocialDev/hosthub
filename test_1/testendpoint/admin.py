@@ -1,5 +1,13 @@
 from django.contrib import admin
-from .models import Call, Account, Location, PhoneNumber, UserAccess, BusinessHour
+from .models import (
+    Call,
+    Account,
+    Location,
+    PhoneNumber,
+    RetellPhoneConfiguration,
+    UserAccess,
+    BusinessHour,
+)
 from .forms import UserAccessAdminForm
 from django import forms
 
@@ -7,6 +15,28 @@ from django import forms
 admin.site.register(Location)
 admin.site.register(PhoneNumber)
 admin.site.register(Call)
+
+
+@admin.register(RetellPhoneConfiguration)
+class RetellPhoneConfigurationAdmin(admin.ModelAdmin):
+    list_display = (
+        "phone_number",
+        "get_location",
+        "host_email",
+        "manager_email",
+        "updated_at",
+    )
+    search_fields = (
+        "phone_number__number",
+        "phone_number__location__name",
+        "phone_number__location__slug",
+        "resy_location_slug",
+    )
+    list_select_related = ("phone_number", "phone_number__location")
+
+    @admin.display(description="Location")
+    def get_location(self, obj):
+        return obj.phone_number.location.name
 
 class AccountAdminForm(forms.ModelForm):
     login_password = forms.CharField(

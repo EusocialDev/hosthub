@@ -7,7 +7,15 @@ from django.utils import timezone
 from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
-from .models import Account, BusinessHour, Call, DateOverride, Location, PhoneNumber
+from .models import (
+    Account,
+    BusinessHour,
+    Call,
+    DateOverride,
+    Location,
+    PhoneNumber,
+    RetellPhoneConfiguration,
+)
 from .services.reports import build_daily_call_report
 
 
@@ -245,3 +253,80 @@ class RetellWebhookTests(TestCase):
         self.assertEqual(call.variables["party_size"], 4)
         self.assertEqual(call.host_status, "needs_action")
         self.assertIsNone(call.handled_at)
+
+
+class RetellInboundWebhookTests(TestCase):
+    def setUp(self):
+        self.account = Account.objects.create(
+            name="Inbound Test Account",
+            slug="inbound-test-account",
+        )
+        self.location = Location.objects.create(
+            account=self.account,
+            name="Sapori",
+            slug="sapori",
+        )
+        self.phone_number = PhoneNumber.objects.create(
+            account=self.account,
+            location=self.location,
+            number="+19478135161",
+        )
+        RetellPhoneConfiguration.objects.create(
+            phone_number=self.phone_number,
+            location_description="Italian restaurant in downtown Trenton.",
+            location_address="123 Main Street, Trenton, MI",
+            corking_fee="$25 per bottle",
+            private_events_description="Private events are available for groups.",
+            resy_venue_id="venue-123",
+            resy_location_slug="sapori-trenton",
+            host_email="orders@saporirestaurant.com",
+            manager_email="manager@saporirestaurant.com",
+            printer_api="printer-secret",
+        )
+
+    @override_settings(RETELL_API_KEY="")
+    def test_inbound_webhook_returns_retell_dynamic_variables(self):
+        response = self.client.post(
+            "/api/retell/inbound/",
+            data=json.dumps(
+                {
+                    "event": "call_inbound",
+                    "call_inbound": {
+                        "call_id": "inbound-call-1",
+                        "from_number": "+17347527463",
+                        "to_number": "+19478135161",
+                    },
+                }
+            ),
+            content_type="application/json",
+        )
+
+        payload = response.json()
+        variables = payload["call_inbound"]["dynamic_variables"]
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(variables["location_slug"], "sapori")
+        self.assertEqual(variables["location_name"], "Sapori")
+        self.assertEqual(variables["location_discription"], "Italian restaurant in downtown Trenton.")
+        self.assertEqual(variables["private_events_discription"], "Private events are available for groups.")
+        self.assertEqual(variables["host_email"], "orders@saporirestaurant.com")
+        self.assertEqual(variables["printer_api"], "printer-secret")
+        self.assertEqual(
+            payload["call_inbound"]["metadata"]["hosthub_location_id"],
+            str(self.location.id),
+        )
+
+    @override_settings(RETELL_API_KEY="")
+    def test_inbound_webhook_rejects_unknown_destination_number(self):
+        response = self.client.post(
+            "/api/retell/inbound/",
+            data=json.dumps(
+                {
+                    "event": "call_inbound",
+                    "call_inbound": {"to_number": "+15555550123"},
+                }
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["call_inbound"]["reject"])

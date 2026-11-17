@@ -16,11 +16,17 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from testendpoint import views as testendpoint_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('test/', include('testendpoint.urls')),
     path('webhooks/', include('owner_agent.urls')),
+    path(
+        'api/retell/inbound/',
+        testendpoint_views.retell_inbound_webhook,
+        name='retell_inbound_webhook',
+    ),
     path('', include("hosthub.urls")),
     path("staff/", include("staff.urls")),
   
