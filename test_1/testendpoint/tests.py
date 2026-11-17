@@ -207,6 +207,7 @@ class RetellWebhookTests(TestCase):
     )
     def test_retell_post_call_is_saved_through_existing_bland_upsert(self):
         payload = {
+            "event": "call_analyzed",
             "name": "hosthub_post_call",
             "call": {
                 "call_id": "retell-call-1",
@@ -253,6 +254,28 @@ class RetellWebhookTests(TestCase):
         self.assertEqual(call.variables["party_size"], 4)
         self.assertEqual(call.host_status, "needs_action")
         self.assertIsNone(call.handled_at)
+
+    @override_settings(
+        RETELL_WEBHOOK_TOKEN="retell-test-token",
+        RETELL_API_KEY="",
+    )
+    def test_retell_call_ended_is_ignored(self):
+        response = self.client.post(
+            "/test/webhooks/retell/calls/retell-test-token/",
+            data=json.dumps(
+                {
+                    "event": "call_ended",
+                    "call": {"call_id": "retell-ended-only"},
+                }
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["ignored_event"], "call_ended")
+        self.assertFalse(
+            Call.objects.filter(bland_call_id="retell_retell-ended-only").exists()
+        )
 
 
 class RetellInboundWebhookTests(TestCase):

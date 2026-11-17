@@ -161,7 +161,7 @@ def retell_calls_webhook(request, token: str):
         )
 
     event = payload.get("event") if isinstance(payload, dict) else None
-    if event and event not in {"call_analyzed", "call_ended"}:
+    if event != "call_analyzed":
         return JsonResponse({"ok": True, "ignored_event": event}, status=200)
 
     try:
