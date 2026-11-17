@@ -166,6 +166,25 @@ class LocationHoursStatusTests(TestCase):
         )
         self.assertTrue(response.json()["is_open"])
 
+    def test_status_accepts_spoken_number_time_from_retell(self):
+        local_today = datetime.now(ZoneInfo("America/Detroit")).date()
+        tomorrow = local_today + timedelta(days=1)
+        BusinessHour.objects.create(
+            location=self.location,
+            day_of_week=tomorrow.weekday(),
+            open_time=time(17, 0),
+            close_time=time(18, 0),
+        )
+
+        response = self.client.get(
+            "/test/api/hours/hours-main/status/",
+            {"date": "tomorrow", "time": "five thirty PM"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["reservation_time"], "5:30 PM")
+        self.assertTrue(response.json()["is_open"])
+
     def test_status_handles_the_after_midnight_part_of_overnight_hours(self):
         BusinessHour.objects.create(
             location=self.location,
@@ -233,6 +252,13 @@ class RetellWebhookTests(TestCase):
                         "party_size": 4,
                     },
                 },
+                "collected_dynamic_variables": {
+                    "user_name": "Sarah Collected",
+                    "date": "November 19th",
+                    "time": "7 PM",
+                    "guest": "4",
+                    "request": "a reservation",
+                },
                 "retell_llm_dynamic_variables": {},
             },
             "args": {},
@@ -248,10 +274,12 @@ class RetellWebhookTests(TestCase):
         call = Call.objects.get(bland_call_id="retell_retell-call-1")
         self.assertEqual(call.location_id, self.location.id)
         self.assertEqual(call.display_category, "reservation")
-        self.assertEqual(call.user_name, "Sarah")
+        self.assertEqual(call.user_name, "Sarah Collected")
         self.assertEqual(call.summary, "The caller requested a reservation for four.")
         self.assertIn("reservation for four", call.full_transcript)
         self.assertEqual(call.variables["party_size"], 4)
+        self.assertEqual(call.variables["date"], "November 19th")
+        self.assertEqual(call.variables["guest"], "4")
         self.assertEqual(call.host_status, "needs_action")
         self.assertIsNone(call.handled_at)
 

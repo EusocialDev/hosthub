@@ -168,6 +168,9 @@ def normalize_retell_to_bland(payload: dict) -> dict:
 
     args = payload.get("args") or {}
     extracted = _extracted_values(call, args)
+    collected_variables = call.get("collected_dynamic_variables") or {}
+    if not isinstance(collected_variables, dict):
+        collected_variables = {}
     analysis = call.get("call_analysis") or {}
     if not isinstance(analysis, dict):
         analysis = {}
@@ -179,10 +182,16 @@ def normalize_retell_to_bland(payload: dict) -> dict:
     )
     user_name = (
         extracted.get("user_name")
+        or collected_variables.get("user_name")
         or extracted.get("caller_name")
         or extracted.get("name")
         or (call.get("retell_llm_dynamic_variables") or {}).get("user_name")
     )
+    if not user_name:
+        user_name = (
+            collected_variables.get("caller_name")
+            or collected_variables.get("name")
+        )
 
     started_at = _timestamp_to_iso(call.get("start_timestamp"))
     ended_at = _timestamp_to_iso(call.get("end_timestamp"))
@@ -199,6 +208,10 @@ def normalize_retell_to_bland(payload: dict) -> dict:
     dynamic_variables = call.get("retell_llm_dynamic_variables") or {}
     if isinstance(dynamic_variables, dict):
         variables.update(dynamic_variables)
+    # These are the values extracted during the Retell conversation. They are
+    # distinct from the inbound variables supplied before the call and must
+    # be retained for HostHub's existing dashboard and assessment logic.
+    variables.update(collected_variables)
     variables.update(extracted)
     if user_name and not variables.get("user_name"):
         variables["user_name"] = user_name

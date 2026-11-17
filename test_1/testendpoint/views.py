@@ -28,6 +28,7 @@ from testendpoint.services.retell_adapter import (
     normalize_retell_to_bland,
     verify_retell_signature,
 )
+from testendpoint.utils.time_parsing import parse_natural_time
 from django.views.decorators.cache import never_cache
 from django.http import Http404
 from testendpoint.utils.phone import _normalize_phone_number
@@ -1201,16 +1202,9 @@ def location_hours_status(request, location_slug):
         )
 
     try:
-        parsed_time = dateparser.parse(
-            requested_time_text.strip(),
-            default=default_datetime,
-            fuzzy=True,
-        )
-        if not parsed_time:
+        requested_time = parse_natural_time(requested_time_text)
+        if requested_time is None:
             raise ValueError("time could not be parsed")
-        if parsed_time.tzinfo is not None:
-            raise ValueError("time must be local to the location")
-        requested_time = parsed_time.time()
     except (TypeError, ValueError, OverflowError):
         return JsonResponse(
             {

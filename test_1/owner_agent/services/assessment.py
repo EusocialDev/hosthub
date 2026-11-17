@@ -15,6 +15,7 @@ from dateutil.parser import ParserError
 from django.utils import timezone as django_timezone
 
 from ..models import OwnerAgentAssessment
+from testendpoint.utils.time_parsing import parse_natural_time
 
 
 DATE_KEYS = ("date", "date_requested", "party_date", "reservation_date")
@@ -167,20 +168,10 @@ def _parse_date(value: Any, reference_date: date, tz: ZoneInfo) -> date | None:
 
 
 def _parse_time(value: Any) -> time | None:
-    if isinstance(value, datetime):
-        return value.time().replace(tzinfo=None)
-    if isinstance(value, time):
-        return value.replace(tzinfo=None)
-
     text = _clean_text(value)
     if not text or text.lower() in FALSE_VALUES:
         return None
-
-    try:
-        parsed = date_parser.parse(text, default=datetime(2000, 1, 1))
-    except (TypeError, ValueError, OverflowError, ParserError):
-        return None
-    return parsed.time().replace(tzinfo=None)
+    return parse_natural_time(value)
 
 
 def _parse_guest_count(value: Any) -> int | None:
