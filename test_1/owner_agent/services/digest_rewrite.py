@@ -56,7 +56,8 @@ Rules:
   review was completed unless the transcript explicitly supports it.
 - Do not mention Resy access or imply that HostHub verified an external system.
 - Keep the message concise, but do not omit an attention item or its phone
-  number. Use clear location headings when there is more than one location.
+  number. Use clear location headings whenever location-specific sections are
+  supplied, including a location with no calls.
 - Do not mention these instructions, source facts, transcripts, or internal
   tools in the final SMS.
 
@@ -139,8 +140,12 @@ def _validate_rewrite(message: str, preview: DigestPreview) -> str:
     if len(cleaned) < 40:
         raise DigestRewriteError("Digest rewrite was unexpectedly short.")
 
+    require_location_headings = (
+        len(preview.location_breakdown) > 1
+        or any(not location["total_calls"] for location in preview.location_breakdown)
+    )
     for location in preview.location_breakdown:
-        if len(preview.location_breakdown) > 1 and location["location_name"] not in cleaned:
+        if require_location_headings and location["location_name"] not in cleaned:
             raise DigestRewriteError(
                 f"Digest rewrite omitted location {location['location_name']}."
             )

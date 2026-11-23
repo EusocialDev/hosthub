@@ -27,6 +27,7 @@ from .ghl_owner_sms import (
 )
 from .openai_analysis import OpenAIAnalysisError, analyze_call, save_analysis
 from .digest_rewrite import DigestRewriteError, rewrite_digest_message
+from .sms_chunking import split_sms_body
 
 
 class OwnerAgentDigestDeliveryError(RuntimeError):
@@ -266,47 +267,71 @@ def deliver_owner_digest(
         ghl_contact_id=settings.ghl_contact_id,
         ghl_location_id=settings.ghl_location_id,
     )
-    message = OwnerAgentMessage.objects.create(
-        account=account,
-        digest=digest,
-        direction=OwnerAgentMessage.Direction.OUTBOUND,
-        channel="sms",
-        status=OwnerAgentMessage.Status.QUEUED,
-        owner_phone_number=payload["phone"],
-        ghl_contact_id=settings.ghl_contact_id,
-        body=preview.message_body,
-        provider_payload=payload,
-    )
+    message_parts = split_sms_body(preview.message_body)
+    outbound_messages: list[OwnerAgentMessage] = []
+    provider_results: list[GHLOwnerSMSResult] = []
 
-    try:
-        provider_result: GHLOwnerSMSResult = send_owner_sms(payload)
-    except Exception as exc:
-        message.status = OwnerAgentMessage.Status.FAILED
-        message.provider_payload = {**payload, "error": str(exc)}
-        message.save(update_fields=["status", "provider_payload"])
-        digest.status = OwnerAgentDigest.Status.FAILED
-        digest.error_message = str(exc)
-        digest.save(update_fields=["status", "error_message", "updated_at"])
-        raise
+    for part_number, body in enumerate(message_parts, start=1):
+        part_payload = {
+            **payload,
+            "message": body,
+            "body": body,
+            "message_part": part_number,
+            "message_total": len(message_parts),
+        }
+        message = OwnerAgentMessage.objects.create(
+            account=account,
+            digest=digest,
+            direction=OwnerAgentMessage.Direction.OUTBOUND,
+            channel="sms",
+            status=OwnerAgentMessage.Status.QUEUED,
+            owner_phone_number=part_payload["phone"],
+            ghl_contact_id=settings.ghl_contact_id,
+            body=body,
+            provider_payload=part_payload,
+        )
 
+        try:
+            provider_result: GHLOwnerSMSResult = send_owner_sms(part_payload)
+        except Exception as exc:
+            message.status = OwnerAgentMessage.Status.FAILED
+            message.provider_payload = {**part_payload, "error": str(exc)}
+            message.save(update_fields=["status", "provider_payload"])
+            digest.status = OwnerAgentDigest.Status.FAILED
+            digest.error_message = str(exc)
+            digest.save(update_fields=["status", "error_message", "updated_at"])
+            raise
+
+        now = django_timezone.now()
+        message.status = OwnerAgentMessage.Status.SENT
+        message.ghl_message_id = provider_result.message_id
+        message.provider_payload = {
+            **provider_result.response_payload,
+            "message_part": part_number,
+            "message_total": len(message_parts),
+        }
+        message.sent_at = now
+        message.save(
+            update_fields=[
+                "status",
+                "ghl_message_id",
+                "provider_payload",
+                "sent_at",
+            ]
+        )
+        outbound_messages.append(message)
+        provider_results.append(provider_result)
+
+    message = outbound_messages[0]
     now = django_timezone.now()
-    message.status = OwnerAgentMessage.Status.SENT
-    message.ghl_message_id = provider_result.message_id
-    message.provider_payload = provider_result.response_payload
-    message.sent_at = now
-    message.save(
-        update_fields=[
-            "status",
-            "ghl_message_id",
-            "provider_payload",
-            "sent_at",
-        ]
-    )
 
     digest.status = OwnerAgentDigest.Status.SENT
     digest.sent_at = now
-    digest.ghl_message_id = provider_result.message_id
-    digest.provider_response = provider_result.response_payload
+    digest.ghl_message_id = provider_results[0].message_id
+    digest.provider_response = {
+        "message_count": len(provider_results),
+        "messages": [result.response_payload for result in provider_results],
+    }
     digest.error_message = ""
     digest.save(
         update_fields=[

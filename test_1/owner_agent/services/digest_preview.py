@@ -183,6 +183,10 @@ def _attention_line(item: dict[str, Any]) -> str:
 
 def _append_location_section(lines: list[str], location: dict[str, Any]) -> None:
     lines.append(f"{location['location_name']}:")
+    if not location["total_calls"]:
+        lines.append("No calls yesterday.")
+        return
+
     lines.append(f"{location['total_calls']} calls.")
     lines.append(f"{location['handled_calls']} were marked handled in HostHub.")
 
@@ -220,11 +224,21 @@ def _compose_message(
     context_items: list[dict[str, Any]],
     location_breakdown: list[dict[str, Any]] | None = None,
 ) -> str:
-    if location_breakdown and len(location_breakdown) > 1:
+    if location_breakdown and (
+        len(location_breakdown) > 1
+        or any(not location["total_calls"] for location in location_breakdown)
+    ):
+        if len(location_breakdown) > 1:
+            header = (
+                f"Yesterday you received {total_calls} calls across "
+                f"{len(location_breakdown)} locations."
+            )
+        else:
+            header = f"Yesterday you received {total_calls} calls."
         lines = [
             "Hello Dear Owner",
             "",
-            f"Yesterday you received {total_calls} calls across {len(location_breakdown)} locations.",
+            header,
             "",
         ]
         for index, location in enumerate(location_breakdown):
@@ -298,6 +312,20 @@ def build_digest_preview(
     context_items: list[dict[str, Any]] = []
     call_assessments: list[dict[str, Any]] = []
     locations: dict[str, dict[str, Any]] = {}
+
+    # Start with every active account location so a location with no calls is
+    # still represented in a multi-location owner digest.
+    for location_obj in account.locations.filter(is_active=True).order_by("name", "id"):
+        locations[str(location_obj.id)] = {
+            "location_name": location_obj.name,
+            "total_calls": 0,
+            "handled_calls": 0,
+            "unhandled_calls": 0,
+            "attention_calls": 0,
+            "context_calls": 0,
+            "attention_items": [],
+            "context_items": [],
+        }
     handled_calls = 0
 
     for call in calls:
@@ -318,11 +346,11 @@ def build_digest_preview(
         )
         call_assessments.append(assessment_item)
 
-        location_name = assessment_item["location_name"]
+        location_key = str(call.location_id) if call.location_id else "unassigned"
         location = locations.setdefault(
-            location_name,
+            location_key,
             {
-                "location_name": location_name,
+                "location_name": assessment_item["location_name"],
                 "total_calls": 0,
                 "handled_calls": 0,
                 "unhandled_calls": 0,

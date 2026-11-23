@@ -19,6 +19,7 @@ from .services.digest_context import context_call_matches, search_digest_calls
 from .services.owner_conversation import answer_owner_message, chunk_transcript
 from .services.digest_rewrite import rewrite_digest_message
 from .services.openai_analysis import normalize_analysis_output
+from .services.sms_chunking import split_sms_body
 
 
 class OwnerAgentAssessmentTests(SimpleTestCase):
@@ -341,6 +342,52 @@ class OwnerAgentAssessmentTests(SimpleTestCase):
         self.assertIn("5 were marked handled in HostHub.", message)
         self.assertIn("Sapori:\n5 calls.", message)
         self.assertIn("There were no unhandled calls.", message)
+
+    def test_digest_message_includes_location_with_no_calls(self):
+        message = _compose_message(
+            total_calls=3,
+            handled_calls=3,
+            unhandled_calls=0,
+            attention_items=[],
+            context_items=[],
+            location_breakdown=[
+                {
+                    "location_name": "160 Main",
+                    "total_calls": 3,
+                    "handled_calls": 3,
+                    "unhandled_calls": 0,
+                    "attention_calls": 0,
+                    "context_calls": 0,
+                    "attention_items": [],
+                    "context_items": [],
+                },
+                {
+                    "location_name": "Sapori",
+                    "total_calls": 0,
+                    "handled_calls": 0,
+                    "unhandled_calls": 0,
+                    "attention_calls": 0,
+                    "context_calls": 0,
+                    "attention_items": [],
+                    "context_items": [],
+                },
+            ],
+        )
+
+        self.assertIn("Sapori:\nNo calls yesterday.", message)
+        self.assertNotIn("Sapori:\n0 calls.", message)
+
+    def test_digest_sms_body_is_split_under_1600_characters(self):
+        message = "Hello Dear Owner\n\n" + ("160 Main: reservation update.\n" * 100)
+
+        parts = split_sms_body(message)
+
+        self.assertGreater(len(parts), 1)
+        self.assertTrue(all(len(part) <= 1600 for part in parts))
+        self.assertEqual(
+            "".join(parts).replace(" ", "").replace("\n", ""),
+            message.replace(" ", "").replace("\n", ""),
+        )
 
     def test_openai_analysis_can_enrich_missing_future_reservation_fields(self):
         call = self.make_call(variables={})
