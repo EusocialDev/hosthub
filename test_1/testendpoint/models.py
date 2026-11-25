@@ -497,7 +497,8 @@ class RetellPhoneConfiguration(models.Model):
     resy_location_slug = models.CharField(max_length=255, blank=True)
     host_email = models.EmailField(blank=True)
     manager_email = models.EmailField(blank=True)
-    printer_api = models.CharField(max_length=255, blank=True)
+    carryout_api_key = models.CharField(max_length=255, blank=True)
+    agent_carryout = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

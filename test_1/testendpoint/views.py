@@ -299,7 +299,8 @@ def retell_inbound_webhook(request):
         "resy_location_slug": configured_value("resy_location_slug"),
         "host_email": configured_value("host_email"),
         "manager_email": configured_value("manager_email"),
-        "printer_api": configured_value("printer_api"),
+        "carryout_api_key": configured_value("carryout_api_key"),
+        "agent_carryout": bool(config and config.agent_carryout),
     }
     metadata = {
         "hosthub_account_id": str(phone_number.account_id),

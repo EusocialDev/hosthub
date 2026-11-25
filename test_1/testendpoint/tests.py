@@ -336,7 +336,8 @@ class RetellInboundWebhookTests(TestCase):
             resy_location_slug="sapori-trenton",
             host_email="orders@saporirestaurant.com",
             manager_email="manager@saporirestaurant.com",
-            printer_api="printer-secret",
+            carryout_api_key="carryout-secret",
+            agent_carryout=True,
         )
 
     @override_settings(RETELL_API_KEY="")
@@ -364,7 +365,9 @@ class RetellInboundWebhookTests(TestCase):
         self.assertEqual(variables["location_discription"], "Italian restaurant in downtown Trenton.")
         self.assertEqual(variables["private_events_discription"], "Private events are available for groups.")
         self.assertEqual(variables["host_email"], "orders@saporirestaurant.com")
-        self.assertEqual(variables["printer_api"], "printer-secret")
+        self.assertEqual(variables["carryout_api_key"], "carryout-secret")
+        self.assertIs(variables["agent_carryout"], True)
+        self.assertNotIn("printer_api", variables)
         self.assertEqual(
             payload["call_inbound"]["metadata"]["hosthub_location_id"],
             str(self.location.id),
